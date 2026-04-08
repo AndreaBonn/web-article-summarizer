@@ -195,12 +195,13 @@ class APIResilience {
   getFallbackOrder(primaryProvider, apiKeys) {
     // Ordini di fallback ottimizzati per qualità e velocità
     const fallbackStrategies = {
-      groq: ['groq', 'openai', 'anthropic'],
-      openai: ['openai', 'anthropic', 'groq'],
-      anthropic: ['anthropic', 'openai', 'groq']
+      groq: ['groq', 'openai', 'anthropic', 'gemini'],
+      openai: ['openai', 'anthropic', 'groq', 'gemini'],
+      anthropic: ['anthropic', 'openai', 'groq', 'gemini'],
+      gemini: ['gemini', 'openai', 'anthropic', 'groq']
     };
-    
-    const order = fallbackStrategies[primaryProvider] || ['groq', 'openai', 'anthropic'];
+
+    const order = fallbackStrategies[primaryProvider] || ['groq', 'openai', 'anthropic', 'gemini'];
     
     // Filtra solo i provider con API key configurata
     return order.filter(provider => apiKeys[provider]);

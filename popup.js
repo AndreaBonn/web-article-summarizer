@@ -1879,11 +1879,11 @@ async function showVoiceSelector(lang) {
     const isSelected = voice.voiceName === currentVoice;
     const localBadge = voice.localService ? '<span class="badge-local">Locale</span>' : '<span class="badge-remote">Remota</span>';
     voiceList += `
-      <div class="voice-item ${isSelected ? 'selected' : ''}" data-voice="${voice.voiceName}">
+      <div class="voice-item ${isSelected ? 'selected' : ''}" data-voice="${HtmlSanitizer.escape(voice.voiceName)}">
         <div class="voice-info">
-          <div class="voice-name">${voice.voiceName}</div>
+          <div class="voice-name">${HtmlSanitizer.escape(voice.voiceName)}</div>
           <div class="voice-meta">
-            <span class="voice-lang">${voice.lang}</span>
+            <span class="voice-lang">${HtmlSanitizer.escape(voice.lang)}</span>
             ${localBadge}
           </div>
         </div>

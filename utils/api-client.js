@@ -1723,7 +1723,7 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
   static async generateCompletion(provider, apiKey, systemPrompt, userPrompt, options = {}) {
     const {
       temperature = 0.3,
-      maxTokens = 2000,
+      maxTokens = 4096,
       model = null,
       responseFormat = null  // Può essere 'json' per forzare output JSON
     } = options;
@@ -1874,19 +1874,19 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
       safetySettings: [
         {
           category: 'HARM_CATEGORY_HARASSMENT',
-          threshold: 'BLOCK_NONE'
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
         },
         {
           category: 'HARM_CATEGORY_HATE_SPEECH',
-          threshold: 'BLOCK_NONE'
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
         },
         {
           category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-          threshold: 'BLOCK_NONE'
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
         },
         {
           category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-          threshold: 'BLOCK_NONE'
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
         }
       ]
     };

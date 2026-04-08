@@ -121,19 +121,18 @@ class StorageManager {
   }
 
   // Translation cache (la cache summary è gestita da CacheManager)
-  static _hashString(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return 'tcache_' + Math.abs(hash).toString(36);
+  static async _hashString(str) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return 'tcache_' + hashHex.slice(0, 16);
   }
 
   static async getCachedTranslation(url, provider, targetLanguage) {
     const str = JSON.stringify({ url, provider, targetLanguage });
-    const cacheKey = this._hashString(str);
+    const cacheKey = await this._hashString(str);
     const result = await chrome.storage.local.get(['translationCache']);
     const cache = result.translationCache || {};
 
@@ -150,7 +149,7 @@ class StorageManager {
 
   static async saveCachedTranslation(url, provider, targetLanguage, translation, originalLanguage) {
     const str = JSON.stringify({ url, provider, targetLanguage });
-    const cacheKey = this._hashString(str);
+    const cacheKey = await this._hashString(str);
     const result = await chrome.storage.local.get(['translationCache']);
     let cache = result.translationCache || {};
 
@@ -175,7 +174,7 @@ class StorageManager {
 
   static async clearTranslationCacheEntry(url, provider, targetLanguage) {
     const str = JSON.stringify({ url, provider, targetLanguage });
-    const cacheKey = this._hashString(str);
+    const cacheKey = await this._hashString(str);
     const result = await chrome.storage.local.get(['translationCache']);
     const cache = result.translationCache || {};
     delete cache[cacheKey];

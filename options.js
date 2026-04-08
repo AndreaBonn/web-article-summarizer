@@ -177,7 +177,8 @@ async function testApiKey(provider) {
       showStatus(provider, 'error', `${I18n.t('settings.test.failed')} ${response.error}`);
     }
   } catch (error) {
-    showStatus(provider, 'error', `❌ ${error.message}`);
+    console.error('Errore test API key:', error);
+    showStatus(provider, 'error', I18n.t('settings.test.genericError') || 'Errore durante il test. Riprova.');
   }
 }
 
@@ -264,7 +265,8 @@ async function runCleanup() {
     // Refresh stats
     await loadPerformanceStats();
   } catch (error) {
-    showToast(I18n.t('settings.cleanup.error') + ' ' + error.message, 'error');
+    console.error('Errore cleanup:', error);
+    showToast(I18n.t('settings.cleanup.error') || 'Errore durante la pulizia. Riprova.', 'error');
   }
 }
 

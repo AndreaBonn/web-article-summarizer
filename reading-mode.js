@@ -1397,7 +1397,7 @@ function displayExtractedText(text) {
         return `<div class="page-marker">📄 Pagina ${part}</div>`;
       } else {
         // Page content
-        return `<div class="page-content">${part.replace(/\n/g, '<br>')}</div>`;
+        return `<div class="page-content">${HtmlSanitizer.escape(part).replace(/\n/g, '<br>')}</div>`;
       }
     })
     .join('');
@@ -1426,7 +1426,7 @@ function displayQuotesInTab(quotes) {
     html += `
       <div class="quote-item">
         <div class="quote-number">${index + 1}</div>
-        <div class="quote-text">"${quote}"</div>
+        <div class="quote-text">"${HtmlSanitizer.escape(quote)}"</div>
       </div>
     `;
   });
