@@ -86,8 +86,7 @@ ai-article-summarizer/
 │   ├── pdf.js              # PDF parsing (Mozilla)
 │   └── lz-string.min.js    # Cache compression
 │
-├── icons/
-└── docs/                   # Architecture notes, audit reports, prompt docs
+└── icons/
 ```
 
 ---

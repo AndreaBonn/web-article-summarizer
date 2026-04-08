@@ -28,3 +28,6 @@ secrets.json
 
 # Backup files
 *.backup
+
+# Internal development docs (not for public consumption)
+docs/
