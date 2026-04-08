@@ -6,7 +6,8 @@ class APIResilience {
     this.rateLimits = {
       groq: { requestsPerMinute: 30, tokens: 30, lastReset: Date.now() },
       openai: { requestsPerMinute: 60, tokens: 60, lastReset: Date.now() },
-      anthropic: { requestsPerMinute: 50, tokens: 50, lastReset: Date.now() }
+      anthropic: { requestsPerMinute: 50, tokens: 50, lastReset: Date.now() },
+      gemini: { requestsPerMinute: 60, tokens: 60, lastReset: Date.now() }
     };
   }
 

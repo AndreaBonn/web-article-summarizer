@@ -1,10 +1,9 @@
 // Compression Manager - Compressione dati con LZ-String
-// Nota: Richiede la libreria lz-string (da includere nel manifest)
+// LZ-String è opzionale: se non disponibile, i dati passano senza compressione.
 
 class CompressionManager {
   constructor() {
     this.compressionThreshold = 1000; // Comprimi solo se > 1KB
-    this.useIndexedDB = true;
   }
 
   /**

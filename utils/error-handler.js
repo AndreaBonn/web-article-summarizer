@@ -75,8 +75,9 @@ class ErrorHandler {
       return 'Spazio di archiviazione esaurito. Pulisci la cache nelle impostazioni.';
     }
     
-    // Errore generico
-    return message;
+    // Errore non riconosciuto — messaggio generico per l'utente
+    console.error('Errore non classificato:', message);
+    return 'Si è verificato un errore imprevisto. Riprova.';
   }
   
   /**
@@ -90,9 +91,16 @@ class ErrorHandler {
       logs.push({
         message: error.message || error.toString(),
         context,
-        stack: error.stack,
         timestamp: Date.now(),
-        url: window.location.href
+        url: (() => {
+          try {
+            if (typeof window !== 'undefined' && window.location) {
+              const u = new URL(window.location.href);
+              return u.origin + u.pathname;
+            }
+            return 'background-sw';
+          } catch { return 'unknown'; }
+        })()
       });
       
       // Mantieni solo gli ultimi 50 errori

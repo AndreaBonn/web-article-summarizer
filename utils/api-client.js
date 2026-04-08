@@ -60,7 +60,7 @@ class APIClient {
   
   static detectLanguage(text) {
     const sample = text.toLowerCase().slice(0, 1000);
-    
+
     const patterns = {
       it: ['che', 'della', 'degli', 'delle', 'questo', 'questa', 'sono', 'essere', 'nell', 'alla'],
       en: ['the', 'and', 'that', 'this', 'with', 'from', 'have', 'been', 'which', 'their'],
@@ -68,18 +68,21 @@ class APIClient {
       fr: ['que', 'les', 'des', 'cette', 'dans', 'pour', 'avec', 'sont', 'qui', 'pas'],
       de: ['der', 'die', 'das', 'und', 'ist', 'des', 'dem', 'den', 'nicht', 'sich']
     };
-    
+
     let maxScore = 0;
     let detectedLang = 'en';
-    
+
     for (const [lang, words] of Object.entries(patterns)) {
-      const score = words.filter(word => sample.includes(` ${word} `)).length;
+      const score = words.filter(word => {
+        const regex = new RegExp(`\\b${word}\\b`, 'g');
+        return regex.test(sample);
+      }).length;
       if (score > maxScore) {
         maxScore = score;
         detectedLang = lang;
       }
     }
-    
+
     return detectedLang;
   }
   
@@ -846,10 +849,10 @@ Inizia ora con il riassunto completo.`;
           { role: 'user', content: prompt.userPrompt }
         ],
         temperature: 0.3,
-        max_tokens: 2000
+        max_tokens: 4096
       })
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error?.message || 'Errore API Groq');
@@ -873,10 +876,10 @@ Inizia ora con il riassunto completo.`;
           { role: 'user', content: prompt.userPrompt }
         ],
         temperature: 0.3,
-        max_tokens: 2000
+        max_tokens: 4096
       })
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error?.message || 'Errore API OpenAI');
@@ -896,7 +899,7 @@ Inizia ora con il riassunto completo.`;
       },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 2000,
+        max_tokens: 4096,
         temperature: 0.3,
         system: prompt.systemPrompt,
         messages: [
@@ -971,19 +974,19 @@ Inizia ora con il riassunto completo.`;
         safetySettings: [
           {
             category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE'
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
           },
           {
             category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE'
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
           },
           {
             category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE'
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
           },
           {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE'
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
           }
         ]
       })

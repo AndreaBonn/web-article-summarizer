@@ -66,11 +66,22 @@ async function loadSettings() {
 
 async function loadApiKeys() {
   const providers = ['groq', 'openai', 'anthropic', 'gemini'];
-  
+
   for (const provider of providers) {
     const key = await StorageManager.getApiKey(provider);
     if (key) {
-      document.getElementById(`${provider}Key`).value = key;
+      const input = document.getElementById(`${provider}Key`);
+      // Mostra solo gli ultimi 4 caratteri per sicurezza
+      const masked = '\u2022'.repeat(Math.max(0, key.length - 4)) + key.slice(-4);
+      input.value = masked;
+      input.dataset.masked = 'true';
+      // Al focus, se ancora mascherato, svuota per nuovo inserimento
+      input.addEventListener('focus', function onFocus() {
+        if (this.dataset.masked === 'true') {
+          this.value = '';
+          this.dataset.masked = 'false';
+        }
+      }, { once: true });
       showStatus(provider, 'success', I18n.t('settings.status.configured'));
     }
   }
@@ -103,17 +114,18 @@ async function loadStats() {
 
 async function saveApiKeys() {
   const providers = ['groq', 'openai', 'anthropic', 'gemini'];
-  
+
   for (const provider of providers) {
     const input = document.getElementById(`${provider}Key`);
     const key = input.value.trim();
-    
-    if (key) {
+
+    // Non salvare se il campo è ancora mascherato (non modificato dall'utente)
+    if (key && input.dataset.masked !== 'true') {
       await StorageManager.saveApiKey(provider, key);
       showStatus(provider, 'success', I18n.t('settings.status.saved'));
     }
   }
-  
+
   showToast(I18n.t('settings.toast.keysSaved'), 'success');
 }
 

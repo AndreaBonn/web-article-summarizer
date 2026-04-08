@@ -275,8 +275,8 @@ function displayContent() {
   if (currentData.translation) {
     elements.translationTabContent.innerHTML = `
       <div class="translation-content">
-        <h3>${article.title}</h3>
-        <div class="translation-text">${currentData.translation}</div>
+        <h3>${HtmlSanitizer.escape(article.title)}</h3>
+        <div class="translation-text">${HtmlSanitizer.escape(currentData.translation)}</div>
       </div>
     `;
   }
@@ -344,15 +344,15 @@ function displayContent() {
             <div class="citation-header">
               <span class="citation-icon">${typeIcon}</span>
               <div class="citation-number">#${citation.id || index + 1}</div>
-              ${author ? `<span class="citation-author-badge">${author}</span>` : ''}
-              ${paragraph ? `<div class="citation-ref">§${paragraph}</div>` : ''}
+              ${author ? `<span class="citation-author-badge">${HtmlSanitizer.escape(author)}</span>` : ''}
+              ${paragraph ? `<div class="citation-ref">§${HtmlSanitizer.escape(String(paragraph))}</div>` : ''}
             </div>
-            ${text ? `<div class="citation-text">"${text.substring(0, 300)}${text.length > 300 ? '...' : ''}"</div>` : '<div class="citation-text citation-no-text">Riferimento senza testo citato</div>'}
-            ${context ? `<div class="citation-context">📝 ${context}</div>` : ''}
+            ${text ? `<div class="citation-text">"${HtmlSanitizer.escape(text.substring(0, 300))}${text.length > 300 ? '...' : ''}"</div>` : '<div class="citation-text citation-no-text">Riferimento senza testo citato</div>'}
+            ${context ? `<div class="citation-context">📝 ${HtmlSanitizer.escape(context)}</div>` : ''}
             <div class="citation-meta">
               <span class="citation-type">${typeLabel}</span>
-              ${source ? `<span class="citation-source">📚 ${source}</span>` : ''}
-              ${year ? `<span class="citation-year">📅 ${year}</span>` : ''}
+              ${source ? `<span class="citation-source">📚 ${HtmlSanitizer.escape(source)}</span>` : ''}
+              ${year ? `<span class="citation-year">📅 ${HtmlSanitizer.escape(String(year))}</span>` : ''}
             </div>
           </div>
         `;
@@ -369,8 +369,8 @@ function displayContent() {
       const qaItem = document.createElement('div');
       qaItem.className = 'qa-item';
       qaItem.innerHTML = `
-        <div class="qa-question">Q: ${item.question}</div>
-        <div class="qa-answer">A: ${item.answer}</div>
+        <div class="qa-question">Q: ${HtmlSanitizer.escape(item.question)}</div>
+        <div class="qa-answer">A: ${HtmlSanitizer.escape(item.answer)}</div>
       `;
       elements.qaHistory.appendChild(qaItem);
     });
@@ -382,8 +382,8 @@ function displayArticle(article) {
   // Prepare text view (always available as fallback)
   let html = `
     <div class="article-content">
-      <h1>${article.title || 'Articolo'}</h1>
-      ${article.excerpt ? `<p class="article-excerpt"><em>${article.excerpt}</em></p>` : ''}
+      <h1>${HtmlSanitizer.escape(article.title || 'Articolo')}</h1>
+      ${article.excerpt ? `<p class="article-excerpt"><em>${HtmlSanitizer.escape(article.excerpt)}</em></p>` : ''}
       <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
   `;
   
@@ -392,7 +392,7 @@ function displayArticle(article) {
     const paragraphs = article.content.split('\n\n');
     paragraphs.forEach((para, index) => {
       if (para.trim()) {
-        html += `<p data-paragraph="${index + 1}">${para.trim()}</p>`;
+        html += `<p data-paragraph="${index + 1}">${HtmlSanitizer.escape(para.trim())}</p>`;
       }
     });
   } else {
@@ -801,14 +801,15 @@ function getLanguageName(code) {
 }
 
 function showError(message) {
+  const safeMessage = HtmlSanitizer.escape(message);
   elements.articleContent.innerHTML = `
     <div class="loading-state">
-      <p style="color: var(--text-primary);">❌ ${message}</p>
+      <p style="color: var(--text-primary);">❌ ${safeMessage}</p>
     </div>
   `;
   elements.summaryContent.innerHTML = `
     <div class="loading-state">
-      <p style="color: var(--text-primary);">❌ ${message}</p>
+      <p style="color: var(--text-primary);">❌ ${safeMessage}</p>
     </div>
   `;
 }
@@ -878,7 +879,7 @@ function displaySummaryInTab(summary) {
   
   elements.summaryTabContent.innerHTML = `
     ${cacheBadge}
-    <div class="summary-text">${summary}</div>
+    <div class="summary-text">${HtmlSanitizer.escape(summary)}</div>
   `;
 }
 
@@ -898,10 +899,10 @@ function displayKeypointsInTab(keyPoints) {
     html += `
       <div class="keypoint" data-paragraph="${point.paragraphs}">
         <div class="keypoint-header">
-          <div class="keypoint-title">${index + 1}. ${point.title}</div>
-          <div class="keypoint-ref">§${point.paragraphs}</div>
+          <div class="keypoint-title">${index + 1}. ${HtmlSanitizer.escape(point.title)}</div>
+          <div class="keypoint-ref">§${HtmlSanitizer.escape(String(point.paragraphs))}</div>
         </div>
-        <div class="keypoint-desc">${point.description}</div>
+        <div class="keypoint-desc">${HtmlSanitizer.escape(point.description)}</div>
       </div>
     `;
   });
@@ -1007,8 +1008,8 @@ async function translateArticle() {
     
     elements.translationTabContent.innerHTML = `
       <div class="translation-content">
-        <h3>${title}</h3>
-        <div class="translation-text">${translation.replace(/\n/g, '<br>')}</div>
+        <h3>${HtmlSanitizer.escape(title)}</h3>
+        <div class="translation-text">${HtmlSanitizer.escape(translation).replace(/\n/g, '<br>')}</div>
       </div>
     `;
     
@@ -1022,7 +1023,7 @@ async function translateArticle() {
     console.error('Translation error:', error);
     elements.translationTabContent.innerHTML = `
       <div class="empty-state">
-        <p style="color: var(--text-primary);">❌ ${error.message}</p>
+        <p style="color: var(--text-primary);">❌ ${HtmlSanitizer.escape(error.message)}</p>
         <button id="translateBtn" class="btn btn-primary">🔄 Riprova</button>
       </div>
     `;
@@ -1102,9 +1103,9 @@ async function extractCitations() {
         html += `
           <div class="citation-item">
             <div class="citation-number">[${index + 1}]</div>
-            <div class="citation-text">${text || 'Testo citazione non disponibile'}</div>
-            ${author ? `<div class="citation-author">— ${author}</div>` : ''}
-            ${citation.paragraph ? `<div class="citation-ref">§${citation.paragraph}</div>` : ''}
+            <div class="citation-text">${HtmlSanitizer.escape(text || 'Testo citazione non disponibile')}</div>
+            ${author ? `<div class="citation-author">— ${HtmlSanitizer.escape(author)}</div>` : ''}
+            ${citation.paragraph ? `<div class="citation-ref">§${HtmlSanitizer.escape(String(citation.paragraph))}</div>` : ''}
           </div>
         `;
       });
@@ -1125,7 +1126,7 @@ async function extractCitations() {
     console.error('Citations error:', error);
     elements.citationsTabContent.innerHTML = `
       <div class="empty-state">
-        <p style="color: var(--text-primary);">❌ ${error.message}</p>
+        <p style="color: var(--text-primary);">❌ ${HtmlSanitizer.escape(error.message)}</p>
         <button id="extractCitationsBtn" class="btn btn-primary">🔄 Riprova</button>
       </div>
     `;
@@ -1142,7 +1143,7 @@ async function askQuestion() {
   const qaItem = document.createElement('div');
   qaItem.className = 'qa-item';
   qaItem.innerHTML = `
-    <div class="qa-question">Q: ${question}</div>
+    <div class="qa-question">Q: ${HtmlSanitizer.escape(question)}</div>
     <div class="qa-answer">⏳ Sto pensando...</div>
   `;
   elements.qaHistory.appendChild(qaItem);

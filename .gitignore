@@ -27,3 +27,9 @@ __00_NOTES.txt
 *.pem
 
 00___SUGGERIMENTI.md
+
+# Backup files
+*.backup
+
+# Documentation (report interni, audit, review)
+docs/

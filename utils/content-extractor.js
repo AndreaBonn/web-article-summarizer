@@ -1,26 +1,22 @@
 // Content Extractor - Estrazione e parsing articoli
 class ContentExtractor {
   static extract(document) {
-    console.log('Inizio estrazione articolo...');
-    
     // Prova prima con Readability
     try {
       if (typeof Readability !== 'undefined') {
         const documentClone = document.cloneNode(true);
         const reader = new Readability(documentClone);
         const article = reader.parse();
-        
+
         if (article && article.content) {
-          console.log('Readability ha trovato un articolo');
           return this.processReadabilityArticle(article, document);
         }
       }
     } catch (error) {
       console.warn('Readability fallito:', error);
     }
-    
+
     // Fallback: estrazione manuale
-    console.log('Uso estrazione manuale...');
     return this.fallbackExtraction(document);
   }
   
@@ -54,8 +50,6 @@ class ContentExtractor {
       throw new Error('Article too short');
     }
     
-    console.log(`Articolo estratto: ${wordCount} parole, ${paragraphs.length} paragrafi`);
-    
     return {
       title: article.title || document.title,
       author: article.byline || 'Sconosciuto',
@@ -70,8 +64,6 @@ class ContentExtractor {
   }
   
   static fallbackExtraction(document) {
-    console.log('Estrazione manuale in corso...');
-    
     // Cerca il contenuto principale in vari modi
     let mainContent = null;
     
@@ -92,14 +84,12 @@ class ContentExtractor {
     for (const selector of selectors) {
       mainContent = document.querySelector(selector);
       if (mainContent) {
-        console.log(`Trovato contenuto con selettore: ${selector}`);
         break;
       }
     }
-    
+
     // Se non trova nulla, usa body
     if (!mainContent) {
-      console.log('Uso document.body come fallback');
       mainContent = document.body;
     }
     
@@ -134,7 +124,6 @@ class ContentExtractor {
     
     // Se non trova abbastanza paragrafi, prova a estrarre tutto il testo
     if (paragraphs.length < 3) {
-      console.log('Pochi paragrafi trovati, estraggo tutto il testo...');
       const allText = clone.textContent || clone.innerText || '';
       const sentences = allText.split(/[.!?]+/).filter(s => s.trim().length > 50);
       
@@ -148,8 +137,6 @@ class ContentExtractor {
     
     const fullText = paragraphs.map(p => p.text).join(' ');
     const wordCount = fullText.split(/\s+/).filter(w => w.length > 0).length;
-    
-    console.log(`Estrazione manuale: ${wordCount} parole, ${paragraphs.length} paragrafi`);
     
     if (wordCount < 200) {
       throw new Error('Article too short');

@@ -8,110 +8,7 @@ let currentQA = []; // Array per salvare domande e risposte
 // Progress Tracker
 let progressTracker = null;
 
-// Modal System
-const Modal = {
-  show(options) {
-    return new Promise((resolve) => {
-      const modal = document.getElementById('customModal');
-      const icon = document.getElementById('modalIcon');
-      const title = document.getElementById('modalTitle');
-      const message = document.getElementById('modalMessage');
-      const confirmBtn = document.getElementById('modalConfirmBtn');
-      const cancelBtn = document.getElementById('modalCancelBtn');
-      
-      // Set content
-      icon.textContent = options.icon || 'ℹ️';
-      title.textContent = options.title || I18n.t('modal.defaultTitle');
-      message.textContent = options.message || '';
-      
-      // Configure buttons
-      if (options.type === 'confirm') {
-        cancelBtn.classList.remove('hidden');
-        cancelBtn.textContent = options.cancelText || I18n.t('modal.cancel');
-        confirmBtn.textContent = options.confirmText || I18n.t('modal.confirm');
-      } else {
-        cancelBtn.classList.add('hidden');
-        confirmBtn.textContent = options.confirmText || I18n.t('modal.confirm');
-      }
-      
-      // Show modal
-      modal.classList.remove('hidden');
-      
-      // Event handlers
-      const handleConfirm = () => {
-        modal.classList.add('hidden');
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-        resolve(true);
-      };
-      
-      const handleCancel = () => {
-        modal.classList.add('hidden');
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-        resolve(false);
-      };
-      
-      confirmBtn.addEventListener('click', handleConfirm);
-      cancelBtn.addEventListener('click', handleCancel);
-      
-      // Close on overlay click
-      const overlay = modal.querySelector('.custom-modal-overlay');
-      overlay.addEventListener('click', handleCancel, { once: true });
-    });
-  },
-  
-  alert(message, title = 'AI Article Summarizer', icon = 'ℹ️') {
-    return this.show({
-      type: 'alert',
-      title,
-      message,
-      icon,
-      confirmText: 'OK'
-    });
-  },
-  
-  confirm(message, title = 'Conferma', icon = '❓') {
-    return this.show({
-      type: 'confirm',
-      title,
-      message,
-      icon,
-      confirmText: 'OK',
-      cancelText: 'Annulla'
-    });
-  },
-  
-  success(message, title = 'Successo') {
-    return this.show({
-      type: 'alert',
-      title,
-      message,
-      icon: '✅',
-      confirmText: 'OK'
-    });
-  },
-  
-  error(message, title = 'Errore') {
-    return this.show({
-      type: 'alert',
-      title,
-      message,
-      icon: '❌',
-      confirmText: 'OK'
-    });
-  },
-  
-  warning(message, title = 'Attenzione') {
-    return this.show({
-      type: 'alert',
-      title,
-      message,
-      icon: '⚠️',
-      confirmText: 'OK'
-    });
-  }
-};
+// Modal System — caricato da utils/modal.js
 
 // Elementi DOM
 const elements = {
@@ -512,8 +409,8 @@ async function generateSummary() {
 }
 
 async function displayResults() {
-  // Mostra riassunto
-  let summaryHtml = `<p>${currentResults.summary}</p>`;
+  // Mostra riassunto (contenuto AI sanitizzato)
+  let summaryHtml = `<p>${HtmlSanitizer.escape(currentResults.summary)}</p>`;
   if (currentResults.fromCache) {
     summaryHtml = `<span class="cache-badge">Da cache</span>` + summaryHtml;
   }
@@ -523,12 +420,12 @@ async function displayResults() {
   let keypointsHtml = '';
   currentResults.keyPoints.forEach((point, index) => {
     keypointsHtml += `
-      <div class="keypoint" data-paragraph="${point.paragraphs}">
+      <div class="keypoint" data-paragraph="${HtmlSanitizer.escape(String(point.paragraphs))}">
         <div class="keypoint-header">
-          <div class="keypoint-title">${index + 1}. ${point.title}</div>
-          <div class="keypoint-ref">§${point.paragraphs}</div>
+          <div class="keypoint-title">${index + 1}. ${HtmlSanitizer.escape(point.title)}</div>
+          <div class="keypoint-ref">§${HtmlSanitizer.escape(String(point.paragraphs))}</div>
         </div>
-        <div class="keypoint-desc">${point.description}</div>
+        <div class="keypoint-desc">${HtmlSanitizer.escape(point.description)}</div>
       </div>
     `;
   });
@@ -1188,7 +1085,7 @@ async function translateArticle() {
     console.error('Errore traduzione:', error);
     elements.translationContent.innerHTML = `
       <div class="translation-empty">
-        <p style="color: #d63031;">❌ Errore durante la traduzione: ${error.message}</p>
+        <p style="color: #d63031;">❌ Errore durante la traduzione: ${HtmlSanitizer.escape(error.message)}</p>
         <button id="translateBtn" class="btn btn-primary">🔄 Riprova</button>
       </div>
     `;
@@ -1223,7 +1120,7 @@ function displayTranslation(translation, targetLang, originalLang, fromCache = f
         <button id="retranslateBtn" class="btn-icon" title="Traduci di nuovo">🔄</button>
       </div>
     </div>
-    <div class="translation-text">${translation}</div>
+    <div class="translation-text">${HtmlSanitizer.escape(translation)}</div>
   `;
   
   // Add event listeners
@@ -1244,14 +1141,7 @@ function displayTranslation(translation, targetLang, originalLang, fromCache = f
 
 async function clearTranslationCache() {
   const provider = elements.providerSelect.value;
-  const targetLanguage = selectedLanguage;
-  const settings = { outputLanguage: targetLanguage };
-  const cacheKey = StorageManager.getCacheKey(currentArticle.url, provider, settings, 'translation');
-  
-  const result = await chrome.storage.local.get(['translationCache']);
-  const cache = result.translationCache || {};
-  delete cache[cacheKey];
-  await chrome.storage.local.set({ translationCache: cache });
+  await StorageManager.clearTranslationCacheEntry(currentArticle.url, provider, selectedLanguage);
 }
 
 function resetTranslationButton() {
@@ -1592,7 +1482,7 @@ async function extractCitations() {
     console.error('Errore estrazione citazioni:', error);
     elements.citationsContent.innerHTML = `
       <div class="error-box">
-        <p>❌ ${error.message}</p>
+        <p>❌ ${HtmlSanitizer.escape(error.message)}</p>
         <button id="retryCitationsBtn" class="btn btn-primary">🔄 Riprova</button>
       </div>
     `;
@@ -1656,29 +1546,33 @@ function displayCitations() {
       'web_source': '🌐'
     }[citation.type] || '📌';
     
-    // Usa quote_text dalla nuova struttura
+    // Usa quote_text dalla nuova struttura (contenuto sanitizzato)
     const quoteText = citation.quote_text || citation.text || '';
-    const escapedText = quoteText.replace(/"/g, '&quot;');
-    
+    const escapedText = HtmlSanitizer.escape(quoteText);
+    const safeAuthor = HtmlSanitizer.escape(citation.author || '');
+    const safeContext = HtmlSanitizer.escape(citation.context || '');
+    const safeSource = HtmlSanitizer.escape(citation.source || '');
+    const safeParagraph = HtmlSanitizer.escape(String(citation.paragraph || ''));
+
     html += `
-      <div class="citation-item" 
-           data-citation-id="${citation.id}" 
+      <div class="citation-item"
+           data-citation-id="${HtmlSanitizer.escape(String(citation.id))}"
            data-citation-text="${escapedText}"
-           data-paragraph="${citation.paragraph || ''}"
-           style="cursor: pointer;" 
+           data-paragraph="${safeParagraph}"
+           style="cursor: pointer;"
            title="Clicca per evidenziare nell'articolo">
         <div class="citation-header">
           <span class="citation-icon">${typeIcon}</span>
-          <span class="citation-number">#${citation.id}</span>
-          ${citation.author ? `<span class="citation-author">${citation.author}</span>` : ''}
-          ${citation.paragraph ? `<span class="citation-paragraph">§${citation.paragraph}</span>` : ''}
+          <span class="citation-number">#${HtmlSanitizer.escape(String(citation.id))}</span>
+          ${citation.author ? `<span class="citation-author">${safeAuthor}</span>` : ''}
+          ${citation.paragraph ? `<span class="citation-paragraph">§${safeParagraph}</span>` : ''}
         </div>
-        ${quoteText ? `<div class="citation-text">"${quoteText.substring(0, 200)}${quoteText.length > 200 ? '...' : ''}"</div>` : ''}
-        ${citation.context ? `<div class="citation-context">${citation.context}</div>` : ''}
+        ${quoteText ? `<div class="citation-text">"${HtmlSanitizer.escape(quoteText.substring(0, 200))}${quoteText.length > 200 ? '...' : ''}"</div>` : ''}
+        ${citation.context ? `<div class="citation-context">${safeContext}</div>` : ''}
         <div class="citation-meta">
           <span class="citation-type">${getCitationTypeLabel(citation.type)}</span>
-          ${citation.source ? `<span class="citation-source">📚 ${citation.source}</span>` : ''}
-          ${citation.year ? `<span class="citation-year">📅 ${citation.year}</span>` : ''}
+          ${citation.source ? `<span class="citation-source">📚 ${safeSource}</span>` : ''}
+          ${citation.year ? `<span class="citation-year">📅 ${HtmlSanitizer.escape(String(citation.year || ''))}</span>` : ''}
         </div>
       </div>
     `;

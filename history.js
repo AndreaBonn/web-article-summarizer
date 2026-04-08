@@ -8,90 +8,7 @@ let lazyLoader = null;
 let searchOptimizer = new SearchOptimizer();
 let debouncedSearch = null;
 
-// Modal System
-const Modal = {
-  show(options) {
-    return new Promise((resolve) => {
-      const modal = document.getElementById('customModal');
-      const icon = document.getElementById('modalIcon');
-      const title = document.getElementById('modalTitle');
-      const message = document.getElementById('modalMessage');
-      const confirmBtn = document.getElementById('modalConfirmBtn');
-      const cancelBtn = document.getElementById('modalCancelBtn');
-      
-      // Set content
-      icon.textContent = options.icon || 'ℹ️';
-      title.textContent = options.title || I18n.t('history.modalTitle');
-      message.textContent = options.message || '';
-      
-      // Configure buttons
-      if (options.type === 'confirm') {
-        cancelBtn.classList.remove('hidden');
-        cancelBtn.textContent = options.cancelText || 'Annulla';
-        confirmBtn.textContent = options.confirmText || 'OK';
-      } else {
-        cancelBtn.classList.add('hidden');
-        confirmBtn.textContent = options.confirmText || 'OK';
-      }
-      
-      // Show modal
-      modal.classList.remove('hidden');
-      
-      // Event handlers
-      const handleConfirm = () => {
-        modal.classList.add('hidden');
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-        resolve(true);
-      };
-      
-      const handleCancel = () => {
-        modal.classList.add('hidden');
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-        resolve(false);
-      };
-      
-      confirmBtn.addEventListener('click', handleConfirm);
-      cancelBtn.addEventListener('click', handleCancel);
-      
-      // Close on overlay click
-      const overlay = modal.querySelector('.custom-modal-overlay');
-      overlay.addEventListener('click', handleCancel, { once: true });
-    });
-  },
-  
-  alert(message, title = 'Cronologia', icon = 'ℹ️') {
-    return this.show({
-      type: 'alert',
-      title,
-      message,
-      icon,
-      confirmText: 'OK'
-    });
-  },
-  
-  confirm(message, title = 'Conferma', icon = '❓') {
-    return this.show({
-      type: 'confirm',
-      title,
-      message,
-      icon,
-      confirmText: 'OK',
-      cancelText: 'Annulla'
-    });
-  },
-  
-  error(message, title = 'Errore') {
-    return this.show({
-      type: 'alert',
-      title,
-      message,
-      icon: '❌',
-      confirmText: 'OK'
-    });
-  }
-};
+// Modal System — caricato da utils/modal.js
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Inizializza i18n
@@ -375,21 +292,21 @@ async function openDetail(id) {
   }
   
   // Populate modal
-  document.getElementById('modalTitle').textContent = currentEntry.article.title;
+  document.getElementById('detailModalTitle').textContent = currentEntry.article.title;
   document.getElementById('modalDate').textContent = new Date(currentEntry.timestamp).toLocaleString('it-IT');
   document.getElementById('modalProvider').textContent = `Provider: ${currentEntry.metadata.provider}`;
   document.getElementById('modalLanguage').textContent = `${I18n.t('controls.language')} ${currentEntry.metadata.language}`;
   document.getElementById('modalStats').textContent = `${currentEntry.article.wordCount} ${I18n.t('article.words')} • ${currentEntry.article.readingTimeMinutes} ${I18n.t('article.readingTime')}`;
   
   // Summary
-  document.getElementById('modalSummary').innerHTML = `<p>${currentEntry.summary}</p>`;
+  document.getElementById('modalSummary').innerHTML = `<p>${HtmlSanitizer.escape(currentEntry.summary)}</p>`;
   
   // Key points
   const keypointsHtml = currentEntry.keyPoints.map((point, index) => `
     <div class="keypoint-modal">
-      <div class="keypoint-modal-title">${index + 1}. ${point.title}</div>
-      <div class="keypoint-modal-ref">§${point.paragraphs}</div>
-      <div class="keypoint-modal-desc">${point.description}</div>
+      <div class="keypoint-modal-title">${index + 1}. ${HtmlSanitizer.escape(point.title)}</div>
+      <div class="keypoint-modal-ref">§${HtmlSanitizer.escape(String(point.paragraphs))}</div>
+      <div class="keypoint-modal-desc">${HtmlSanitizer.escape(point.description)}</div>
     </div>
   `).join('');
   document.getElementById('modalKeypoints').innerHTML = keypointsHtml;
@@ -398,9 +315,9 @@ async function openDetail(id) {
   if (currentEntry.translation) {
     document.getElementById('modalTranslation').innerHTML = `
       <div class="translation-info-modal">
-        📝 Tradotto da ${currentEntry.translation.originalLanguage} a ${currentEntry.translation.targetLanguage}
+        📝 Tradotto da ${HtmlSanitizer.escape(currentEntry.translation.originalLanguage)} a ${HtmlSanitizer.escape(currentEntry.translation.targetLanguage)}
       </div>
-      <div class="translation-text">${currentEntry.translation.text}</div>
+      <div class="translation-text">${HtmlSanitizer.escape(currentEntry.translation.text)}</div>
     `;
   } else {
     document.getElementById('modalTranslation').innerHTML = `
@@ -417,10 +334,10 @@ async function openDetail(id) {
       qaHtml += `
         <div class="qa-item">
           <div class="qa-question">
-            <strong>Q${index + 1}:</strong> ${qa.question}
+            <strong>Q${index + 1}:</strong> ${HtmlSanitizer.escape(qa.question)}
           </div>
           <div class="qa-answer">
-            <strong>R${index + 1}:</strong> ${qa.answer}
+            <strong>R${index + 1}:</strong> ${HtmlSanitizer.escape(qa.answer)}
           </div>
         </div>
       `;
@@ -463,11 +380,11 @@ async function openDetail(id) {
         <div class="citation-item" style="background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 3px solid #667eea;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
             <span style="font-size: 16px;">${typeIcon}</span>
-            <span style="font-size: 11px; font-weight: 600; color: #667eea; background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 4px;">#${citation.id}</span>
-            ${citation.author ? `<span style="font-size: 12px; font-weight: 600;">${citation.author}</span>` : ''}
+            <span style="font-size: 11px; font-weight: 600; color: #667eea; background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 4px;">#${HtmlSanitizer.escape(String(citation.id))}</span>
+            ${citation.author ? `<span style="font-size: 12px; font-weight: 600;">${HtmlSanitizer.escape(citation.author)}</span>` : ''}
           </div>
-          ${citation.text ? `<div style="font-size: 11px; font-style: italic; margin-bottom: 8px; background: rgba(102, 126, 234, 0.05); padding: 8px; border-radius: 4px;">"${citation.text}"</div>` : ''}
-          <div style="font-size: 11px; color: #636e72; line-height: 1.5;">${citation.context}</div>
+          ${citation.text ? `<div style="font-size: 11px; font-style: italic; margin-bottom: 8px; background: rgba(102, 126, 234, 0.05); padding: 8px; border-radius: 4px;">"${HtmlSanitizer.escape(citation.text)}"</div>` : ''}
+          <div style="font-size: 11px; color: #636e72; line-height: 1.5;">${HtmlSanitizer.escape(citation.context)}</div>
         </div>
       `;
     });
@@ -485,7 +402,7 @@ async function openDetail(id) {
   // Notes (always editable)
   const notesHtml = `
     <div class="notes-container">
-      <textarea id="notesTextarea" class="notes-textarea" placeholder="Aggiungi note personali su questo articolo...">${currentEntry.notes || ''}</textarea>
+      <textarea id="notesTextarea" class="notes-textarea" placeholder="Aggiungi note personali su questo articolo...">${HtmlSanitizer.escape(currentEntry.notes || '')}</textarea>
       <button id="saveNotesBtn" class="btn btn-primary save-notes-btn">💾 Salva Note</button>
     </div>
   `;
@@ -1160,37 +1077,37 @@ function createPDFCard(entry) {
     <div class="history-card pdf-card" data-id="${entry.id}">
       <div class="card-header">
         <div class="card-title-row">
-          <h3 class="card-title">📄 ${entry.pdf.name}</h3>
-          <button class="btn-favorite ${isFavorite ? 'active' : ''}" 
+          <h3 class="card-title">📄 ${HtmlSanitizer.escape(entry.pdf.name)}</h3>
+          <button class="btn-favorite ${isFavorite ? 'active' : ''}"
                   title="${isFavorite ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}">
             ${isFavorite ? '⭐' : '☆'}
           </button>
         </div>
         <div class="card-meta">
-          <span class="meta-item">📅 ${date}</span>
-          <span class="meta-item">📊 ${fileSize}</span>
-          <span class="meta-item">📄 ${entry.pdf.pages} pagine</span>
-          <span class="meta-item">🤖 ${entry.metadata.provider}</span>
-          <span class="meta-item">🌍 ${entry.metadata.language}</span>
+          <span class="meta-item">📅 ${HtmlSanitizer.escape(date)}</span>
+          <span class="meta-item">📊 ${HtmlSanitizer.escape(fileSize)}</span>
+          <span class="meta-item">📄 ${HtmlSanitizer.escape(String(entry.pdf.pages))} pagine</span>
+          <span class="meta-item">🤖 ${HtmlSanitizer.escape(entry.metadata.provider)}</span>
+          <span class="meta-item">🌍 ${HtmlSanitizer.escape(entry.metadata.language)}</span>
         </div>
       </div>
-      
+
       <div class="card-content">
         <div class="summary-preview">
-          ${entry.summary.substring(0, 200)}${entry.summary.length > 200 ? '...' : ''}
+          ${HtmlSanitizer.escape(entry.summary.substring(0, 200))}${entry.summary.length > 200 ? '...' : ''}
         </div>
-        
+
         ${badges.length > 0 ? `<div class="badges">${badges.join('')}</div>` : ''}
-        
+
         <div class="keypoints-preview">
           <strong>🔑 Punti Chiave:</strong>
           <ul>
-            ${entry.keyPoints.slice(0, 3).map(kp => `<li>${kp.title}</li>`).join('')}
+            ${entry.keyPoints.slice(0, 3).map(kp => `<li>${HtmlSanitizer.escape(kp.title)}</li>`).join('')}
             ${entry.keyPoints.length > 3 ? `<li><em>+${entry.keyPoints.length - 3} altri...</em></li>` : ''}
           </ul>
         </div>
       </div>
-      
+
       <div class="card-actions">
         <button class="history-btn btn-delete" title="Elimina" style="flex: 1;">
           🗑️ Elimina
@@ -1311,28 +1228,28 @@ function createMultiAnalysisCard(entry) {
       <div class="multi-analysis-header">
         <div>
           <div class="multi-analysis-title">
-            🔬 ${I18n.t('multi.analysisOf')} ${articlesCount} ${I18n.t('multi.articles')}
+            🔬 ${HtmlSanitizer.escape(I18n.t('multi.analysisOf'))} ${articlesCount} ${HtmlSanitizer.escape(I18n.t('multi.articles'))}
           </div>
           <div class="multi-analysis-meta">
-            <span class="multi-analysis-badge articles">${articlesCount} ${I18n.t('multi.articles')}</span>
-            <span class="multi-analysis-badge date">${date}</span>
-            <span class="multi-analysis-badge provider">${provider}</span>
+            <span class="multi-analysis-badge articles">${articlesCount} ${HtmlSanitizer.escape(I18n.t('multi.articles'))}</span>
+            <span class="multi-analysis-badge date">${HtmlSanitizer.escape(date)}</span>
+            <span class="multi-analysis-badge provider">${HtmlSanitizer.escape(provider)}</span>
             ${qaCount > 0 ? `<span class="multi-analysis-badge qa">${qaCount} Q&A</span>` : ''}
           </div>
         </div>
-        <button class="btn-favorite-multi ${entry.favorite ? 'active' : ''}" data-id="${entry.id}" title="${entry.favorite ? I18n.t('history.removeFavorite') : I18n.t('history.addFavorite')}">
+        <button class="btn-favorite-multi ${entry.favorite ? 'active' : ''}" data-id="${entry.id}" title="${entry.favorite ? HtmlSanitizer.escape(I18n.t('history.removeFavorite')) : HtmlSanitizer.escape(I18n.t('history.addFavorite'))}">
           ${entry.favorite ? '⭐' : '☆'}
         </button>
       </div>
-      
+
       <div class="multi-analysis-articles">
-        <div class="multi-analysis-articles-title">${I18n.t('multi.articlesIncluded')}</div>
+        <div class="multi-analysis-articles-title">${HtmlSanitizer.escape(I18n.t('multi.articlesIncluded'))}</div>
         ${entry.articles && entry.articles.length > 0 ? entry.articles.slice(0, 3).map(a => `
-          <div class="multi-analysis-article-item">${a.title || 'Titolo non disponibile'}</div>
+          <div class="multi-analysis-article-item">${HtmlSanitizer.escape(a.title || 'Titolo non disponibile')}</div>
         `).join('') : '<div class="multi-analysis-article-item">Nessun articolo</div>'}
         ${entry.articles && entry.articles.length > 3 ? `<div class="multi-analysis-article-item">... e altri ${entry.articles.length - 3}</div>` : ''}
       </div>
-      
+
       <div class="multi-analysis-actions">
         <button class="multi-analysis-btn danger btn-delete-multi">🗑️ Elimina</button>
       </div>

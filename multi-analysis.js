@@ -3,67 +3,7 @@ let allArticles = [];
 let selectedArticles = [];
 let currentAnalysis = null;
 
-const Modal = {
-  show(options) {
-    return new Promise((resolve) => {
-      const modal = document.getElementById('customModal');
-      if (!modal) {
-        resolve(false);
-        return;
-      }
-      
-      const icon = modal.querySelector('.custom-modal-icon');
-      const title = modal.querySelector('.custom-modal-title');
-      const message = modal.querySelector('.custom-modal-message');
-      const confirmBtn = modal.querySelector('#modalConfirmBtn');
-      const cancelBtn = modal.querySelector('#modalCancelBtn');
-      
-      if (icon) icon.textContent = options.icon || 'ℹ️';
-      if (title) title.textContent = options.title || I18n.t('multi.modalTitle');
-      if (message) message.textContent = options.message || '';
-      
-      if (options.type === 'confirm') {
-        if (cancelBtn) {
-          cancelBtn.classList.remove('hidden');
-          cancelBtn.textContent = options.cancelText || 'Annulla';
-        }
-        if (confirmBtn) confirmBtn.textContent = options.confirmText || 'OK';
-      } else {
-        if (cancelBtn) cancelBtn.classList.add('hidden');
-        if (confirmBtn) confirmBtn.textContent = options.confirmText || 'OK';
-      }
-      
-      modal.classList.remove('hidden');
-      
-      const handleConfirm = () => {
-        modal.classList.add('hidden');
-        if (confirmBtn) confirmBtn.removeEventListener('click', handleConfirm);
-        if (cancelBtn) cancelBtn.removeEventListener('click', handleCancel);
-        resolve(true);
-      };
-      
-      const handleCancel = () => {
-        modal.classList.add('hidden');
-        if (confirmBtn) confirmBtn.removeEventListener('click', handleConfirm);
-        if (cancelBtn) cancelBtn.removeEventListener('click', handleCancel);
-        resolve(false);
-      };
-      
-      if (confirmBtn) confirmBtn.addEventListener('click', handleConfirm);
-      if (cancelBtn) cancelBtn.addEventListener('click', handleCancel);
-    });
-  },
-  
-  alert(message, title = 'Analisi', icon = 'ℹ️') {
-    return this.show({
-      type: 'alert',
-      title,
-      message,
-      icon,
-      confirmText: 'OK'
-    });
-  }
-};
+// Modal System — caricato da utils/modal.js
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Multi-Analysis: DOMContentLoaded');

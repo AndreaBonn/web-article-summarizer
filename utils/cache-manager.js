@@ -69,7 +69,7 @@ class CacheManager {
       expiresAt: Date.now() + ttl,
       hits: 0,
       lastAccessed: Date.now(),
-      contentHash: contentHash || null // 🆕 Hash del contenuto per validazione
+      contentHash: contentHash || null
     };
     
     try {
@@ -116,32 +116,22 @@ class CacheManager {
         return null;
       }
       
-      // 🆕 Validazione contenuto: se fornito un hash, verifica che corrisponda
+      // Validazione contenuto: se fornito un hash, verifica che corrisponda
       if (contentHash && entry.contentHash && entry.contentHash !== contentHash) {
-        console.log('⚠️ Contenuto modificato, invalido cache');
         await this.invalidate(cacheKey);
         await this.logCacheOperation('read', cacheKey, false, 'content_changed');
         return null;
       }
-      
-      // 🆕 Validazione età: se la cache è troppo vecchia (>24h), richiedi conferma
+
+      // Validazione età: se la cache è troppo vecchia (>24h), potrebbe essere obsoleta
       const cacheAge = Date.now() - entry.timestamp;
       const maxAge = 24 * 60 * 60 * 1000; // 24 ore
-      
+
       if (cacheAge > maxAge) {
-        console.log('⚠️ Cache vecchia (>24h), potrebbe essere obsoleta');
-        // Non invalidiamo automaticamente, ma logghiamo
         await this.logCacheOperation('read', cacheKey, true, 'old_cache');
       }
       
-      // Cache hit - aggiorna statistiche
-      entry.hits++;
-      entry.lastAccessed = Date.now();
-      cache[cacheKey] = entry;
-      await chrome.storage.local.set({ summaryCache: cache });
-      
-      await this.logCacheOperation('read', cacheKey, true);
-      
+      // Cache hit — NON scrivere su disco per una lettura (performance)
       return entry.data;
     } catch (error) {
       console.error('Errore nel leggere cache:', error);
@@ -393,7 +383,7 @@ class CacheManager {
   }
   
   /**
-   * 🆕 Genera hash semplice del contenuto per validazione
+   * Genera hash semplice del contenuto per validazione
    */
   static hashContent(content) {
     if (!content) return null;
@@ -412,7 +402,7 @@ class CacheManager {
   }
   
   /**
-   * 🆕 Invalida cache per URL se il contenuto è cambiato
+   * Invalida cache per URL se il contenuto è cambiato
    */
   async invalidateIfContentChanged(url, newContentHash) {
     const normalizedUrl = this.normalizeUrl(url);
@@ -429,7 +419,6 @@ class CacheManager {
           if (entry.contentHash && entry.contentHash !== newContentHash) {
             delete cache[key];
             invalidatedCount++;
-            console.log(`🔄 Cache invalidata per contenuto modificato: ${url}`);
           }
         }
       }

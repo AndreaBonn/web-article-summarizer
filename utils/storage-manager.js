@@ -1,109 +1,14 @@
-// Storage Manager - Gestione sicura di API keys e cache
-const EXTENSION_SECRET = 'ai-summarizer-v1-secret-key-2024';
+// Storage Manager - Gestione API keys e impostazioni
+// Le API key sono salvate in chrome.storage.local che è sandboxed per estensione.
+// Non viene usata cifratura custom perché in un'estensione Chrome il codice sorgente
+// è sempre leggibile — un segreto hardcoded non offre protezione reale.
 
 class StorageManager {
-  // Encryption helpers
-  static async encryptKey(apiKey) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(apiKey);
-    
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(EXTENSION_SECRET),
-      'PBKDF2',
-      false,
-      ['deriveKey']
-    );
-    
-    const key = await crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt,
-        iterations: 100000,
-        hash: 'SHA-256'
-      },
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['encrypt']
-    );
-    
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encrypted = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      data
-    );
-    
-    return {
-      encrypted: this.arrayBufferToBase64(encrypted),
-      iv: this.arrayBufferToBase64(iv),
-      salt: this.arrayBufferToBase64(salt)
-    };
-  }
-
-  static async decryptKey(encryptedData) {
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-    
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(EXTENSION_SECRET),
-      'PBKDF2',
-      false,
-      ['deriveKey']
-    );
-    
-    const key = await crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt: this.base64ToArrayBuffer(encryptedData.salt),
-        iterations: 100000,
-        hash: 'SHA-256'
-      },
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['decrypt']
-    );
-    
-    const decrypted = await crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv: this.base64ToArrayBuffer(encryptedData.iv)
-      },
-      key,
-      this.base64ToArrayBuffer(encryptedData.encrypted)
-    );
-    
-    return decoder.decode(decrypted);
-  }
-
-  static arrayBufferToBase64(buffer) {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
-  }
-
-  static base64ToArrayBuffer(base64) {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
-  }
-
   // API Keys management
   static async saveApiKey(provider, apiKey) {
-    const encrypted = await this.encryptKey(apiKey);
     const result = await chrome.storage.local.get(['apiKeys']);
     const apiKeys = result.apiKeys || {};
-    apiKeys[provider] = encrypted;
+    apiKeys[provider] = apiKey;
     await chrome.storage.local.set({ apiKeys });
   }
 
@@ -112,7 +17,50 @@ class StorageManager {
     if (!result.apiKeys || !result.apiKeys[provider]) {
       return null;
     }
-    return await this.decryptKey(result.apiKeys[provider]);
+    const stored = result.apiKeys[provider];
+    // Migrazione: se la key è un oggetto cifrato (formato legacy), decripta e ri-salva in chiaro
+    if (typeof stored === 'object' && stored.encrypted) {
+      try {
+        const plainKey = await this._decryptLegacyKey(stored);
+        await this.saveApiKey(provider, plainKey);
+        return plainKey;
+      } catch (e) {
+        console.error(`Migrazione API key ${provider} fallita:`, e);
+        return null;
+      }
+    }
+    return stored;
+  }
+
+  // Migrazione legacy: decripta key cifrate con il vecchio segreto hardcoded
+  static async _decryptLegacyKey(encryptedData) {
+    const LEGACY_SECRET = 'ai-summarizer-v1-secret-key-2024';
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw', encoder.encode(LEGACY_SECRET), 'PBKDF2', false, ['deriveKey']
+    );
+    const salt = this._base64ToArrayBuffer(encryptedData.salt);
+    const key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+    );
+    const iv = this._base64ToArrayBuffer(encryptedData.iv);
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv }, key,
+      this._base64ToArrayBuffer(encryptedData.encrypted)
+    );
+    return decoder.decode(decrypted);
+  }
+
+  static _base64ToArrayBuffer(base64) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
   }
 
   // Settings management
@@ -172,68 +120,27 @@ class StorageManager {
     return result.selectedContentType || 'auto'; // Default: Rilevamento automatico
   }
 
-  // Cache management
-  static getCacheKey(url, provider, settings, type = 'summary') {
-    // Crea una chiave che include tutti i parametri rilevanti
-    // IMPORTANTE: La lingua di output deve essere parte della chiave
-    const cacheParams = {
-      url,
-      provider,
-      type, // 'summary' o 'translation'
-      contentType: settings.contentType || 'auto',
-      summaryLength: settings.summaryLength || 'medium',
-      outputLanguage: settings.outputLanguage || 'it', // ← CRITICO per cache
-      tone: settings.tone || 'neutral'
-    };
-    const str = JSON.stringify(cacheParams);
-    return this.hashString(str);
-  }
-
-  static hashString(str) {
+  // Translation cache (la cache summary è gestita da CacheManager)
+  static _hashString(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash;
     }
-    return hash.toString(36);
+    return 'tcache_' + Math.abs(hash).toString(36);
   }
 
-  static async getCachedSummary(url, provider, settings) {
-    // La cache è specifica per:
-    // - URL dell'articolo
-    // - Provider AI (groq/openai/anthropic)
-    // - Lingua di output (it/en/es/fr/de)
-    // - Tipo di contenuto (auto/general/scientific/etc)
-    // - Lunghezza riassunto (short/medium/detailed)
-    // Cambiando uno di questi parametri, viene generato un nuovo riassunto
-    const cacheKey = this.getCacheKey(url, provider, settings, 'summary');
-    const result = await chrome.storage.local.get(['summaryCache']);
-    const cache = result.summaryCache || {};
-    
-    if (cache[cacheKey]) {
-      const cached = cache[cacheKey];
-      const age = Date.now() - cached.timestamp;
-      const TTL = 24 * 60 * 60 * 1000; // 24 ore
-      
-      if (age < TTL) {
-        return cached;
-      }
-    }
-    return null;
-  }
-  
   static async getCachedTranslation(url, provider, targetLanguage) {
-    const settings = { outputLanguage: targetLanguage };
-    const cacheKey = this.getCacheKey(url, provider, settings, 'translation');
+    const str = JSON.stringify({ url, provider, targetLanguage });
+    const cacheKey = this._hashString(str);
     const result = await chrome.storage.local.get(['translationCache']);
     const cache = result.translationCache || {};
-    
+
     if (cache[cacheKey]) {
       const cached = cache[cacheKey];
       const age = Date.now() - cached.timestamp;
       const TTL = 24 * 60 * 60 * 1000; // 24 ore
-      
       if (age < TTL) {
         return cached;
       }
@@ -241,39 +148,12 @@ class StorageManager {
     return null;
   }
 
-  static async saveCachedSummary(url, provider, settings, summary, keyPoints) {
-    const cacheKey = this.getCacheKey(url, provider, settings, 'summary');
-    const result = await chrome.storage.local.get(['summaryCache']);
-    let cache = result.summaryCache || {};
-    
-    cache[cacheKey] = {
-      timestamp: Date.now(),
-      summary,
-      keyPoints,
-      provider,
-      url,
-      // Salva anche i parametri per debug/info
-      outputLanguage: settings.outputLanguage || 'it',
-      contentType: settings.contentType || 'auto',
-      summaryLength: settings.summaryLength || 'medium'
-    };
-    
-    // LRU eviction - mantieni max 50 articoli
-    const entries = Object.entries(cache);
-    if (entries.length > 50) {
-      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-      cache = Object.fromEntries(entries.slice(-50));
-    }
-    
-    await chrome.storage.local.set({ summaryCache: cache });
-  }
-  
   static async saveCachedTranslation(url, provider, targetLanguage, translation, originalLanguage) {
-    const settings = { outputLanguage: targetLanguage };
-    const cacheKey = this.getCacheKey(url, provider, settings, 'translation');
+    const str = JSON.stringify({ url, provider, targetLanguage });
+    const cacheKey = this._hashString(str);
     const result = await chrome.storage.local.get(['translationCache']);
     let cache = result.translationCache || {};
-    
+
     cache[cacheKey] = {
       timestamp: Date.now(),
       translation,
@@ -282,14 +162,23 @@ class StorageManager {
       targetLanguage,
       originalLanguage
     };
-    
+
     // LRU eviction - mantieni max 50 traduzioni
     const entries = Object.entries(cache);
     if (entries.length > 50) {
       entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
       cache = Object.fromEntries(entries.slice(-50));
     }
-    
+
+    await chrome.storage.local.set({ translationCache: cache });
+  }
+
+  static async clearTranslationCacheEntry(url, provider, targetLanguage) {
+    const str = JSON.stringify({ url, provider, targetLanguage });
+    const cacheKey = this._hashString(str);
+    const result = await chrome.storage.local.get(['translationCache']);
+    const cache = result.translationCache || {};
+    delete cache[cacheKey];
     await chrome.storage.local.set({ translationCache: cache });
   }
 

@@ -2,65 +2,7 @@
 let selectedFile = null;
 let pdfAnalyzer = null;
 
-const Modal = {
-  show(options) {
-    return new Promise((resolve) => {
-      const modal = document.getElementById('customModal');
-      const icon = document.getElementById('modalIcon');
-      const title = document.getElementById('modalTitle');
-      const message = document.getElementById('modalMessage');
-      const confirmBtn = document.getElementById('modalConfirmBtn');
-      const cancelBtn = document.getElementById('modalCancelBtn');
-      
-      icon.textContent = options.icon || 'ℹ️';
-      title.textContent = options.title || 'Informazione';
-      message.textContent = options.message || '';
-      
-      if (options.type === 'confirm') {
-        cancelBtn.classList.remove('hidden');
-        cancelBtn.textContent = options.cancelText || 'Annulla';
-        confirmBtn.textContent = options.confirmText || 'OK';
-      } else {
-        cancelBtn.classList.add('hidden');
-        confirmBtn.textContent = options.confirmText || 'OK';
-      }
-      
-      modal.classList.remove('hidden');
-      
-      const handleConfirm = () => {
-        modal.classList.add('hidden');
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-        resolve(true);
-      };
-      
-      const handleCancel = () => {
-        modal.classList.add('hidden');
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-        resolve(false);
-      };
-      
-      confirmBtn.addEventListener('click', handleConfirm);
-      cancelBtn.addEventListener('click', handleCancel);
-      
-      const overlay = modal.querySelector('.custom-modal-overlay');
-      overlay.addEventListener('click', handleCancel, { once: true });
-    });
-  },
-  
-  alert(message, title = 'Analisi PDF', icon = 'ℹ️') {
-    return this.show({ type: 'alert', title, message, icon, confirmText: 'OK' });
-  },
-  
-  error(message, title = 'Errore') {
-    return this.show({ type: 'alert', title, message, icon: '❌', confirmText: 'OK' });
-  },
-  
-  success(message, title = 'Successo') {
-    return this.show({ type: 'alert', title, message, icon: '✅', confirmText: 'OK' });
-  }
-};
+// Modal System — caricato da utils/modal.js
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('PDF Analysis: Inizializzazione...');

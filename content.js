@@ -1,17 +1,12 @@
 // Content Script - Esegue nell'ambito della pagina web
-console.log('Web Sites Summarizer: Content script caricato');
-
 let paragraphMap = new Map();
 let extractedArticle = null;
 
 // Listener per messaggi dal popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Web Sites Summarizer: Messaggio ricevuto', request);
   if (request.action === 'extractArticle') {
-    console.log('Web Sites Summarizer: Inizio estrazione articolo');
     try {
       extractedArticle = ContentExtractor.extract(document);
-      console.log('Web Sites Summarizer: Estrazione completata', extractedArticle);
       
       // Crea mappa paragrafi → elementi DOM
       buildParagraphMap();
@@ -122,8 +117,6 @@ document.head.appendChild(style);
 
 // Evidenzia testo specifico nella pagina (per citazioni)
 function highlightTextInPage(searchText) {
-  console.log('🔍 Ricerca testo nella pagina:', searchText.substring(0, 100));
-  
   // Rimuovi highlight precedenti
   document.querySelectorAll('.citation-highlight').forEach(el => {
     const parent = el.parentNode;
@@ -132,7 +125,6 @@ function highlightTextInPage(searchText) {
   });
   
   if (!searchText || searchText.length < 10) {
-    console.warn('⚠️ Testo di ricerca troppo corto');
     return false;
   }
   
@@ -180,7 +172,6 @@ function highlightTextInPage(searchText) {
         searchText: searchText,
         exact: true
       });
-      console.log('✅ Match esatto trovato:', text.substring(0, 100));
     }
     // Match parziale (prime 30 parole o 150 caratteri)
     else if (searchText.length > 150) {
@@ -192,7 +183,6 @@ function highlightTextInPage(searchText) {
           searchText: searchText.substring(0, 150),
           exact: false
         });
-        console.log('✅ Match parziale trovato:', text.substring(0, 100));
       }
     }
     // Match per parole chiave (se il testo è molto lungo)
@@ -202,14 +192,14 @@ function highlightTextInPage(searchText) {
         .split(' ')
         .filter(w => w.length > 4)
         .slice(0, 5);
-      
+
       let keywordMatches = 0;
       for (const keyword of keywords) {
         if (textNormalized.includes(keyword)) {
           keywordMatches++;
         }
       }
-      
+
       // Se troviamo almeno 3 keyword match, probabilmente è il testo giusto
       if (keywordMatches >= Math.min(3, keywords.length)) {
         nodesToHighlight.push({
@@ -219,15 +209,11 @@ function highlightTextInPage(searchText) {
           exact: false,
           keywordMatch: true
         });
-        console.log(`✅ Match keyword trovato (${keywordMatches}/${keywords.length}):`, text.substring(0, 100));
       }
     }
   }
-  
-  console.log(`📊 Trovati ${nodesToHighlight.length} match`);
-  
+
   if (nodesToHighlight.length === 0) {
-    console.warn('⚠️ Nessun match trovato per:', searchText.substring(0, 100));
     return false;
   }
   
@@ -298,9 +284,7 @@ function highlightTextInPage(searchText) {
     const firstHighlight = document.querySelector('.citation-highlight');
     if (firstHighlight) {
       firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      console.log('✅ Citazione evidenziata e scrollata in vista');
-      
+
       // Rimuovi highlight dopo 8 secondi
       setTimeout(() => {
         document.querySelectorAll('.citation-highlight').forEach(el => {
@@ -308,7 +292,6 @@ function highlightTextInPage(searchText) {
           parent.replaceChild(document.createTextNode(el.textContent), el);
           parent.normalize();
         });
-        console.log('🧹 Highlight rimosso');
       }, 8000);
     }
     
