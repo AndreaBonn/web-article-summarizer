@@ -1,5 +1,5 @@
 // Email Manager - Gestione email salvate e invio tramite mailto
-class EmailManager {
+export class EmailManager {
   // Salva una nuova email nella lista
   static async saveEmail(email) {
     const result = await chrome.storage.local.get(['savedEmails']);

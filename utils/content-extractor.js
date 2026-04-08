@@ -1,5 +1,7 @@
 // Content Extractor - Estrazione e parsing articoli
-class ContentExtractor {
+import { Readability } from '@mozilla/readability';
+
+export class ContentExtractor {
   static extract(document) {
     // Prova prima con Readability
     try {

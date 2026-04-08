@@ -1,5 +1,7 @@
 // Modal System - Componente modale condiviso tra tutte le pagine
-const Modal = {
+import { I18n } from './i18n-extended.js';
+
+export const Modal = {
   show(options) {
     return new Promise((resolve) => {
       const modal = document.getElementById('customModal');

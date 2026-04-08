@@ -1,5 +1,5 @@
 // Event Cleanup Manager - Gestisce la rimozione automatica degli event listeners
-class EventCleanupManager {
+export class EventCleanupManager {
   constructor() {
     this.listeners = new Map(); // Map<element, Array<{event, handler}>>
     this.setupUnloadHandler();
@@ -129,4 +129,4 @@ class EventCleanupManager {
 }
 
 // Istanza globale
-const eventCleanup = new EventCleanupManager();
+export const eventCleanup = new EventCleanupManager();

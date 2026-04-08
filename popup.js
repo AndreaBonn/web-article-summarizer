@@ -1,86 +1,32 @@
 // Popup Script - Controller principale
-// Variabili globali di stato, init, event listeners, UI management
-// Modules loaded before this file: src/popup/ (analysis, export, features, citations, voice)
-// accedono a queste variabili globali direttamente.
+// Entry point ES Module: importa tutti i moduli e gestisce init + event listeners
 
-let currentArticle = null;
-let currentResults = null;
-let selectedLanguage = 'it'; // Default: Italiano
-let selectedContentType = 'auto'; // Default: Rilevamento automatico
-let currentQA = []; // Array per salvare domande e risposte
-
-// Progress Tracker
-let progressTracker = null;
-
-// Modal System — caricato da utils/modal.js
-
-// Elementi DOM
-const elements = {
-  // Stati
-  initialState: document.getElementById('initialState'),
-  loadingState: document.getElementById('loadingState'),
-  errorState: document.getElementById('errorState'),
-  resultsState: document.getElementById('resultsState'),
-
-  // Info articolo
-  articleInfo: document.getElementById('articleInfo'),
-  articleTitle: document.getElementById('articleTitle'),
-  articleStats: document.getElementById('articleStats'),
-
-  // Controlli
-  controls: document.getElementById('controls'),
-  providerSelect: document.getElementById('providerSelect'),
-  languageSelect: document.getElementById('languageSelect'),
-  contentTypeSelect: document.getElementById('contentTypeSelect'),
-  languageSelectReady: document.getElementById('languageSelectReady'),
-  contentTypeSelectReady: document.getElementById('contentTypeSelectReady'),
-
-  // Bottoni
-  analyzeBtn: document.getElementById('analyzeBtn'),
-  generateBtn: document.getElementById('generateBtn'),
-  retryBtn: document.getElementById('retryBtn'),
-  themeToggleBtn: document.getElementById('themeToggleBtn'),
-  settingsBtn: document.getElementById('settingsBtn'),
-  historyBtn: document.getElementById('historyBtn'),
-  multiAnalysisBtn: document.getElementById('multiAnalysisBtn'),
-  pdfAnalysisBtn: document.getElementById('pdfAnalysisBtn'),
-  readingModeBtn: document.getElementById('readingModeBtn'),
-  copyBtn: document.getElementById('copyBtn'),
-  newBtn: document.getElementById('newBtn'),
-  exportPdfBtn: document.getElementById('exportPdfBtn'),
-  exportMdBtn: document.getElementById('exportMdBtn'),
-  sendEmailBtn: document.getElementById('sendEmailBtn'),
-  askBtn: document.getElementById('askBtn'),
-
-  // Contenuto
-  loadingText: document.getElementById('loadingText'),
-  errorMessage: document.getElementById('errorMessage'),
-  summaryContent: document.getElementById('summaryContent'),
-  keypointsContent: document.getElementById('keypointsContent'),
-  translationContent: document.getElementById('translationContent'),
-
-  // Q&A
-  questionInput: document.getElementById('questionInput'),
-  qaAnswer: document.getElementById('qaAnswer'),
-
-  // Translation
-  translateBtn: document.getElementById('translateBtn'),
-
-  // Citations
-  extractCitationsBtn: document.getElementById('extractCitationsBtn'),
-  citationsContent: document.getElementById('citationsContent')
-};
+import { state, elements, initElements, showState, showError } from './src/popup/state.js';
+import { translationState, citationsState } from './src/popup/features.js';
+import { analyzeArticle, generateSummary, switchTab, copyToClipboard } from './src/popup/analysis.js';
+import { exportToPDF, exportToMarkdown, openEmailModal } from './src/popup/export.js';
+import { askQuestion, translateArticle } from './src/popup/features.js';
+import { extractCitations } from './src/popup/citations.js';
+import { initVoiceController, handleVoiceQuestion } from './src/popup/voice.js';
+import { StorageManager } from './utils/storage-manager.js';
+import { I18n } from './utils/i18n.js';
+import { ProgressTracker } from './utils/progress-tracker.js';
+import { eventCleanup } from './utils/event-cleanup.js';
+import { ErrorHandler } from './utils/error-handler.js';
 
 // Inizializzazione
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     console.log('Popup inizializzato');
 
+    // Inizializza elementi DOM
+    initElements();
+
     // Inizializza i18n
     await I18n.init();
 
     // Inizializza Progress Tracker
-    progressTracker = new ProgressTracker(
+    state.progressTracker = new ProgressTracker(
       elements.loadingState,
       elements.loadingText,
       document.getElementById('progressBar'),
@@ -88,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     );
 
     // Definisci gli step del processo
-    progressTracker.defineSteps([
+    state.progressTracker.defineSteps([
       { name: 'extract', label: '📄 Estrazione articolo', weight: 10 },
       { name: 'classify', label: '🔍 Classificazione tipo', weight: 15 },
       { name: 'generate', label: '🤖 Generazione riassunto', weight: 60 },
@@ -110,13 +56,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Carica lingua output salvata
     const savedLanguage = await StorageManager.getSelectedLanguage();
     if (savedLanguage) {
-      selectedLanguage = savedLanguage;
+      state.selectedLanguage = savedLanguage;
       elements.languageSelect.value = savedLanguage;
       elements.languageSelectReady.value = savedLanguage;
     }
 
     // Imposta sempre "auto" come default all'apertura
-    selectedContentType = 'auto';
+    state.selectedContentType = 'auto';
     elements.contentTypeSelect.value = 'auto';
     elements.contentTypeSelectReady.value = 'auto';
 
@@ -180,35 +126,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Salva lingua selezionata (pagina iniziale)
     const handleLanguageChange = async () => {
-      selectedLanguage = elements.languageSelect.value;
-      elements.languageSelectReady.value = selectedLanguage; // Sincronizza
-      await StorageManager.saveSelectedLanguage(selectedLanguage);
-      console.log('Lingua selezionata:', selectedLanguage);
+      state.selectedLanguage = elements.languageSelect.value;
+      elements.languageSelectReady.value = state.selectedLanguage; // Sincronizza
+      await StorageManager.saveSelectedLanguage(state.selectedLanguage);
+      console.log('Lingua selezionata:', state.selectedLanguage);
     };
     eventCleanup.addEventListener(elements.languageSelect, 'change', handleLanguageChange);
 
     // Salva lingua selezionata (pagina ready)
     const handleLanguageReadyChange = async () => {
-      selectedLanguage = elements.languageSelectReady.value;
-      elements.languageSelect.value = selectedLanguage; // Sincronizza
-      await StorageManager.saveSelectedLanguage(selectedLanguage);
-      console.log('Lingua selezionata:', selectedLanguage);
+      state.selectedLanguage = elements.languageSelectReady.value;
+      elements.languageSelect.value = state.selectedLanguage; // Sincronizza
+      await StorageManager.saveSelectedLanguage(state.selectedLanguage);
+      console.log('Lingua selezionata:', state.selectedLanguage);
     };
     eventCleanup.addEventListener(elements.languageSelectReady, 'change', handleLanguageReadyChange);
 
     // Gestisci cambio tipo di contenuto (pagina iniziale)
     const handleContentTypeChange = () => {
-      selectedContentType = elements.contentTypeSelect.value;
-      elements.contentTypeSelectReady.value = selectedContentType; // Sincronizza
-      console.log('Tipo di contenuto selezionato:', selectedContentType);
+      state.selectedContentType = elements.contentTypeSelect.value;
+      elements.contentTypeSelectReady.value = state.selectedContentType; // Sincronizza
+      console.log('Tipo di contenuto selezionato:', state.selectedContentType);
     };
     eventCleanup.addEventListener(elements.contentTypeSelect, 'change', handleContentTypeChange);
 
     // Gestisci cambio tipo di contenuto (pagina ready)
     const handleContentTypeReadyChange = () => {
-      selectedContentType = elements.contentTypeSelectReady.value;
-      elements.contentTypeSelect.value = selectedContentType; // Sincronizza
-      console.log('Tipo di contenuto selezionato:', selectedContentType);
+      state.selectedContentType = elements.contentTypeSelectReady.value;
+      elements.contentTypeSelect.value = state.selectedContentType; // Sincronizza
+      console.log('Tipo di contenuto selezionato:', state.selectedContentType);
     };
     eventCleanup.addEventListener(elements.contentTypeSelectReady, 'change', handleContentTypeReadyChange);
 
@@ -224,74 +170,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-function showState(stateName) {
-  // Nascondi tutti gli stati
-  elements.initialState.classList.add('hidden');
-  elements.loadingState.classList.add('hidden');
-  elements.errorState.classList.add('hidden');
-  elements.resultsState.classList.add('hidden');
-  elements.articleInfo.classList.add('hidden');
-  elements.controls.classList.add('hidden');
-
-  // Mostra solo lo stato richiesto
-  if (stateName === 'initial') {
-    elements.initialState.classList.remove('hidden');
-  } else if (stateName === 'loading') {
-    elements.loadingState.classList.remove('hidden');
-  } else if (stateName === 'error') {
-    elements.errorState.classList.remove('hidden');
-  } else if (stateName === 'ready') {
-    // Mostra solo info articolo e controlli, NON la schermata iniziale
-    elements.articleInfo.classList.remove('hidden');
-    elements.controls.classList.remove('hidden');
-    // Aggiorna traduzioni per elementi appena mostrati
-    I18n.updateUI();
-  } else if (stateName === 'results') {
-    elements.articleInfo.classList.remove('hidden');
-    elements.resultsState.classList.remove('hidden');
-    // Aggiorna traduzioni per elementi appena mostrati
-    I18n.updateUI();
-  }
-}
-
 function reset() {
-  currentArticle = null;
-  currentResults = null;
-  currentQA = []; // Pulisci anche le Q&A
+  state.currentArticle = null;
+  state.currentResults = null;
+  state.currentQA = []; // Pulisci anche le Q&A
 
   // Reset tipo di articolo a 'auto'
-  selectedContentType = 'auto';
+  state.selectedContentType = 'auto';
   elements.contentTypeSelect.value = 'auto';
   elements.contentTypeSelectReady.value = 'auto';
 
   showState('initial');
-}
-
-function showError(message) {
-  elements.errorMessage.textContent = message;
-  showState('error');
-}
-
-function getErrorMessage(error) {
-  if (error.includes('No article found')) {
-    return 'Nessun articolo rilevato in questa pagina. Prova con un articolo di blog o news.';
-  }
-  if (error.includes('Article too short')) {
-    return 'Articolo troppo breve per essere riassunto (minimo 200 parole).';
-  }
-  if (error.includes('API key non configurata')) {
-    return 'API key non configurata. Clicca sull\'icona ⚙️ per configurare.';
-  }
-  if (error.includes('401')) {
-    return 'API key non valida. Verifica la configurazione nelle impostazioni.';
-  }
-  if (error.includes('429')) {
-    return 'Troppe richieste. Riprova tra qualche secondo.';
-  }
-  if (error.includes('Network')) {
-    return 'Errore di connessione. Verifica la tua connessione internet.';
-  }
-  return error;
 }
 
 // Theme Toggle
@@ -319,6 +208,9 @@ async function toggleTheme() {
 document.addEventListener('DOMContentLoaded', async () => {
   const settings = await StorageManager.getSettings();
   if (settings.darkMode) {
+    // elements può non essere ancora inizializzato qui se questo listener
+    // gira prima del principale. Il primo DOMContentLoaded chiama initElements(),
+    // quindi l'ordine di registrazione garantisce che questo giri dopo.
     elements.themeToggleBtn.textContent = '☀️';
     elements.themeToggleBtn.title = 'Tema Chiaro';
   }
@@ -326,23 +218,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Open Reading Mode
 async function openReadingMode() {
-  if (!currentArticle || !currentResults) {
+  if (!state.currentArticle || !state.currentResults) {
     showError('Nessun riassunto disponibile per la modalità lettura');
     return;
   }
 
   // Prepare data for reading mode (include all available data)
   const readingData = {
-    article: currentArticle,
-    summary: currentResults.summary,
-    keyPoints: currentResults.keyPoints,
-    translation: currentTranslation || null,
-    citations: currentCitations || null,
-    qa: currentQA && currentQA.length > 0 ? currentQA : null,
+    article: state.currentArticle,
+    summary: state.currentResults.summary,
+    keyPoints: state.currentResults.keyPoints,
+    translation: translationState.value || null,
+    citations: citationsState.value || null,
+    qa: state.currentQA && state.currentQA.length > 0 ? state.currentQA : null,
     metadata: {
       provider: elements.providerSelect.value,
-      language: selectedLanguage,
-      contentType: currentResults.detectedContentType || selectedContentType
+      language: state.selectedLanguage,
+      contentType: state.currentResults.detectedContentType || state.selectedContentType
     }
   };
 

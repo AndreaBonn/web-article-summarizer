@@ -1,6 +1,9 @@
 // History Voice Module - Estratto da history.js
 // Gestisce: TTS controls nel modal dettaglio
-// Dipende da: voiceController, currentEntry (globals in history.js)
+
+import { state } from './state.js';
+import { Modal } from '../../utils/modal.js';
+import { VoiceController } from '../../utils/voice-controller.js';
 
 // ============================================
 // VOICE CONTROLS
@@ -9,7 +12,7 @@
 /**
  * Setup voice event listeners
  */
-function setupVoiceEventListeners() {
+export function setupVoiceEventListeners() {
   // TTS events
   window.addEventListener('tts:started', () => {
     updateModalTTSButtons('playing');
@@ -41,14 +44,14 @@ function setupVoiceEventListeners() {
 /**
  * Update TTS button states in modal
  */
-function updateModalTTSButtons(state) {
+function updateModalTTSButtons(buttonState) {
   const playBtn = document.getElementById('modalTtsPlayBtn');
   const pauseBtn = document.getElementById('modalTtsPauseBtn');
   const stopBtn = document.getElementById('modalTtsStopBtn');
 
   if (!playBtn || !pauseBtn || !stopBtn) return;
 
-  switch (state) {
+  switch (buttonState) {
     case 'playing':
       playBtn.style.display = 'none';
       pauseBtn.style.display = 'inline-block';
@@ -78,14 +81,14 @@ function updateModalTTSButtons(state) {
 /**
  * Handle TTS play/resume in modal
  */
-function handleModalTTSPlay() {
-  if (!voiceController || !currentEntry) return;
+export function handleModalTTSPlay() {
+  if (!state.voiceController || !state.currentEntry) return;
 
-  const ttsState = voiceController.getTTSState();
+  const ttsState = state.voiceController.getTTSState();
 
   if (ttsState.isPaused) {
     // Resume
-    voiceController.resumeSpeaking();
+    state.voiceController.resumeSpeaking();
   } else {
     // Start new reading
     const textToRead = getCurrentModalTabText();
@@ -95,34 +98,34 @@ function handleModalTTSPlay() {
     }
 
     // Get language from metadata
-    const lang = currentEntry.metadata?.language || 'it';
+    const lang = state.currentEntry.metadata?.language || 'it';
     const voiceLang = VoiceController.mapLanguageCode(lang);
 
-    voiceController.speak(textToRead, voiceLang);
+    state.voiceController.speak(textToRead, voiceLang);
   }
 }
 
 /**
  * Handle TTS pause in modal
  */
-function handleModalTTSPause() {
-  if (!voiceController) return;
-  voiceController.pauseSpeaking();
+export function handleModalTTSPause() {
+  if (!state.voiceController) return;
+  state.voiceController.pauseSpeaking();
 }
 
 /**
  * Handle TTS stop in modal
  */
-function handleModalTTSStop() {
-  if (!voiceController) return;
-  voiceController.stopSpeaking();
+export function handleModalTTSStop() {
+  if (!state.voiceController) return;
+  state.voiceController.stopSpeaking();
 }
 
 /**
  * Get text from current active modal tab
  */
 function getCurrentModalTabText() {
-  if (!currentEntry) return null;
+  if (!state.currentEntry) return null;
 
   // Find active tab
   const activeTab = document.querySelector('.modal-tab.active');
@@ -132,21 +135,21 @@ function getCurrentModalTabText() {
 
   switch (tabName) {
     case 'summary':
-      return currentEntry.summary || null;
+      return state.currentEntry.summary || null;
 
     case 'keypoints':
-      if (!currentEntry.keyPoints) return null;
-      return currentEntry.keyPoints
+      if (!state.currentEntry.keyPoints) return null;
+      return state.currentEntry.keyPoints
         .map((point, index) => `${index + 1}. ${point.title}. ${point.description}`)
         .join('. ');
 
     case 'translation':
-      if (!currentEntry.translation) return null;
-      return currentEntry.translation.text || currentEntry.translation;
+      if (!state.currentEntry.translation) return null;
+      return state.currentEntry.translation.text || state.currentEntry.translation;
 
     case 'citations':
-      if (!currentEntry.citations?.citations) return null;
-      return currentEntry.citations.citations
+      if (!state.currentEntry.citations?.citations) return null;
+      return state.currentEntry.citations.citations
         .map((citation, index) => {
           let text = `Citazione ${index + 1}. `;
           if (citation.author) text += `${citation.author}. `;
@@ -156,13 +159,13 @@ function getCurrentModalTabText() {
         .join('. ');
 
     case 'qa':
-      if (!currentEntry.qa || currentEntry.qa.length === 0) return null;
-      return currentEntry.qa
+      if (!state.currentEntry.qa || state.currentEntry.qa.length === 0) return null;
+      return state.currentEntry.qa
         .map(item => `Domanda: ${item.question}. Risposta: ${item.answer}`)
         .join('. ');
 
     case 'notes':
-      return currentEntry.notes || null;
+      return state.currentEntry.notes || null;
 
     default:
       return null;

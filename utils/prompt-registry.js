@@ -1,5 +1,5 @@
 // Prompt Registry - Centralizza TUTTI i system prompt dell'estensione
-class PromptRegistry {
+export class PromptRegistry {
 
   // ============================================================
   // SUMMARY PROMPTS

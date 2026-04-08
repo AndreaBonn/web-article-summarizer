@@ -3,7 +3,7 @@
 // Non viene usata cifratura custom perché in un'estensione Chrome il codice sorgente
 // è sempre leggibile — un segreto hardcoded non offre protezione reale.
 
-class StorageManager {
+export class StorageManager {
   // API Keys management
   static async saveApiKey(provider, apiKey) {
     const result = await chrome.storage.local.get(['apiKeys']);

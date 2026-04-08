@@ -1,5 +1,8 @@
 // Multi-Analysis Manager - Gestione analisi multi-articolo
-class MultiAnalysisManager {
+import { StorageManager } from './storage-manager.js';
+import { APIClient } from './api-client.js';
+
+export class MultiAnalysisManager {
   
   static async checkArticlesRelation(articles) {
     // Usa l'AI per analisi semantica intelligente

@@ -1,23 +1,31 @@
 // PDF Analysis Page Script
+import * as pdfjsLib from 'pdfjs-dist';
+import { HtmlSanitizer } from './utils/html-sanitizer.js';
+import { TTSManager } from './utils/tts-manager.js';
+import { STTManager } from './utils/stt-manager.js';
+import { VoiceController } from './utils/voice-controller.js';
+import { StorageManager } from './utils/storage-manager.js';
+import { HistoryManager } from './utils/history-manager.js';
+import { I18n } from './utils/i18n.js';
+import { ThemeManager } from './utils/theme-manager.js';
+import { PromptRegistry } from './utils/prompt-registry.js';
+import { APIClient } from './utils/api-client.js';
+import { PDFCacheManager } from './utils/pdf-cache-manager.js';
+import { PDFAnalyzer } from './utils/pdf-analyzer.js';
+import { Modal } from './utils/modal.js';
+
 let selectedFile = null;
 let pdfAnalyzer = null;
 
-// Modal System — caricato da utils/modal.js
-
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('PDF Analysis: Inizializzazione...');
-  
+
   // Inizializza i18n
   await I18n.init();
-  
+
   // Configura PDF.js worker
-  if (typeof pdfjsLib !== 'undefined') {
-    // Usa il path assoluto per il worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('lib/pdf.worker.min.js');
-    console.log('✓ PDF.js configurato con worker:', pdfjsLib.GlobalWorkerOptions.workerSrc);
-  } else {
-    console.error('✗ PDF.js non caricato!');
-  }
+  pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('lib/pdf.worker.min.js');
+  console.log('✓ PDF.js configurato con worker:', pdfjsLib.GlobalWorkerOptions.workerSrc);
   
   // Inizializza PDF Analyzer
   pdfAnalyzer = new PDFAnalyzer();

@@ -1,5 +1,5 @@
 // API Resilience Manager - Retry Logic, Fallback Providers, Rate Limiting
-class APIResilience {
+export class APIResilience {
   constructor() {
     this.requestQueue = [];
     this.isProcessing = false;

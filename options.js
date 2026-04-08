@@ -1,4 +1,10 @@
 // Options Script - Gestione impostazioni
+import { StorageManager } from './utils/storage-manager.js';
+import { I18n } from './utils/i18n.js';
+import { ThemeManager } from './utils/theme-manager.js';
+import { APIResilience } from './utils/api-resilience.js';
+import { CacheManager } from './utils/cache-manager.js';
+import { CompressionManager } from './utils/compression-manager.js';
 document.addEventListener('DOMContentLoaded', async () => {
   // Inizializza i18n
   await I18n.init();

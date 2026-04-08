@@ -1,5 +1,8 @@
 // Citation Extractor - Estrazione citazioni da articoli
-const CitationExtractor = {
+import { PromptRegistry } from './prompt-registry.js';
+import { APIClient } from './api-client.js';
+
+export const CitationExtractor = {
   /**
    * Estrae citazioni dall'articolo usando AI
    */

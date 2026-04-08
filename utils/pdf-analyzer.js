@@ -1,5 +1,10 @@
 // PDFAnalyzer - Estrazione e analisi PDF
-class PDFAnalyzer {
+import * as pdfjsLib from 'pdfjs-dist';
+import { PDFCacheManager } from './pdf-cache-manager.js';
+import { StorageManager } from './storage-manager.js';
+import { APIClient } from './api-client.js';
+
+export class PDFAnalyzer {
   constructor() {
     this.cacheManager = new PDFCacheManager();
     this.ERROR_MESSAGES = {

@@ -1,7 +1,7 @@
 // Progress Tracker - Sistema di tracking progresso granulare
 // Mostra step dettagliati durante operazioni lunghe
 
-class ProgressTracker {
+export class ProgressTracker {
   constructor(containerEl, messageEl, progressBarEl, percentEl) {
     this.container = containerEl;
     this.messageEl = messageEl;

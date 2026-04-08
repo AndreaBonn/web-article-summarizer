@@ -2,8 +2,11 @@
 // Funzioni helper per operazioni AI su documenti PDF:
 // traduzione, estrazione citazioni, Q&A
 
+import { APIClient } from '../../utils/api-client.js';
+import { StorageManager } from '../../utils/storage-manager.js';
+
 // Translate PDF text
-async function translatePDFText(text, targetLanguage, provider, apiKey, forceTranslate = false) {
+export async function translatePDFText(text, targetLanguage, provider, apiKey, forceTranslate = false) {
   console.log('Translating PDF text to:', targetLanguage, 'Force:', forceTranslate);
 
   // Language names for prompt
@@ -66,7 +69,7 @@ ${text}`;
 }
 
 // Extract citations from PDF text
-async function extractPDFCitations(text, filename, provider, settings) {
+export async function extractPDFCitations(text, filename, provider, settings) {
   console.log('Extracting citations from PDF:', filename);
 
   const apiKey = await StorageManager.getApiKey(provider);
@@ -135,7 +138,7 @@ Rispondi in formato JSON come specificato.`;
 }
 
 // Ask question about PDF
-async function askQuestionPDF(question, extractedText, summary, provider, apiKey) {
+export async function askQuestionPDF(question, extractedText, summary, provider, apiKey) {
   console.log('Asking question about PDF:', question);
 
   // Build prompt

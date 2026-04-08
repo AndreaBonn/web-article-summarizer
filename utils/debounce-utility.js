@@ -1,7 +1,7 @@
 // Debounce Utility - Ottimizzazione performance per eventi frequenti
 // Riduce il numero di chiamate a funzioni costose
 
-class DebounceUtility {
+export class DebounceUtility {
   /**
    * Debounce classico - esegue la funzione dopo N ms di inattività
    * Perfetto per: ricerca, resize, scroll

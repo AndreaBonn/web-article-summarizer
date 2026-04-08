@@ -1,21 +1,39 @@
 // Popup Features Module - Estratto da popup.js
 // Gestisce: Q&A e traduzione
 
-// Translation System
-let currentTranslation = null;
+import { state, elements, showError } from './state.js';
+import { HtmlSanitizer } from '../../utils/html-sanitizer.js';
+import { StorageManager } from '../../utils/storage-manager.js';
+import { I18n } from '../../utils/i18n.js';
+import { HistoryManager } from '../../utils/history-manager.js';
+import { InputSanitizer } from '../../utils/input-sanitizer.js';
+import { AdvancedAnalysis } from '../../utils/advanced-analysis.js';
+import { Translator } from '../../utils/translator.js';
+import { Modal } from '../../utils/modal.js';
+import { VoiceController } from '../../utils/voice-controller.js';
+import { createTTSButton } from './voice.js';
 
-// Citations System
-let currentCitations = null;
+// Translation System — usa un oggetto wrapper per permettere la mutazione cross-modulo
+export const translationState = { value: null };
+
+// Citations System — stesso pattern
+export const citationsState = { value: null };
+
+// Getter/setter per compatibilità con i moduli che importano i valori
+export function getCurrentTranslation() { return translationState.value; }
+export function setCurrentTranslation(val) { translationState.value = val; }
+export function getCurrentCitations() { return citationsState.value; }
+export function setCurrentCitations(val) { citationsState.value = val; }
 
 // Q&A System
-async function askQuestion() {
+export async function askQuestion() {
   const question = elements.questionInput.value.trim();
 
   if (!question) {
     return;
   }
 
-  if (!currentArticle || !currentResults) {
+  if (!state.currentArticle || !state.currentResults) {
     showError('Nessun articolo analizzato');
     return;
   }
@@ -50,12 +68,12 @@ async function askQuestion() {
       throw new Error('API key non configurata per ' + provider);
     }
 
-    settings.outputLanguage = selectedLanguage;
+    settings.outputLanguage = state.selectedLanguage;
 
     const answer = await AdvancedAnalysis.askQuestion(
       cleanQuestion,  // ← Usa versione sanitizzata
-      currentArticle,
-      currentResults.summary,
+      state.currentArticle,
+      state.currentResults.summary,
       provider,
       apiKey,
       settings
@@ -71,7 +89,7 @@ async function askQuestion() {
     answerText.className = 'qa-answer-text';
     answerText.textContent = answer;
 
-    const voiceLang = VoiceController.mapLanguageCode(selectedLanguage);
+    const voiceLang = VoiceController.mapLanguageCode(state.selectedLanguage);
     const ttsBtn = createTTSButton(answer, voiceLang, 'Leggi Risposta');
     ttsBtn.style.marginTop = '8px';
 
@@ -82,15 +100,15 @@ async function askQuestion() {
     elements.qaAnswer.appendChild(answerContainer);
 
     // Salva la Q&A nell'array (usa la domanda sanitizzata)
-    currentQA.push({
+    state.currentQA.push({
       question: cleanQuestion,
       answer: answer,
       timestamp: new Date().toISOString()
     });
 
     // Aggiorna anche la cronologia con le Q&A
-    if (currentArticle && currentArticle.url) {
-      await HistoryManager.updateSummaryWithQA(currentArticle.url, currentQA);
+    if (state.currentArticle && state.currentArticle.url) {
+      await HistoryManager.updateSummaryWithQA(state.currentArticle.url, state.currentQA);
     }
 
     elements.questionInput.value = '';
@@ -130,8 +148,8 @@ function detectArticleLanguage(text) {
   return detectedLang;
 }
 
-async function translateArticle() {
-  if (!currentArticle) {
+export async function translateArticle() {
+  if (!state.currentArticle) {
     showError('Nessun articolo da tradurre');
     return;
   }
@@ -150,14 +168,14 @@ async function translateArticle() {
       throw new Error('API key non configurata per ' + provider);
     }
 
-    const targetLanguage = selectedLanguage;
+    const targetLanguage = state.selectedLanguage;
 
     // Rileva lingua originale (semplice detection)
-    const originalLanguage = detectArticleLanguage(currentArticle.content);
+    const originalLanguage = detectArticleLanguage(state.currentArticle.content);
 
     // Controlla cache prima
     const cached = await StorageManager.getCachedTranslation(
-      currentArticle.url,
+      state.currentArticle.url,
       provider,
       targetLanguage
     );
@@ -192,7 +210,7 @@ async function translateArticle() {
       }
 
       translation = await Translator.translateArticle(
-        currentArticle,
+        state.currentArticle,
         targetLanguage,
         provider,
         apiKey
@@ -200,7 +218,7 @@ async function translateArticle() {
 
       // Salva in cache
       await StorageManager.saveCachedTranslation(
-        currentArticle.url,
+        state.currentArticle.url,
         provider,
         targetLanguage,
         translation,
@@ -209,14 +227,14 @@ async function translateArticle() {
 
       // Salva nello storico
       await HistoryManager.updateSummaryWithTranslation(
-        currentArticle.url,
+        state.currentArticle.url,
         translation,
         targetLanguage,
         originalLanguage
       );
     }
 
-    currentTranslation = translation;
+    translationState.value = translation;
     displayTranslation(translation, targetLanguage, originalLanguage, fromCache);
 
   } catch (error) {
@@ -279,7 +297,7 @@ function displayTranslation(translation, targetLang, originalLang, fromCache = f
 
 async function clearTranslationCache() {
   const provider = elements.providerSelect.value;
-  await StorageManager.clearTranslationCacheEntry(currentArticle.url, provider, selectedLanguage);
+  await StorageManager.clearTranslationCacheEntry(state.currentArticle.url, provider, state.selectedLanguage);
 }
 
 function resetTranslationButton() {
@@ -288,10 +306,10 @@ function resetTranslationButton() {
 }
 
 async function copyTranslation() {
-  if (!currentTranslation) return;
+  if (!translationState.value) return;
 
   try {
-    await navigator.clipboard.writeText(currentTranslation);
+    await navigator.clipboard.writeText(translationState.value);
     const btn = document.getElementById('copyTranslationBtn');
     const originalText = btn.textContent;
     btn.textContent = '✓';

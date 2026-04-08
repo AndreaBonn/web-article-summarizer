@@ -1,5 +1,5 @@
 // History Manager - Gestione cronologia riassunti
-class HistoryManager {
+export class HistoryManager {
   static async saveSummary(article, summary, keyPoints, metadata) {
     const result = await chrome.storage.local.get(['summaryHistory']);
     let history = result.summaryHistory || [];

@@ -1,7 +1,7 @@
 // i18n.js - Sistema di internazionalizzazione COMPLETO
 // Versione 2.0 - Tutte le stringhe tradotte in 5 lingue
 
-const I18n = {
+export const I18n = {
   currentLanguage: 'it',
   
   translations: {

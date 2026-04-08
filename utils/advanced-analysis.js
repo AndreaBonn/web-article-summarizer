@@ -1,5 +1,5 @@
 // Advanced Analysis - Q&A e Bias Detection
-class AdvancedAnalysis {
+export class AdvancedAnalysis {
   // Q&A System
   static async askQuestion(question, article, summary, provider, apiKey, settings) {
     const systemPrompt = this.getQASystemPrompt(provider, settings.outputLanguage || 'it');

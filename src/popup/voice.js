@@ -1,11 +1,19 @@
 // Popup Voice Module - Estratto da popup.js
 // Gestisce: VoiceController, handleVoiceQuestion, addTTSButtons, createTTSButton, showVoiceSelector, speakQAAnswer
 
+import { state, elements } from './state.js';
+import { translationState } from './features.js';
+import { HtmlSanitizer } from '../../utils/html-sanitizer.js';
+import { Modal } from '../../utils/modal.js';
+import { VoiceController } from '../../utils/voice-controller.js';
+import { STTManager } from '../../utils/stt-manager.js';
+import { askQuestion } from './features.js';
+
 // Voice Controller
 let voiceController = null;
 
 // Inizializza Voice Controller
-async function initVoiceController() {
+export async function initVoiceController() {
   if (!voiceController) {
     voiceController = new VoiceController();
     await voiceController.initialize();
@@ -14,7 +22,7 @@ async function initVoiceController() {
 }
 
 // Voice Question Handler
-async function handleVoiceQuestion() {
+export async function handleVoiceQuestion() {
   const voiceBtn = document.getElementById('voiceQuestionBtn');
   const listeningIndicator = document.getElementById('listeningIndicator');
   const interimTranscript = document.getElementById('interimTranscript');
@@ -45,7 +53,7 @@ async function handleVoiceQuestion() {
     window.addEventListener('stt:interim', handleInterim);
 
     // Mappa lingua output a lingua vocale
-    const voiceLang = VoiceController.mapLanguageCode(selectedLanguage);
+    const voiceLang = VoiceController.mapLanguageCode(state.selectedLanguage);
 
     // Avvia ascolto
     const transcript = await voiceController.startListening(voiceLang);
@@ -77,22 +85,22 @@ async function handleVoiceQuestion() {
 }
 
 // Aggiungi pulsanti TTS ai contenuti
-function addTTSButtons() {
+export function addTTSButtons() {
   if (!voiceController) return;
 
-  const voiceLang = VoiceController.mapLanguageCode(selectedLanguage);
+  const voiceLang = VoiceController.mapLanguageCode(state.selectedLanguage);
 
   // TTS per riassunto
   const summaryContent = document.getElementById('summaryContent');
   if (summaryContent && !summaryContent.querySelector('.tts-button')) {
-    const ttsBtn = createTTSButton(currentResults.summary, voiceLang, 'Leggi Riassunto');
+    const ttsBtn = createTTSButton(state.currentResults.summary, voiceLang, 'Leggi Riassunto');
     summaryContent.insertBefore(ttsBtn, summaryContent.firstChild);
   }
 
   // TTS per punti chiave
   const keypointsContent = document.getElementById('keypointsContent');
   if (keypointsContent && !keypointsContent.querySelector('.tts-button')) {
-    const keypointsText = currentResults.keyPoints
+    const keypointsText = state.currentResults.keyPoints
       .map((kp, i) => `${i + 1}. ${kp.title}. ${kp.description}`)
       .join('. ');
     const ttsBtn = createTTSButton(keypointsText, voiceLang, 'Leggi Punti Chiave');
@@ -100,17 +108,17 @@ function addTTSButtons() {
   }
 
   // TTS per traduzione (se presente)
-  if (currentTranslation) {
+  if (translationState.value) {
     const translationText = document.querySelector('.translation-text');
     if (translationText && !translationText.parentElement.querySelector('.tts-button')) {
-      const ttsBtn = createTTSButton(currentTranslation, voiceLang, 'Leggi Traduzione');
+      const ttsBtn = createTTSButton(translationState.value, voiceLang, 'Leggi Traduzione');
       translationText.parentElement.insertBefore(ttsBtn, translationText);
     }
   }
 }
 
 // Crea pulsante TTS con selezione voce
-function createTTSButton(text, lang, label = 'Leggi') {
+export function createTTSButton(text, lang, label = 'Leggi') {
   const container = document.createElement('div');
   container.className = 'tts-button-container';
 
@@ -120,9 +128,9 @@ function createTTSButton(text, lang, label = 'Leggi') {
   button.title = label;
 
   button.addEventListener('click', () => {
-    const state = voiceController.getTTSState();
+    const ttsState = voiceController.getTTSState();
 
-    if (state.isSpeaking) {
+    if (ttsState.isSpeaking) {
       // Se sta parlando, ferma
       voiceController.stopSpeaking();
       button.classList.remove('active');
@@ -160,7 +168,7 @@ function createTTSButton(text, lang, label = 'Leggi') {
 }
 
 // Mostra selettore voce
-async function showVoiceSelector(lang) {
+export async function showVoiceSelector(lang) {
   const voices = voiceController.ttsManager.getVoicesForLanguage(lang);
   const currentVoice = voiceController.ttsManager.getPreferredVoice(lang);
 
@@ -245,9 +253,9 @@ async function showVoiceSelector(lang) {
 }
 
 // Leggi risposta Q&A ad alta voce
-async function speakQAAnswer(answer) {
+export async function speakQAAnswer(answer) {
   if (!voiceController) return;
 
-  const voiceLang = VoiceController.mapLanguageCode(selectedLanguage);
+  const voiceLang = VoiceController.mapLanguageCode(state.selectedLanguage);
   voiceController.speak(answer, voiceLang);
 }

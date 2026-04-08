@@ -1,5 +1,5 @@
 // Cache Manager - Caching avanzato con TTL e invalidazione intelligente
-class CacheManager {
+export class CacheManager {
   constructor() {
     this.defaultTTL = 7 * 24 * 60 * 60 * 1000; // 7 giorni in millisecondi
   }

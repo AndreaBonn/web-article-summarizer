@@ -3,7 +3,7 @@
  * Pulisce e valida il testo prima di inviarlo ai servizi AI
  */
 
-class InputSanitizer {
+export class InputSanitizer {
   /**
    * Sanitizza il testo per l'invio all'AI
    * @param {string} text - Testo da sanitizzare

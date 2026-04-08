@@ -1,7 +1,7 @@
 // History Lazy Loader - Virtual Scrolling per cronologia
 // Carica progressivamente gli articoli per migliorare performance
 
-class HistoryLazyLoader {
+export class HistoryLazyLoader {
   constructor(container, itemsPerPage = 20) {
     this.container = container;
     this.itemsPerPage = itemsPerPage;

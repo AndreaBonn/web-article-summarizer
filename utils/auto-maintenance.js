@@ -1,5 +1,8 @@
 // Auto Maintenance - Cleanup automatico in background
-class AutoMaintenance {
+import { CacheManager } from './cache-manager.js';
+import { CompressionManager } from './compression-manager.js';
+
+export class AutoMaintenance {
   constructor() {
     this.maintenanceInterval = 24 * 60 * 60 * 1000; // 24 ore
     this.lastMaintenanceKey = 'lastMaintenanceRun';

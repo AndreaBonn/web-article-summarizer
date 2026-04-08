@@ -1,5 +1,7 @@
 // i18n Validator - Verifica completezza traduzioni
-const I18nValidator = {
+import { I18n } from './i18n-extended.js';
+
+export const I18nValidator = {
   
   // Verifica che tutte le lingue abbiano le stesse chiavi
   validateTranslations() {

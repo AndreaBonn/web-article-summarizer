@@ -2,8 +2,10 @@
  * VoiceController - Coordina TTS e STT per Q&A vocale
  * @module utils/voice-controller
  */
+import { TTSManager } from './tts-manager.js';
+import { STTManager } from './stt-manager.js';
 
-class VoiceController {
+export class VoiceController {
   constructor() {
     this.ttsManager = new TTSManager();
     this.sttManager = new STTManager();

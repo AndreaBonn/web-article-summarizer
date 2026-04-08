@@ -1,7 +1,9 @@
 // Compression Manager - Compressione dati con LZ-String
 // LZ-String è opzionale: se non disponibile, i dati passano senza compressione.
+import LZString from 'lz-string';
+import { CacheManager } from './cache-manager.js';
 
-class CompressionManager {
+export class CompressionManager {
   constructor() {
     this.compressionThreshold = 1000; // Comprimi solo se > 1KB
   }
@@ -25,26 +27,14 @@ class CompressionManager {
     }
     
     try {
-      // Usa LZ-String se disponibile, altrimenti fallback
-      if (typeof LZString !== 'undefined') {
-        const compressed = LZString.compressToUTF16(data);
-        return {
-          compressed: true,
-          data: compressed,
-          originalSize: data.length,
-          compressedSize: compressed.length,
-          ratio: ((1 - compressed.length / data.length) * 100).toFixed(1)
-        };
-      } else {
-        // Fallback: nessuna compressione
-        return {
-          compressed: false,
-          data: data,
-          originalSize: data.length,
-          compressedSize: data.length,
-          warning: 'LZ-String non disponibile'
-        };
-      }
+      const compressed = LZString.compressToUTF16(data);
+      return {
+        compressed: true,
+        data: compressed,
+        originalSize: data.length,
+        compressedSize: compressed.length,
+        ratio: ((1 - compressed.length / data.length) * 100).toFixed(1)
+      };
     } catch (error) {
       console.error('Errore nella compressione:', error);
       return {
@@ -68,11 +58,7 @@ class CompressionManager {
     }
     
     try {
-      if (typeof LZString !== 'undefined') {
-        return LZString.decompressFromUTF16(compressedData.data);
-      } else {
-        return compressedData.data;
-      }
+      return LZString.decompressFromUTF16(compressedData.data);
     } catch (error) {
       console.error('Errore nella decompressione:', error);
       return compressedData.data;

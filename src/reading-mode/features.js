@@ -2,21 +2,30 @@
 // Gestisce traduzioni, citazioni, Q&A e aggiornamento storage
 // Funzioni helper PDF (translatePDFText, extractPDFCitations, askQuestionPDF) → reading-mode-pdf.js
 
+import { state, elements } from './state.js';
+import { HtmlSanitizer } from '../../utils/html-sanitizer.js';
+import { StorageManager } from '../../utils/storage-manager.js';
+import { I18n } from '../../utils/i18n.js';
+import { Translator } from '../../utils/translator.js';
+import { AdvancedAnalysis } from '../../utils/advanced-analysis.js';
+import { Modal } from '../../utils/modal.js';
+import { translatePDFText, extractPDFCitations, askQuestionPDF } from './pdf.js';
+
 // Translate article
-async function translateArticle() {
+export async function translateArticle() {
   // Check if we have data (article or PDF)
-  if (!currentData) return;
+  if (!state.currentData) return;
 
   // For PDFs, check if we have extracted text - gestisci diverse strutture
-  const extractedText = currentData.extractedText || currentData.pdf?.text;
-  if (currentData.isPDF && !extractedText) {
+  const extractedText = state.currentData.extractedText || state.currentData.pdf?.text;
+  if (state.currentData.isPDF && !extractedText) {
     console.error('No extracted text for PDF translation');
     await Modal.error('Testo non disponibile per la traduzione');
     return;
   }
 
   // For articles, check if we have article object
-  if (!currentData.isPDF && !currentData.article) {
+  if (!state.currentData.isPDF && !state.currentData.article) {
     console.error('No article for translation');
     return;
   }
@@ -34,11 +43,11 @@ async function translateArticle() {
       throw new Error('API key non configurata per ' + provider);
     }
 
-    const targetLanguage = currentData.metadata?.language || 'it';
+    const targetLanguage = state.currentData.metadata?.language || 'it';
 
     let translationResult;
 
-    if (currentData.isPDF) {
+    if (state.currentData.isPDF) {
       // For PDFs, translate the extracted text directly - usa la variabile già estratta
       translationResult = await translatePDFText(
         extractedText,
@@ -56,7 +65,7 @@ async function translateArticle() {
         if (choice === 'translate') {
           // Force translate (reformat)
           translationResult = await translatePDFText(
-            currentData.extractedText,
+            state.currentData.extractedText,
             targetLanguage,
             provider,
             apiKey,
@@ -78,7 +87,7 @@ async function translateArticle() {
     } else {
       // For articles, use Translator
       const translation = await Translator.translateArticle(
-        currentData.article,
+        state.currentData.article,
         targetLanguage,
         provider,
         apiKey
@@ -87,7 +96,7 @@ async function translateArticle() {
     }
 
     // Display translation
-    const title = currentData.isPDF ? currentData.filename : currentData.article.title;
+    const title = state.currentData.isPDF ? state.currentData.filename : state.currentData.article.title;
     const translation = translationResult.translation;
 
     elements.translationTabContent.innerHTML = `
@@ -98,7 +107,7 @@ async function translateArticle() {
     `;
 
     // Save to current data
-    currentData.translation = translation;
+    state.currentData.translation = translation;
 
     // Update in storage
     await updateDataInStorage();
@@ -119,20 +128,20 @@ async function translateArticle() {
 }
 
 // Extract citations
-async function extractCitations() {
+export async function extractCitations() {
   // Check if we have data (article or PDF)
-  if (!currentData) return;
+  if (!state.currentData) return;
 
   // For PDFs, check if we have extracted text - gestisci diverse strutture
-  const extractedText = currentData.extractedText || currentData.pdf?.text;
-  if (currentData.isPDF && !extractedText) {
+  const extractedText = state.currentData.extractedText || state.currentData.pdf?.text;
+  if (state.currentData.isPDF && !extractedText) {
     console.error('No extracted text for PDF citations');
     await Modal.error('Testo non disponibile per l\'estrazione citazioni');
     return;
   }
 
   // For articles, check if we have article object
-  if (!currentData.isPDF && !currentData.article) {
+  if (!state.currentData.isPDF && !state.currentData.article) {
     console.error('No article for citations');
     return;
   }
@@ -147,9 +156,9 @@ async function extractCitations() {
 
     let citations;
 
-    if (currentData.isPDF) {
+    if (state.currentData.isPDF) {
       // For PDFs, extract citations from extracted text - usa la variabile già estratta
-      const filename = currentData.filename || currentData.pdf?.name || 'PDF';
+      const filename = state.currentData.filename || state.currentData.pdf?.name || 'PDF';
       citations = await extractPDFCitations(
         extractedText,
         filename,
@@ -160,7 +169,7 @@ async function extractCitations() {
       // For articles, call background script
       const response = await chrome.runtime.sendMessage({
         action: 'extractCitations',
-        article: currentData.article,
+        article: state.currentData.article,
         provider: provider,
         settings: settings
       });
@@ -201,7 +210,7 @@ async function extractCitations() {
     elements.citationsTabContent.innerHTML = html;
 
     // Save to current data
-    currentData.citations = citations;
+    state.currentData.citations = citations;
 
     // Update in storage
     await updateDataInStorage();
@@ -284,9 +293,9 @@ function showSameLanguageModal(targetLanguage) {
 }
 
 // Ask question
-async function askQuestion() {
+export async function askQuestion() {
   const question = elements.qaInput.value.trim();
-  if (!question || !currentData) return;
+  if (!question || !state.currentData) return;
 
   // Add question to history
   const qaItem = document.createElement('div');
@@ -315,40 +324,40 @@ async function askQuestion() {
 
     let answer;
 
-    if (currentData.isPDF) {
+    if (state.currentData.isPDF) {
       // For PDFs, use extracted text directly
       answer = await askQuestionPDF(
         question,
-        currentData.extractedText,
-        currentData.summary,
+        state.currentData.extractedText,
+        state.currentData.summary,
         provider,
         apiKey
       );
     } else {
       // For articles, prepare article with paragraphs structure
       const articleWithParagraphs = {
-        ...currentData.article,
+        ...state.currentData.article,
         paragraphs: []
       };
 
       // Convert content to paragraphs if needed
-      if (currentData.article.content && !currentData.article.paragraphs) {
-        const paragraphs = currentData.article.content.split('\n\n');
+      if (state.currentData.article.content && !state.currentData.article.paragraphs) {
+        const paragraphs = state.currentData.article.content.split('\n\n');
         articleWithParagraphs.paragraphs = paragraphs
           .filter(p => p.trim())
           .map((text, index) => ({
             id: index + 1,
             text: text.trim()
           }));
-      } else if (currentData.article.paragraphs) {
-        articleWithParagraphs.paragraphs = currentData.article.paragraphs;
+      } else if (state.currentData.article.paragraphs) {
+        articleWithParagraphs.paragraphs = state.currentData.article.paragraphs;
       }
 
       // Use AdvancedAnalysis directly (like popup does)
       answer = await AdvancedAnalysis.askQuestion(
         question,
         articleWithParagraphs,
-        currentData.summary,
+        state.currentData.summary,
         provider,
         apiKey,
         settings
@@ -359,8 +368,8 @@ async function askQuestion() {
     qaItem.querySelector('.qa-answer').textContent = `A: ${answer}`;
 
     // Save to current data
-    if (!currentData.qa) currentData.qa = [];
-    currentData.qa.push({
+    if (!state.currentData.qa) state.currentData.qa = [];
+    state.currentData.qa.push({
       question,
       answer,
       timestamp: new Date().toISOString()
@@ -376,16 +385,16 @@ async function askQuestion() {
 }
 
 // Update data in storage (save to history)
-async function updateDataInStorage() {
+export async function updateDataInStorage() {
   try {
-    if (currentData.isPDF) {
+    if (state.currentData.isPDF) {
       // For PDFs, update in PDF history
       const result = await chrome.storage.local.get(['pdf_analysis_history']);
       const pdfHistory = result.pdf_analysis_history || [];
 
       // Find existing entry by fileHash
       const existingIndex = pdfHistory.findIndex(item =>
-        item.fileHash === currentData.fileHash
+        item.fileHash === state.currentData.fileHash
       );
 
       if (existingIndex >= 0) {
@@ -394,9 +403,9 @@ async function updateDataInStorage() {
           ...pdfHistory[existingIndex],
           analysis: {
             ...pdfHistory[existingIndex].analysis,
-            translation: currentData.translation || pdfHistory[existingIndex].analysis.translation,
-            citations: currentData.citations || pdfHistory[existingIndex].analysis.citations,
-            qa: currentData.qa || pdfHistory[existingIndex].analysis.qa
+            translation: state.currentData.translation || pdfHistory[existingIndex].analysis.translation,
+            citations: state.currentData.citations || pdfHistory[existingIndex].analysis.citations,
+            qa: state.currentData.qa || pdfHistory[existingIndex].analysis.qa
           },
           timestamp: Date.now()
         };
@@ -411,16 +420,16 @@ async function updateDataInStorage() {
 
       // Find existing entry by URL
       const existingIndex = history.findIndex(item =>
-        item.article && item.article.url === currentData.article.url
+        item.article && item.article.url === state.currentData.article.url
       );
 
       if (existingIndex >= 0) {
         // Update existing entry with new data
         history[existingIndex] = {
           ...history[existingIndex],
-          translation: currentData.translation || history[existingIndex].translation,
-          citations: currentData.citations || history[existingIndex].citations,
-          qa: currentData.qa || history[existingIndex].qa,
+          translation: state.currentData.translation || history[existingIndex].translation,
+          citations: state.currentData.citations || history[existingIndex].citations,
+          qa: state.currentData.qa || history[existingIndex].qa,
           timestamp: Date.now()
         };
 

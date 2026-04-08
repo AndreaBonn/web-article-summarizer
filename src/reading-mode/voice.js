@@ -1,6 +1,10 @@
 // Reading Mode - Voice Module
 // Gestisce TTS, STT e controllo dimensione font
 
+import { state, elements } from './state.js';
+import { VoiceController } from '../../utils/voice-controller.js';
+import { STTManager } from '../../utils/stt-manager.js';
+
 // ============================================
 // VOICE CONTROLS
 // ============================================
@@ -8,7 +12,7 @@
 /**
  * Setup voice event listeners
  */
-function setupVoiceEventListeners() {
+export function setupVoiceEventListeners() {
   // TTS events
   window.addEventListener('tts:started', () => {
     updateTTSButtons('playing');
@@ -90,10 +94,10 @@ function setupVoiceEventListeners() {
 /**
  * Update TTS button states
  */
-function updateTTSButtons(state) {
+function updateTTSButtons(buttonState) {
   if (!elements.ttsPlayBtn || !elements.ttsPauseBtn || !elements.ttsStopBtn) return;
 
-  switch (state) {
+  switch (buttonState) {
     case 'playing':
       elements.ttsPlayBtn.style.display = 'none';
       elements.ttsPauseBtn.style.display = 'inline-block';
@@ -123,14 +127,14 @@ function updateTTSButtons(state) {
 /**
  * Handle TTS play/resume
  */
-function handleTTSPlay() {
-  if (!voiceController) return;
+export function handleTTSPlay() {
+  if (!state.voiceController) return;
 
-  const ttsState = voiceController.getTTSState();
+  const ttsState = state.voiceController.getTTSState();
 
   if (ttsState.isPaused) {
     // Resume
-    voiceController.resumeSpeaking();
+    state.voiceController.resumeSpeaking();
   } else {
     // Start new reading
     const textToRead = getCurrentTabText();
@@ -140,27 +144,27 @@ function handleTTSPlay() {
     }
 
     // Get language from metadata
-    const lang = currentData?.metadata?.language || 'it';
+    const lang = state.currentData?.metadata?.language || 'it';
     const voiceLang = VoiceController.mapLanguageCode(lang);
 
-    voiceController.speak(textToRead, voiceLang);
+    state.voiceController.speak(textToRead, voiceLang);
   }
 }
 
 /**
  * Handle TTS pause
  */
-function handleTTSPause() {
-  if (!voiceController) return;
-  voiceController.pauseSpeaking();
+export function handleTTSPause() {
+  if (!state.voiceController) return;
+  state.voiceController.pauseSpeaking();
 }
 
 /**
  * Handle TTS stop
  */
-function handleTTSStop() {
-  if (!voiceController) return;
-  voiceController.stopSpeaking();
+export function handleTTSStop() {
+  if (!state.voiceController) return;
+  state.voiceController.stopSpeaking();
 }
 
 /**
@@ -175,20 +179,20 @@ function getCurrentTabText() {
 
   switch (tabName) {
     case 'summary':
-      return currentData?.summary || null;
+      return state.currentData?.summary || null;
 
     case 'keypoints':
-      if (!currentData?.keyPoints) return null;
-      return currentData.keyPoints
+      if (!state.currentData?.keyPoints) return null;
+      return state.currentData.keyPoints
         .map((point, index) => `${index + 1}. ${point.title}. ${point.description}`)
         .join('. ');
 
     case 'translation':
-      return currentData?.translation || null;
+      return state.currentData?.translation || null;
 
     case 'citations':
-      if (!currentData?.citations?.citations) return null;
-      return currentData.citations.citations
+      if (!state.currentData?.citations?.citations) return null;
+      return state.currentData.citations.citations
         .map((citation, index) => {
           let text = `Citazione ${index + 1}. `;
           if (citation.author) text += `${citation.author}. `;
@@ -198,8 +202,8 @@ function getCurrentTabText() {
         .join('. ');
 
     case 'qa':
-      if (!currentData?.qa || currentData.qa.length === 0) return null;
-      return currentData.qa
+      if (!state.currentData?.qa || state.currentData.qa.length === 0) return null;
+      return state.currentData.qa
         .map(item => `Domanda: ${item.question}. Risposta: ${item.answer}`)
         .join('. ');
 
@@ -211,8 +215,8 @@ function getCurrentTabText() {
 /**
  * Handle voice input for Q&A
  */
-async function handleVoiceInput() {
-  if (!voiceController) {
+export async function handleVoiceInput() {
+  if (!state.voiceController) {
     alert('Controller vocale non inizializzato');
     return;
   }
@@ -222,21 +226,21 @@ async function handleVoiceInput() {
     return;
   }
 
-  const sttState = voiceController.getSTTState();
+  const sttState = state.voiceController.getSTTState();
 
   if (sttState.isListening) {
     // Stop listening
-    voiceController.stopListening();
+    state.voiceController.stopListening();
     return;
   }
 
   try {
     // Get language from metadata
-    const lang = currentData?.metadata?.language || 'it';
+    const lang = state.currentData?.metadata?.language || 'it';
     const voiceLang = VoiceController.mapLanguageCode(lang);
 
     // Start listening
-    const transcript = await voiceController.startListening(voiceLang);
+    const transcript = await state.voiceController.startListening(voiceLang);
 
     // Transcript is already set in input by event listener
     // User can now click "Chiedi" or press Enter
@@ -257,7 +261,7 @@ let currentFontSizeIndex = 1; // Default: M
 /**
  * Load saved font size
  */
-function loadFontSize() {
+export function loadFontSize() {
   const savedSize = localStorage.getItem('readingModeFontSize') || 'M';
   const index = FONT_SIZES.indexOf(savedSize);
   currentFontSizeIndex = index >= 0 ? index : 1;
@@ -290,7 +294,7 @@ function applyFontSize() {
 /**
  * Increase font size
  */
-function increaseFontSize() {
+export function increaseFontSize() {
   if (currentFontSizeIndex < FONT_SIZES.length - 1) {
     currentFontSizeIndex++;
     applyFontSize();
@@ -300,7 +304,7 @@ function increaseFontSize() {
 /**
  * Decrease font size
  */
-function decreaseFontSize() {
+export function decreaseFontSize() {
   if (currentFontSizeIndex > 0) {
     currentFontSizeIndex--;
     applyFontSize();

@@ -1,16 +1,14 @@
 // Background Service Worker - Gestisce chiamate API
-importScripts(
-  'utils/storage-manager.js',
-  'utils/prompt-registry.js',
-  'utils/api-client.js',
-  'utils/api-resilience.js',
-  'utils/cache-manager.js',
-  'utils/compression-manager.js',
-  'utils/auto-maintenance.js',
-  'utils/citation-extractor.js',
-  'utils/input-sanitizer.js',
-  'utils/error-handler.js'
-);
+import { StorageManager } from './utils/storage-manager.js';
+import { PromptRegistry } from './utils/prompt-registry.js';
+import { APIClient } from './utils/api-client.js';
+import { APIResilience } from './utils/api-resilience.js';
+import { CacheManager } from './utils/cache-manager.js';
+import { CompressionManager } from './utils/compression-manager.js';
+import { AutoMaintenance } from './utils/auto-maintenance.js';
+import { CitationExtractor } from './utils/citation-extractor.js';
+import { InputSanitizer } from './utils/input-sanitizer.js';
+import { ErrorHandler } from './utils/error-handler.js';
 
 // Inizializza manutenzione automatica cache
 const autoMaintenance = new AutoMaintenance();

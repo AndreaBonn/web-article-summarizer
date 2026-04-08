@@ -1,9 +1,17 @@
 // Popup Citations Module - Estratto da popup.js
 // Gestisce: estrazione, visualizzazione e gestione citazioni
 
+import { state, elements, showError } from './state.js';
+import { citationsState, setCurrentCitations } from './features.js';
+import { HtmlSanitizer } from '../../utils/html-sanitizer.js';
+import { StorageManager } from '../../utils/storage-manager.js';
+import { HistoryManager } from '../../utils/history-manager.js';
+import { CitationExtractor } from '../../utils/citation-extractor.js';
+import { Modal } from '../../utils/modal.js';
+
 // Citations System
-async function extractCitations() {
-  if (!currentArticle || !currentResults) {
+export async function extractCitations() {
+  if (!state.currentArticle || !state.currentResults) {
     showError('Nessun articolo analizzato');
     return;
   }
@@ -19,7 +27,7 @@ async function extractCitations() {
     // Invia richiesta al background script (come per i riassunti)
     const response = await chrome.runtime.sendMessage({
       action: 'extractCitations',
-      article: currentArticle,
+      article: state.currentArticle,
       provider: provider,
       settings: settings
     });
@@ -28,10 +36,12 @@ async function extractCitations() {
       throw new Error(response.error);
     }
 
-    currentCitations = response.result.citations;
+    // Aggiorna la variabile di stato condivisa in features.js
+    const citationsData = response.result.citations;
+    setCurrentCitations(citationsData);
 
     // Mostra citazioni
-    displayCitations();
+    displayCitationsData(citationsData);
 
     // Mostra badge "Da Cache" se applicabile
     if (response.result.fromCache) {
@@ -49,8 +59,8 @@ async function extractCitations() {
     }
 
     // Salva nella cronologia
-    if (currentArticle && currentArticle.url) {
-      await HistoryManager.updateSummaryWithCitations(currentArticle.url, currentCitations);
+    if (state.currentArticle && state.currentArticle.url) {
+      await HistoryManager.updateSummaryWithCitations(state.currentArticle.url, citationsData);
       console.log('💾 Citazioni salvate in cronologia');
     }
 
@@ -69,8 +79,12 @@ async function extractCitations() {
   }
 }
 
-function displayCitations() {
-  if (!currentCitations || !currentCitations.citations || currentCitations.citations.length === 0) {
+export function displayCitations() {
+  displayCitationsData(citationsState.value);
+}
+
+function displayCitationsData(citationsData) {
+  if (!citationsData || !citationsData.citations || citationsData.citations.length === 0) {
     elements.citationsContent.innerHTML = `
       <div class="citations-empty">
         <p>📚 Nessuna citazione trovata in questo articolo</p>
@@ -80,7 +94,7 @@ function displayCitations() {
   }
 
   // Calcola il numero totale di citazioni con fallback
-  const totalCitations = currentCitations.total_citations || currentCitations.totalCount || currentCitations.citations.length;
+  const totalCitations = citationsData.total_citations || citationsData.totalCount || citationsData.citations.length;
 
   let html = `
     <div class="citations-header">
@@ -108,7 +122,7 @@ function displayCitations() {
     <div class="citations-list">
   `;
 
-  currentCitations.citations.forEach(citation => {
+  citationsData.citations.forEach(citation => {
     const typeIcon = {
       'direct_quote': '💬',
       'indirect_quote': '💭',
@@ -166,7 +180,7 @@ function displayCitations() {
     updateMainCitation(e.target.value);
   });
 
-  document.getElementById('copyCitationsBtn').addEventListener('click', copyCitations);
+  document.getElementById('copyCitationsBtn').addEventListener('click', () => copyCitationsData(citationsData));
 
   // Click handler per evidenziare citazioni nell'articolo
   document.querySelectorAll('.citation-item').forEach(item => {
@@ -192,8 +206,8 @@ function displayCitations() {
 }
 
 function updateMainCitation(style) {
-  // Usa currentArticle invece di currentCitations.article
-  const citationText = CitationExtractor.formatCitation(currentArticle, style);
+  // Usa state.currentArticle invece di currentCitations.article
+  const citationText = CitationExtractor.formatCitation(state.currentArticle, style);
   document.getElementById('mainCitationText').textContent = citationText;
 }
 
@@ -222,13 +236,13 @@ function getPositionLabel(position) {
   return labels[position] || '📍 Articolo';
 }
 
-async function copyCitations() {
-  if (!currentCitations || !currentArticle) return;
+async function copyCitationsData(citationsData) {
+  if (!citationsData || !state.currentArticle) return;
 
   const style = document.getElementById('citationStyleSelect').value;
   const bibliography = CitationExtractor.generateBibliography(
-    currentArticle,
-    currentCitations.citations,
+    state.currentArticle,
+    citationsData.citations,
     style
   );
 

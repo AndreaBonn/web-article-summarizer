@@ -1,5 +1,7 @@
 // Theme Manager - Gestione Dark Mode
-const ThemeManager = {
+import { StorageManager } from './storage-manager.js';
+
+export const ThemeManager = {
   async init() {
     try {
       // Attendi che StorageManager sia disponibile

@@ -1,17 +1,24 @@
 // Multi-Analysis Page Script
+import { HtmlSanitizer } from './utils/html-sanitizer.js';
+import { StorageManager } from './utils/storage-manager.js';
+import { I18n } from './utils/i18n.js';
+import { ThemeManager } from './utils/theme-manager.js';
+import { HistoryManager } from './utils/history-manager.js';
+import { PromptRegistry } from './utils/prompt-registry.js';
+import { APIClient } from './utils/api-client.js';
+import { MultiAnalysisManager } from './utils/multi-analysis-manager.js';
+import { PDFExporter } from './utils/pdf-exporter.js';
+import { MarkdownExporter } from './utils/markdown-exporter.js';
+import { EmailManager } from './utils/email-manager.js';
+import { Modal } from './utils/modal.js';
+
 let allArticles = [];
 let selectedArticles = [];
 let currentAnalysis = null;
 
-// Modal System — caricato da utils/modal.js
-
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Multi-Analysis: DOMContentLoaded');
-  console.log('APIClient definito:', typeof APIClient !== 'undefined');
-  console.log('StorageManager definito:', typeof StorageManager !== 'undefined');
-  console.log('HistoryManager definito:', typeof HistoryManager !== 'undefined');
-  console.log('MultiAnalysisManager definito:', typeof MultiAnalysisManager !== 'undefined');
-  
+
   // Inizializza i18n
   await I18n.init();
   
@@ -441,11 +448,6 @@ async function exportPdf() {
   if (!currentAnalysis) return;
   
   try {
-    if (typeof PDFExporter === 'undefined') {
-      await Modal.alert('PDFExporter non caricato. Ricarica la pagina.', 'Errore', '❌');
-      return;
-    }
-    
     // Mostra modal di selezione
     const options = await showExportOptionsModal('PDF');
     if (!options) return; // Utente ha annullato
@@ -465,11 +467,6 @@ async function exportMarkdown() {
   if (!currentAnalysis) return;
   
   try {
-    if (typeof MarkdownExporter === 'undefined') {
-      await Modal.alert('MarkdownExporter non caricato. Ricarica la pagina.', 'Errore', '❌');
-      return;
-    }
-    
     // Mostra modal di selezione
     const options = await showExportOptionsModal('Markdown');
     if (!options) return; // Utente ha annullato
@@ -540,11 +537,6 @@ async function sendEmail() {
   if (!currentAnalysis) return;
   
   try {
-    if (typeof EmailManager === 'undefined') {
-      await Modal.alert('EmailManager non caricato. Ricarica la pagina.', 'Errore', '❌');
-      return;
-    }
-    
     // Mostra modal di selezione
     const options = await showExportOptionsModal('Email');
     if (!options) return; // Utente ha annullato

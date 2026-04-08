@@ -1,5 +1,9 @@
 // Translator - Gestione traduzione articoli completi
-class Translator {
+import { APIClient } from './api-client.js';
+import { PromptRegistry } from './prompt-registry.js';
+import { InputSanitizer } from './input-sanitizer.js';
+
+export class Translator {
   static async translateArticle(article, targetLanguage, provider, apiKey, contentType = null) {
     const detectedType = contentType || APIClient.detectContentType(article);
     const systemPrompt = PromptRegistry.getTranslationSystemPrompt(provider, detectedType);

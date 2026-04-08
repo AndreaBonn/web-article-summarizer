@@ -1,4 +1,6 @@
 // Content Script - Esegue nell'ambito della pagina web
+import { ContentExtractor } from './utils/content-extractor.js';
+
 let paragraphMap = new Map();
 let extractedArticle = null;
 

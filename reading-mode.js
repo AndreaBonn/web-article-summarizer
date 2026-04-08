@@ -1,59 +1,46 @@
 // Reading Mode - Side-by-Side View
-// Controller: variabili globali, init, caricamento dati, event listeners, theme, resize
-// Modules loaded before this file: src/reading-mode/ (display, pdf, features, export, voice)
+// Controller: init, caricamento dati, event listeners, theme, resize
 
-let currentData = null;
-let syncScroll = true;
-let isResizing = false;
-let voiceController = null;
+import { state, elements, initElements } from './src/reading-mode/state.js';
+import { HtmlSanitizer } from './utils/html-sanitizer.js';
+import { VoiceController } from './utils/voice-controller.js';
 
-// Elements
-const elements = {
-  backBtn: document.getElementById('backBtn'),
-  themeToggleBtn: document.getElementById('themeToggleBtn'),
-  copyBtn: document.getElementById('copyBtn'),
-  exportBtn: document.getElementById('exportBtn'),
-  articleContent: document.getElementById('articleContent'),
-  summaryContent: document.getElementById('summaryContent'),
-  articleWordCount: document.getElementById('articleWordCount'),
-  articleReadTime: document.getElementById('articleReadTime'),
-  summaryProvider: document.getElementById('summaryProvider'),
-  summaryLanguage: document.getElementById('summaryLanguage'),
-  divider: document.getElementById('divider'),
-  // Article views
-  articleIframe: document.getElementById('articleIframe'),
-  articleText: document.getElementById('articleText'),
-  viewIframeBtn: document.getElementById('viewIframeBtn'),
-  viewTextBtn: document.getElementById('viewTextBtn'),
-  // Tab contents
-  summaryTabContent: document.getElementById('summaryTabContent'),
-  keypointsTabContent: document.getElementById('keypointsTabContent'),
-  translationTabContent: document.getElementById('translationTabContent'),
-  citationsTabContent: document.getElementById('citationsTabContent'),
-  qaTabContent: document.getElementById('qaTabContent'),
-  // Buttons
-  translateBtn: document.getElementById('translateBtn'),
-  extractCitationsBtn: document.getElementById('extractCitationsBtn'),
-  qaAskBtn: document.getElementById('qaAskBtn'),
-  qaInput: document.getElementById('qaInput'),
-  qaHistory: document.getElementById('qaHistory'),
-  // Voice controls
-  ttsPlayBtn: document.getElementById('ttsPlayBtn'),
-  ttsPauseBtn: document.getElementById('ttsPauseBtn'),
-  ttsStopBtn: document.getElementById('ttsStopBtn'),
-  qaVoiceBtn: document.getElementById('qaVoiceBtn'),
-  // Font size controls
-  fontIncreaseBtn: document.getElementById('fontIncreaseBtn'),
-  fontDecreaseBtn: document.getElementById('fontDecreaseBtn'),
-  fontSizeLabel: document.getElementById('fontSizeLabel')
-};
+import {
+  displayContent,
+  switchArticleView,
+  syncScrollPosition,
+  switchSummaryTab,
+  showError,
+} from './src/reading-mode/display.js';
+
+import { copyAll, exportToPDF } from './src/reading-mode/export.js';
+
+import {
+  translateArticle,
+  extractCitations,
+  askQuestion,
+} from './src/reading-mode/features.js';
+
+import {
+  setupVoiceEventListeners,
+  handleTTSPlay,
+  handleTTSPause,
+  handleTTSStop,
+  handleVoiceInput,
+  loadFontSize,
+  increaseFontSize,
+  decreaseFontSize,
+} from './src/reading-mode/voice.js';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+  // Populate DOM element references
+  initElements();
+
   try {
     // Initialize voice controller
-    voiceController = new VoiceController();
-    await voiceController.initialize();
+    state.voiceController = new VoiceController();
+    await state.voiceController.initialize();
 
     // Load data from URL params or storage
     await loadData();
@@ -96,11 +83,11 @@ async function loadData() {
     if (source === 'pdf' && typeof chrome !== 'undefined' && chrome.storage) {
       const result = await chrome.storage.local.get(['pdfReadingMode']);
       if (result.pdfReadingMode) {
-        currentData = result.pdfReadingMode;
-        currentData.isPDF = true;
+        state.currentData = result.pdfReadingMode;
+        state.currentData.isPDF = true;
         // Clean up after loading
         await chrome.storage.local.remove(['pdfReadingMode']);
-        console.log('📄 Dati PDF caricati:', currentData);
+        console.log('📄 Dati PDF caricati:', state.currentData);
         return;
       }
     }
@@ -109,18 +96,18 @@ async function loadData() {
       // Load from history using chrome.storage (use summaryHistory)
       const result = await chrome.storage.local.get(['summaryHistory']);
       const history = result.summaryHistory || [];
-      currentData = history.find(item => item.id === parseInt(historyId));
+      state.currentData = history.find(item => item.id === parseInt(historyId));
 
-      if (!currentData) {
+      if (!state.currentData) {
         throw new Error('Riassunto non trovato nella cronologia');
       }
 
-      console.log('📖 Dati caricati dalla cronologia:', currentData);
+      console.log('📖 Dati caricati dalla cronologia:', state.currentData);
     } else if (typeof chrome !== 'undefined' && chrome.storage) {
       // Try to load from chrome.storage (passed from popup)
       const result = await chrome.storage.local.get(['readingModeData']);
       if (result.readingModeData) {
-        currentData = result.readingModeData;
+        state.currentData = result.readingModeData;
         // Clean up after loading
         await chrome.storage.local.remove(['readingModeData']);
       } else {
@@ -131,7 +118,7 @@ async function loadData() {
       // Fallback to sessionStorage (for test files)
       const sessionData = sessionStorage.getItem('readingModeData');
       if (sessionData) {
-        currentData = JSON.parse(sessionData);
+        state.currentData = JSON.parse(sessionData);
       } else {
         throw new Error('NODATA');
       }
@@ -197,7 +184,7 @@ function setupEventListeners() {
   // Scroll sync
   let scrollTimeout;
   elements.articleContent.addEventListener('scroll', () => {
-    if (!syncScroll) return;
+    if (!state.syncScroll) return;
 
     clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(() => {
@@ -206,7 +193,7 @@ function setupEventListeners() {
   });
 
   elements.summaryContent.addEventListener('scroll', () => {
-    if (!syncScroll) return;
+    if (!state.syncScroll) return;
 
     clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(() => {
@@ -242,12 +229,12 @@ function setupEventListeners() {
 
 // Resizable divider
 function startResize(e) {
-  isResizing = true;
+  state.isResizing = true;
   document.body.style.cursor = 'col-resize';
   document.body.style.userSelect = 'none';
 
   const onMouseMove = (e) => {
-    if (!isResizing) return;
+    if (!state.isResizing) return;
 
     const container = document.querySelector('.reading-container');
     const containerRect = container.getBoundingClientRect();
@@ -261,7 +248,7 @@ function startResize(e) {
   };
 
   const onMouseUp = () => {
-    isResizing = false;
+    state.isResizing = false;
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     document.removeEventListener('mousemove', onMouseMove);
@@ -290,32 +277,6 @@ function toggleTheme() {
 
 function updateThemeIcon(theme) {
   elements.themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
-}
-
-// Helper functions
-function getLanguageName(code) {
-  const languages = {
-    'it': 'Italiano',
-    'en': 'English',
-    'es': 'Español',
-    'fr': 'Français',
-    'de': 'Deutsch'
-  };
-  return languages[code] || code;
-}
-
-function showError(message) {
-  const safeMessage = HtmlSanitizer.escape(message);
-  elements.articleContent.innerHTML = `
-    <div class="loading-state">
-      <p style="color: var(--text-primary);">❌ ${safeMessage}</p>
-    </div>
-  `;
-  elements.summaryContent.innerHTML = `
-    <div class="loading-state">
-      <p style="color: var(--text-primary);">❌ ${safeMessage}</p>
-    </div>
-  `;
 }
 
 function showNoDataMessage() {

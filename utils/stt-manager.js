@@ -3,7 +3,7 @@
  * @module utils/stt-manager
  */
 
-class STTManager {
+export class STTManager {
   constructor() {
     this.recognition = null;
     this.isListening = false;

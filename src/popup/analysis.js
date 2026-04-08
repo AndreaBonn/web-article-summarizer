@@ -1,7 +1,18 @@
 // Popup Analysis Module - Estratto da popup.js
 // Gestisce: analyzeArticle, generateSummary, displayResults, switchTab, copyToClipboard
 
-async function analyzeArticle() {
+import { state, elements, showState, showError } from './state.js';
+import { translationState, citationsState } from './features.js';
+import { HtmlSanitizer } from '../../utils/html-sanitizer.js';
+import { StorageManager } from '../../utils/storage-manager.js';
+import { I18n } from '../../utils/i18n.js';
+import { HistoryManager } from '../../utils/history-manager.js';
+import { ContentClassifier } from '../../utils/content-classifier.js';
+import { CitationExtractor } from '../../utils/citation-extractor.js';
+import { ErrorHandler } from '../../utils/error-handler.js';
+import { addTTSButtons } from './voice.js';
+
+export async function analyzeArticle() {
   showState('loading');
   elements.loadingText.textContent = I18n.t('loading.extract');
 
@@ -21,23 +32,23 @@ async function analyzeArticle() {
       throw new Error(response?.error || 'Errore durante l\'estrazione');
     }
 
-    currentArticle = response.article;
-    currentArticle.url = tab.url;
+    state.currentArticle = response.article;
+    state.currentArticle.url = tab.url;
 
     // Mostra info articolo
-    elements.articleTitle.textContent = currentArticle.title;
-    elements.articleStats.textContent = `${currentArticle.wordCount} ${I18n.t('article.words')} • ${currentArticle.readingTimeMinutes} ${I18n.t('article.readingTime')}`;
+    elements.articleTitle.textContent = state.currentArticle.title;
+    elements.articleStats.textContent = `${state.currentArticle.wordCount} ${I18n.t('article.words')} • ${state.currentArticle.readingTimeMinutes} ${I18n.t('article.readingTime')}`;
 
     // 🔍 Controlla se l'articolo è già stato analizzato in precedenza
     const history = await HistoryManager.getHistory();
-    const previousAnalysis = history.find(entry => entry.article.url === currentArticle.url);
+    const previousAnalysis = history.find(entry => entry.article.url === state.currentArticle.url);
 
     if (previousAnalysis && previousAnalysis.metadata && previousAnalysis.metadata.contentType) {
       // Se l'articolo è già stato analizzato e ha un contentType salvato
       const savedContentType = previousAnalysis.metadata.contentType;
 
       // Imposta il tipo di articolo salvato nei select
-      selectedContentType = savedContentType;
+      state.selectedContentType = savedContentType;
       elements.contentTypeSelect.value = savedContentType;
       elements.contentTypeSelectReady.value = savedContentType;
 
@@ -57,21 +68,21 @@ async function analyzeArticle() {
   }
 }
 
-async function generateSummary() {
-  if (!currentArticle) {
+export async function generateSummary() {
+  if (!state.currentArticle) {
     await ErrorHandler.showError(new Error('Nessun articolo estratto'), 'Generazione riassunto');
     return;
   }
 
   showState('loading');
-  progressTracker.start();
+  state.progressTracker.start();
 
   try {
     const settings = await StorageManager.getSettings();
     const provider = elements.providerSelect.value;
 
     // Aggiungi la lingua selezionata alle impostazioni
-    settings.outputLanguage = selectedLanguage;
+    settings.outputLanguage = state.selectedLanguage;
 
     // Aggiungi la lunghezza del riassunto selezionata
     const summaryLengthSelect = document.getElementById('summaryLengthSelect');
@@ -80,26 +91,26 @@ async function generateSummary() {
     }
 
     // STEP 1: Classificazione del tipo di contenuto
-    progressTracker.setStep('classify');
-    let finalContentType = selectedContentType;
+    state.progressTracker.setStep('classify');
+    let finalContentType = state.selectedContentType;
 
-    console.log('🎯 selectedContentType:', selectedContentType);
+    console.log('🎯 selectedContentType:', state.selectedContentType);
 
-    if (selectedContentType === 'auto') {
+    if (state.selectedContentType === 'auto') {
       console.log('🔄 Avvio classificazione automatica...');
-      progressTracker.setStep('classify', '🔍 Analisi contenuto con AI...');
+      state.progressTracker.setStep('classify', '🔍 Analisi contenuto con AI...');
 
-      console.log('📋 currentArticle:', currentArticle);
+      console.log('📋 currentArticle:', state.currentArticle);
 
       try {
-        const classification = await ContentClassifier.classifyArticle(currentArticle, 'auto');
+        const classification = await ContentClassifier.classifyArticle(state.currentArticle, 'auto');
         finalContentType = classification.category;
 
         console.log('✅ Classificazione completata:', classification);
 
         // Mostra la categoria rilevata
         const categoryLabel = ContentClassifier.getCategoryLabel(finalContentType);
-        progressTracker.setStep('classify', `✓ Rilevato: ${categoryLabel}`);
+        state.progressTracker.setStep('classify', `✓ Rilevato: ${categoryLabel}`);
         await new Promise(resolve => setTimeout(resolve, 800));
       } catch (error) {
         console.error('❌ Errore classificazione:', error);
@@ -107,18 +118,18 @@ async function generateSummary() {
         finalContentType = 'general'; // Fallback
       }
     } else {
-      console.log('👤 Tipo già impostato (manuale o da cronologia):', selectedContentType);
-      progressTracker.setStep('classify', '✓ Tipo già impostato');
+      console.log('👤 Tipo già impostato (manuale o da cronologia):', state.selectedContentType);
+      state.progressTracker.setStep('classify', '✓ Tipo già impostato');
       await new Promise(resolve => setTimeout(resolve, 300));
     }
 
     // STEP 2: Generazione riassunto
-    progressTracker.setStep('generate');
+    state.progressTracker.setStep('generate');
     settings.contentType = finalContentType;
 
     const response = await chrome.runtime.sendMessage({
       action: 'generateSummary',
-      article: currentArticle,
+      article: state.currentArticle,
       provider: provider,
       settings: settings
     });
@@ -127,30 +138,30 @@ async function generateSummary() {
       throw new Error(response.error);
     }
 
-    currentResults = response.result;
+    state.currentResults = response.result;
 
     // STEP 3: Punti chiave (già inclusi, ma mostriamo lo step)
-    progressTracker.setStep('keypoints');
+    state.progressTracker.setStep('keypoints');
     await new Promise(resolve => setTimeout(resolve, 300));
 
     // STEP 4: Salvataggio
-    progressTracker.setStep('save');
+    state.progressTracker.setStep('save');
 
-    if (selectedContentType === 'auto') {
-      currentResults.detectedContentType = finalContentType;
-      currentResults.contentTypeMethod = 'auto';
+    if (state.selectedContentType === 'auto') {
+      state.currentResults.detectedContentType = finalContentType;
+      state.currentResults.contentTypeMethod = 'auto';
     } else {
-      currentResults.detectedContentType = selectedContentType;
-      currentResults.contentTypeMethod = 'manual';
+      state.currentResults.detectedContentType = state.selectedContentType;
+      state.currentResults.contentTypeMethod = 'manual';
     }
 
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    progressTracker.complete();
+    state.progressTracker.complete();
     displayResults();
 
   } catch (error) {
-    progressTracker.error(error.message);
+    state.progressTracker.error(error.message);
     // 🆕 Usa ErrorHandler per gestione errori migliorata
     await ErrorHandler.showError(error, 'Generazione riassunto');
     setTimeout(() => {
@@ -159,17 +170,17 @@ async function generateSummary() {
   }
 }
 
-async function displayResults() {
+export async function displayResults() {
   // Mostra riassunto (contenuto AI sanitizzato)
-  let summaryHtml = `<p>${HtmlSanitizer.escape(currentResults.summary)}</p>`;
-  if (currentResults.fromCache) {
+  let summaryHtml = `<p>${HtmlSanitizer.escape(state.currentResults.summary)}</p>`;
+  if (state.currentResults.fromCache) {
     summaryHtml = `<span class="cache-badge">Da cache</span>` + summaryHtml;
   }
   elements.summaryContent.innerHTML = summaryHtml;
 
   // Mostra punti chiave
   let keypointsHtml = '';
-  currentResults.keyPoints.forEach((point, index) => {
+  state.currentResults.keyPoints.forEach((point, index) => {
     keypointsHtml += `
       <div class="keypoint" data-paragraph="${HtmlSanitizer.escape(String(point.paragraphs))}">
         <div class="keypoint-header">
@@ -198,16 +209,16 @@ async function displayResults() {
   try {
     const metadata = {
       provider: elements.providerSelect.value,
-      language: selectedLanguage,
-      contentType: currentResults.detectedContentType || selectedContentType,
-      contentTypeMethod: currentResults.contentTypeMethod || 'manual',
-      fromCache: currentResults.fromCache || false
+      language: state.selectedLanguage,
+      contentType: state.currentResults.detectedContentType || state.selectedContentType,
+      contentTypeMethod: state.currentResults.contentTypeMethod || 'manual',
+      fromCache: state.currentResults.fromCache || false
     };
 
     await HistoryManager.saveSummary(
-      currentArticle,
-      currentResults.summary,
-      currentResults.keyPoints,
+      state.currentArticle,
+      state.currentResults.summary,
+      state.currentResults.keyPoints,
       metadata
     );
   } catch (error) {
@@ -222,7 +233,7 @@ async function displayResults() {
   }, 100);
 }
 
-function switchTab(tabName) {
+export function switchTab(tabName) {
   // Aggiorna tab attivi
   document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.remove('active');
@@ -247,37 +258,37 @@ function switchTab(tabName) {
   }
 }
 
-async function copyToClipboard() {
-  if (!currentResults) return;
+export async function copyToClipboard() {
+  if (!state.currentResults) return;
 
-  let text = `RIASSUNTO:\n${currentResults.summary}\n\n`;
+  let text = `RIASSUNTO:\n${state.currentResults.summary}\n\n`;
   text += `PUNTI CHIAVE:\n`;
-  currentResults.keyPoints.forEach((point, index) => {
+  state.currentResults.keyPoints.forEach((point, index) => {
     text += `${index + 1}. ${point.title} (§${point.paragraphs})\n   ${point.description}\n\n`;
   });
 
   // Aggiungi traduzione se presente
-  if (currentTranslation) {
+  if (translationState.value) {
     text += `\n${'='.repeat(50)}\n\n`;
-    text += `TRADUZIONE:\n${currentTranslation}\n`;
+    text += `TRADUZIONE:\n${translationState.value}\n`;
   }
 
   // Aggiungi Q&A se presenti
-  if (currentQA && currentQA.length > 0) {
+  if (state.currentQA && state.currentQA.length > 0) {
     text += `\n${'='.repeat(50)}\n\n`;
     text += `DOMANDE E RISPOSTE:\n\n`;
-    currentQA.forEach((qa, index) => {
+    state.currentQA.forEach((qa, index) => {
       text += `Q${index + 1}: ${qa.question}\n`;
       text += `R${index + 1}: ${qa.answer}\n\n`;
     });
   }
 
   // Aggiungi citazioni se presenti
-  if (currentCitations && currentCitations.citations && currentCitations.citations.length > 0) {
+  if (citationsState.value && citationsState.value.citations && citationsState.value.citations.length > 0) {
     text += `\n${'='.repeat(50)}\n\n`;
     text += `CITAZIONI E BIBLIOGRAFIA:\n\n`;
     const style = document.getElementById('citationStyleSelect')?.value || 'apa';
-    text += CitationExtractor.generateBibliography(currentArticle, currentCitations.citations, style);
+    text += CitationExtractor.generateBibliography(state.currentArticle, citationsState.value.citations, style);
   }
 
   try {

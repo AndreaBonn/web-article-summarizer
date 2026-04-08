@@ -1,7 +1,7 @@
 // Search Optimizer - Ottimizzazione ricerca incrementale
 // Riduce il carico di lavoro per ricerche successive
 
-class SearchOptimizer {
+export class SearchOptimizer {
   constructor() {
     this.cache = new Map();
     this.lastQuery = '';

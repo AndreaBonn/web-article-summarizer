@@ -1,5 +1,8 @@
 // Content Classifier - Sistema di riconoscimento automatico del tipo di articolo tramite AI
-class ContentClassifier {
+import { StorageManager } from './storage-manager.js';
+import { APIClient } from './api-client.js';
+
+export class ContentClassifier {
 
   /**
    * Classifica un articolo

@@ -1,5 +1,5 @@
 // PDFCacheManager - Gestione cache e cronologia PDF
-class PDFCacheManager {
+export class PDFCacheManager {
   constructor() {
     this.STORAGE_KEY = 'pdf_analysis_history';
     this.MAX_ENTRIES = 50;

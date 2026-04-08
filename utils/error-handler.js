@@ -1,5 +1,7 @@
 // Error Handler - Gestione centralizzata degli errori con feedback utente
-class ErrorHandler {
+import { Modal } from './modal.js';
+
+export class ErrorHandler {
   /**
    * Mostra un errore all'utente con feedback visivo
    */

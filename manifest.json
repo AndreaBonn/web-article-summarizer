@@ -16,7 +16,8 @@
     "https://generativelanguage.googleapis.com/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "popup.html",
@@ -30,7 +31,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["lib/Readability.js", "utils/content-extractor.js", "content.js"],
+      "js": ["content.js"],
       "run_at": "document_idle"
     }
   ],

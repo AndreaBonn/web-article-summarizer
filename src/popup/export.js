@@ -1,9 +1,18 @@
 // Popup Export Module - Estratto da popup.js
 // Gestisce: exportToPDF, showExportOptionsModal, exportToMarkdown, showMarkdownExportModal, openEmailModal
 
+import { state, elements, showError } from './state.js';
+import { translationState, citationsState } from './features.js';
+import { StorageManager } from '../../utils/storage-manager.js';
+import { I18n } from '../../utils/i18n.js';
+import { PDFExporter } from '../../utils/pdf-exporter.js';
+import { MarkdownExporter } from '../../utils/markdown-exporter.js';
+import { EmailManager } from '../../utils/email-manager.js';
+import { Modal } from '../../utils/modal.js';
+
 // Export to PDF
-async function exportToPDF() {
-  if (!currentArticle || !currentResults) {
+export async function exportToPDF() {
+  if (!state.currentArticle || !state.currentResults) {
     showError('Nessun riassunto da esportare');
     return;
   }
@@ -12,7 +21,7 @@ async function exportToPDF() {
   showExportOptionsModal();
 }
 
-async function showExportOptionsModal() {
+export async function showExportOptionsModal() {
   const modal = document.getElementById('exportOptionsModal');
   const translationOption = document.getElementById('pdfTranslationOption');
   const qaOption = document.getElementById('pdfQAOption');
@@ -22,7 +31,7 @@ async function showExportOptionsModal() {
   const citationsCheckbox = document.getElementById('pdfIncludeCitations');
 
   // Gestisci disponibilità traduzione
-  if (currentTranslation) {
+  if (translationState.value) {
     translationOption.classList.remove('disabled');
     translationCheckbox.disabled = false;
     translationCheckbox.checked = true;
@@ -33,7 +42,7 @@ async function showExportOptionsModal() {
   }
 
   // Gestisci disponibilità Q&A
-  if (currentQA && currentQA.length > 0) {
+  if (state.currentQA && state.currentQA.length > 0) {
     qaOption.classList.remove('disabled');
     qaCheckbox.disabled = false;
     qaCheckbox.checked = true;
@@ -44,7 +53,7 @@ async function showExportOptionsModal() {
   }
 
   // Gestisci disponibilità Citazioni
-  if (currentCitations && currentCitations.citations && currentCitations.citations.length > 0) {
+  if (citationsState.value && citationsState.value.citations && citationsState.value.citations.length > 0) {
     citationsOption.classList.remove('disabled');
     citationsCheckbox.disabled = false;
     citationsCheckbox.checked = true;
@@ -62,9 +71,9 @@ async function showExportOptionsModal() {
     const options = {
       includeSummary: document.getElementById('pdfIncludeSummary').checked,
       includeKeypoints: document.getElementById('pdfIncludeKeypoints').checked,
-      includeTranslation: document.getElementById('pdfIncludeTranslation').checked && currentTranslation,
-      includeQA: document.getElementById('pdfIncludeQA').checked && currentQA && currentQA.length > 0,
-      includeCitations: document.getElementById('pdfIncludeCitations').checked && currentCitations && currentCitations.citations && currentCitations.citations.length > 0
+      includeTranslation: document.getElementById('pdfIncludeTranslation').checked && translationState.value,
+      includeQA: document.getElementById('pdfIncludeQA').checked && state.currentQA && state.currentQA.length > 0,
+      includeCitations: document.getElementById('pdfIncludeCitations').checked && citationsState.value && citationsState.value.citations && citationsState.value.citations.length > 0
     };
 
     // Verifica che almeno una opzione sia selezionata
@@ -79,18 +88,18 @@ async function showExportOptionsModal() {
       const settings = await StorageManager.getSettings();
       const metadata = {
         provider: elements.providerSelect.value,
-        language: selectedLanguage,
-        contentType: selectedContentType !== 'auto' ? selectedContentType : 'auto'
+        language: state.selectedLanguage,
+        contentType: state.selectedContentType !== 'auto' ? state.selectedContentType : 'auto'
       };
 
       await PDFExporter.exportToPDF(
-        currentArticle,
-        options.includeSummary ? currentResults.summary : null,
-        options.includeKeypoints ? currentResults.keyPoints : null,
+        state.currentArticle,
+        options.includeSummary ? state.currentResults.summary : null,
+        options.includeKeypoints ? state.currentResults.keyPoints : null,
         metadata,
-        options.includeTranslation ? currentTranslation : null,
-        options.includeQA ? currentQA : null,
-        options.includeCitations ? currentCitations : null
+        options.includeTranslation ? translationState.value : null,
+        options.includeQA ? state.currentQA : null,
+        options.includeCitations ? citationsState.value : null
       );
 
       // Visual feedback
@@ -134,8 +143,8 @@ async function showExportOptionsModal() {
 }
 
 // Export to Markdown
-async function exportToMarkdown() {
-  if (!currentArticle || !currentResults) {
+export async function exportToMarkdown() {
+  if (!state.currentArticle || !state.currentResults) {
     showError('Nessun riassunto da esportare');
     return;
   }
@@ -144,7 +153,7 @@ async function exportToMarkdown() {
   showMarkdownExportModal();
 }
 
-async function showMarkdownExportModal() {
+export async function showMarkdownExportModal() {
   const modal = document.getElementById('exportOptionsModal');
   const translationOption = document.getElementById('pdfTranslationOption');
   const qaOption = document.getElementById('pdfQAOption');
@@ -158,7 +167,7 @@ async function showMarkdownExportModal() {
   modalTitle.textContent = I18n.t('export.markdown');
 
   // Gestisci disponibilità traduzione
-  if (currentTranslation) {
+  if (translationState.value) {
     translationOption.classList.remove('disabled');
     translationCheckbox.disabled = false;
     translationCheckbox.checked = true;
@@ -169,7 +178,7 @@ async function showMarkdownExportModal() {
   }
 
   // Gestisci disponibilità Q&A
-  if (currentQA && currentQA.length > 0) {
+  if (state.currentQA && state.currentQA.length > 0) {
     qaOption.classList.remove('disabled');
     qaCheckbox.disabled = false;
     qaCheckbox.checked = true;
@@ -180,7 +189,7 @@ async function showMarkdownExportModal() {
   }
 
   // Gestisci disponibilità Citazioni
-  if (currentCitations && currentCitations.citations && currentCitations.citations.length > 0) {
+  if (citationsState.value && citationsState.value.citations && citationsState.value.citations.length > 0) {
     citationsOption.classList.remove('disabled');
     citationsCheckbox.disabled = false;
     citationsCheckbox.checked = true;
@@ -198,9 +207,9 @@ async function showMarkdownExportModal() {
     const options = {
       includeSummary: document.getElementById('pdfIncludeSummary').checked,
       includeKeypoints: document.getElementById('pdfIncludeKeypoints').checked,
-      includeTranslation: document.getElementById('pdfIncludeTranslation').checked && currentTranslation,
-      includeQA: document.getElementById('pdfIncludeQA').checked && currentQA && currentQA.length > 0,
-      includeCitations: document.getElementById('pdfIncludeCitations').checked && currentCitations && currentCitations.citations && currentCitations.citations.length > 0
+      includeTranslation: document.getElementById('pdfIncludeTranslation').checked && translationState.value,
+      includeQA: document.getElementById('pdfIncludeQA').checked && state.currentQA && state.currentQA.length > 0,
+      includeCitations: document.getElementById('pdfIncludeCitations').checked && citationsState.value && citationsState.value.citations && citationsState.value.citations.length > 0
     };
 
     // Verifica che almeno una opzione sia selezionata
@@ -216,19 +225,19 @@ async function showMarkdownExportModal() {
       const settings = await StorageManager.getSettings();
       const metadata = {
         provider: elements.providerSelect.value,
-        language: selectedLanguage,
-        contentType: selectedContentType !== 'auto' ? selectedContentType : 'auto'
+        language: state.selectedLanguage,
+        contentType: state.selectedContentType !== 'auto' ? state.selectedContentType : 'auto'
       };
 
       MarkdownExporter.exportToMarkdown(
-        currentArticle,
-        options.includeSummary ? currentResults.summary : null,
-        options.includeKeypoints ? currentResults.keyPoints : null,
+        state.currentArticle,
+        options.includeSummary ? state.currentResults.summary : null,
+        options.includeKeypoints ? state.currentResults.keyPoints : null,
         metadata,
-        options.includeTranslation ? currentTranslation : null,
-        options.includeQA ? currentQA : null,
+        options.includeTranslation ? translationState.value : null,
+        options.includeQA ? state.currentQA : null,
         null, // notes
-        options.includeCitations ? currentCitations : null
+        options.includeCitations ? citationsState.value : null
       );
 
       // Visual feedback
@@ -273,8 +282,8 @@ async function showMarkdownExportModal() {
 }
 
 // Email System
-async function openEmailModal() {
-  if (!currentArticle || !currentResults) {
+export async function openEmailModal() {
+  if (!state.currentArticle || !state.currentResults) {
     showError('Nessun riassunto da inviare');
     return;
   }
@@ -368,7 +377,7 @@ async function openEmailModal() {
   const citationsCheckbox = document.getElementById('emailIncludeCitations');
 
   // Gestisci disponibilità traduzione
-  if (currentTranslation) {
+  if (translationState.value) {
     translationOption.classList.remove('disabled');
     translationCheckbox.disabled = false;
     translationCheckbox.checked = true;
@@ -379,7 +388,7 @@ async function openEmailModal() {
   }
 
   // Gestisci disponibilità Q&A
-  if (currentQA && currentQA.length > 0) {
+  if (state.currentQA && state.currentQA.length > 0) {
     qaOption.classList.remove('disabled');
     qaCheckbox.disabled = false;
     qaCheckbox.checked = true;
@@ -390,7 +399,7 @@ async function openEmailModal() {
   }
 
   // Gestisci disponibilità Citazioni
-  if (currentCitations && currentCitations.citations && currentCitations.citations.length > 0) {
+  if (citationsState.value && citationsState.value.citations && citationsState.value.citations.length > 0) {
     citationsOption.classList.remove('disabled');
     citationsCheckbox.disabled = false;
     citationsCheckbox.checked = true;
@@ -425,9 +434,9 @@ async function openEmailModal() {
     const options = {
       includeSummary: document.getElementById('emailIncludeSummary').checked,
       includeKeypoints: document.getElementById('emailIncludeKeypoints').checked,
-      includeTranslation: document.getElementById('emailIncludeTranslation').checked && currentTranslation,
-      includeQA: document.getElementById('emailIncludeQA').checked && currentQA && currentQA.length > 0,
-      includeCitations: document.getElementById('emailIncludeCitations').checked && currentCitations && currentCitations.citations && currentCitations.citations.length > 0
+      includeTranslation: document.getElementById('emailIncludeTranslation').checked && translationState.value,
+      includeQA: document.getElementById('emailIncludeQA').checked && state.currentQA && state.currentQA.length > 0,
+      includeCitations: document.getElementById('emailIncludeCitations').checked && citationsState.value && citationsState.value.citations && citationsState.value.citations.length > 0
     };
 
     // Verifica che almeno una opzione sia selezionata
@@ -441,12 +450,12 @@ async function openEmailModal() {
 
     // Genera contenuto email con opzioni
     const { subject, body } = EmailManager.formatEmailContent(
-      currentArticle,
-      options.includeSummary ? currentResults.summary : null,
-      options.includeKeypoints ? currentResults.keyPoints : null,
-      options.includeTranslation ? currentTranslation : null,
-      options.includeQA ? currentQA : null,
-      options.includeCitations ? currentCitations : null
+      state.currentArticle,
+      options.includeSummary ? state.currentResults.summary : null,
+      options.includeKeypoints ? state.currentResults.keyPoints : null,
+      options.includeTranslation ? translationState.value : null,
+      options.includeQA ? state.currentQA : null,
+      options.includeCitations ? citationsState.value : null
     );
 
     // Apri client email

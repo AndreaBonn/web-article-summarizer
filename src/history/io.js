@@ -1,9 +1,14 @@
 // history-io.js — Email, import/export, reading mode
-// Dipende da: currentEntry (globals in history.js)
+
+import { state } from './state.js';
+import { StorageManager } from '../../utils/storage-manager.js';
+import { HistoryManager } from '../../utils/history-manager.js';
+import { EmailManager } from '../../utils/email-manager.js';
+import { Modal } from '../../utils/modal.js';
 
 // Email System
-async function sendCurrentEmail() {
-  if (!currentEntry) return;
+export async function sendCurrentEmail() {
+  if (!state.currentEntry) return;
 
   const modal = document.getElementById('emailModal');
   const emailInput = document.getElementById('emailInput');
@@ -92,7 +97,7 @@ async function sendCurrentEmail() {
   const qaCheckbox = document.getElementById('emailIncludeQA');
 
   // Gestisci disponibilità traduzione
-  if (currentEntry.translation) {
+  if (state.currentEntry.translation) {
     translationOption.classList.remove('disabled');
     translationCheckbox.disabled = false;
     translationCheckbox.checked = true;
@@ -103,7 +108,7 @@ async function sendCurrentEmail() {
   }
 
   // Gestisci disponibilità Q&A
-  if (currentEntry.qa && currentEntry.qa.length > 0) {
+  if (state.currentEntry.qa && state.currentEntry.qa.length > 0) {
     qaOption.classList.remove('disabled');
     qaCheckbox.disabled = false;
     qaCheckbox.checked = true;
@@ -138,8 +143,8 @@ async function sendCurrentEmail() {
     const options = {
       includeSummary: document.getElementById('emailIncludeSummary').checked,
       includeKeypoints: document.getElementById('emailIncludeKeypoints').checked,
-      includeTranslation: document.getElementById('emailIncludeTranslation').checked && currentEntry.translation,
-      includeQA: document.getElementById('emailIncludeQA').checked && currentEntry.qa && currentEntry.qa.length > 0
+      includeTranslation: document.getElementById('emailIncludeTranslation').checked && state.currentEntry.translation,
+      includeQA: document.getElementById('emailIncludeQA').checked && state.currentEntry.qa && state.currentEntry.qa.length > 0
     };
 
     // Verifica che almeno una opzione sia selezionata
@@ -153,11 +158,11 @@ async function sendCurrentEmail() {
 
     // Genera contenuto email con opzioni
     const { subject, body } = EmailManager.formatEmailContent(
-      currentEntry.article,
-      options.includeSummary ? currentEntry.summary : null,
-      options.includeKeypoints ? currentEntry.keyPoints : null,
-      options.includeTranslation && currentEntry.translation ? currentEntry.translation.text : null,
-      options.includeQA ? currentEntry.qa : null
+      state.currentEntry.article,
+      options.includeSummary ? state.currentEntry.summary : null,
+      options.includeKeypoints ? state.currentEntry.keyPoints : null,
+      options.includeTranslation && state.currentEntry.translation ? state.currentEntry.translation.text : null,
+      options.includeQA ? state.currentEntry.qa : null
     );
 
     // Apri client email
@@ -214,18 +219,18 @@ async function sendCurrentEmail() {
 
 
 // Open Reading Mode from History
-async function openReadingModeFromHistory() {
-  if (!currentEntry) return;
+export async function openReadingModeFromHistory() {
+  if (!state.currentEntry) return;
 
   // Prepare data for reading mode (include all available data)
   const readingData = {
-    article: currentEntry.article,
-    summary: currentEntry.summary,
-    keyPoints: currentEntry.keyPoints,
-    translation: currentEntry.translation || null,
-    citations: currentEntry.citations || null,
-    qa: currentEntry.qa || null,
-    metadata: currentEntry.metadata || {}
+    article: state.currentEntry.article,
+    summary: state.currentEntry.summary,
+    keyPoints: state.currentEntry.keyPoints,
+    translation: state.currentEntry.translation || null,
+    citations: state.currentEntry.citations || null,
+    qa: state.currentEntry.qa || null,
+    metadata: state.currentEntry.metadata || {}
   };
 
   console.log('📖 Opening reading mode with data:', readingData);
@@ -243,7 +248,7 @@ async function openReadingModeFromHistory() {
 /**
  * Scarica l'intera cronologia in formato JSON
  */
-async function downloadHistory() {
+export async function downloadHistory() {
   try {
     // Mostra loading
     const btn = document.getElementById('downloadHistoryBtn');
@@ -338,7 +343,7 @@ async function downloadHistory() {
 /**
  * Importa cronologia da file JSON
  */
-async function importHistory(event) {
+export async function importHistory(event) {
   const file = event.target.files[0];
   if (!file) return;
 
@@ -421,8 +426,8 @@ async function importHistory(event) {
     }
 
     // Ricarica cronologia
-    await loadHistory();
-    await loadMultiAnalysisHistory();
+    await state.loadHistory();
+    await state.loadMultiAnalysisHistory();
 
     // Ripristina bottone
     btn.textContent = '✓ Importato!';

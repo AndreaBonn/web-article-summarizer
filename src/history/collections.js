@@ -1,7 +1,11 @@
 // history-collections.js — PDF e Multi-analysis history
-// Dipende da: HistoryManager, Modal, HtmlSanitizer, I18n (globals)
 
-async function loadPDFHistory() {
+import { HtmlSanitizer } from '../../utils/html-sanitizer.js';
+import { I18n } from '../../utils/i18n.js';
+import { HistoryManager } from '../../utils/history-manager.js';
+import { Modal } from '../../utils/modal.js';
+
+export async function loadPDFHistory() {
   console.log('Caricamento cronologia PDF...');
   const history = await HistoryManager.getPDFHistory();
   console.log('Trovati', history.length, 'PDF analizzati');
@@ -157,7 +161,7 @@ async function deletePDF(id) {
   await loadPDFHistory();
 }
 
-async function loadMultiAnalysisHistory() {
+export async function loadMultiAnalysisHistory() {
   console.log('Caricamento cronologia multi-analisi...');
   const history = await HistoryManager.getMultiAnalysisHistory();
   console.log('Trovate', history.length, 'analisi Multi Articolo');

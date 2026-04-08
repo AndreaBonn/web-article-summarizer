@@ -1,17 +1,20 @@
 // Reading Mode - Display Module
 // Gestisce la visualizzazione dei contenuti (articoli, PDF, tab, highlight)
 
+import { state, elements } from './state.js';
+import { HtmlSanitizer } from '../../utils/html-sanitizer.js';
+
 // Display content
-function displayContent() {
-  if (!currentData) return;
+export function displayContent() {
+  if (!state.currentData) return;
 
   // Check if PDF
-  if (currentData.isPDF) {
+  if (state.currentData.isPDF) {
     displayPDFContent();
     return;
   }
 
-  const { article, summary, keyPoints, metadata } = currentData;
+  const { article, summary, keyPoints, metadata } = state.currentData;
 
   // Safety check for article
   if (!article) {
@@ -36,27 +39,27 @@ function displayContent() {
   displayKeypointsInTab(keyPoints);
 
   // Check if translation exists
-  if (currentData.translation) {
+  if (state.currentData.translation) {
     elements.translationTabContent.innerHTML = `
       <div class="translation-content">
         <h3>${HtmlSanitizer.escape(article.title)}</h3>
-        <div class="translation-text">${HtmlSanitizer.escape(currentData.translation)}</div>
+        <div class="translation-text">${HtmlSanitizer.escape(state.currentData.translation)}</div>
       </div>
     `;
   }
 
   // Check if citations exist
-  if (currentData.citations) {
-    console.log('📚 Struttura citazioni:', currentData.citations);
+  if (state.currentData.citations) {
+    console.log('📚 Struttura citazioni:', state.currentData.citations);
 
     // Handle both structures: direct array or nested object
-    const citationsList = currentData.citations.citations || currentData.citations;
+    const citationsList = state.currentData.citations.citations || state.currentData.citations;
 
     if (citationsList && citationsList.length > 0) {
       console.log('📚 Lista citazioni:', citationsList);
       console.log('📚 Prima citazione:', citationsList[0]);
 
-      const totalCitations = currentData.citations.total_citations || currentData.citations.totalCount || citationsList.length;
+      const totalCitations = state.currentData.citations.total_citations || state.currentData.citations.totalCount || citationsList.length;
       let html = `<div class="citations-content"><h3>📚 ${totalCitations} Citazioni Trovate</h3>`;
 
       citationsList.forEach((citation, index) => {
@@ -128,8 +131,8 @@ function displayContent() {
   }
 
   // Check if Q&A exists
-  if (currentData.qa && currentData.qa.length > 0) {
-    currentData.qa.forEach(item => {
+  if (state.currentData.qa && state.currentData.qa.length > 0) {
+    state.currentData.qa.forEach(item => {
       const qaItem = document.createElement('div');
       qaItem.className = 'qa-item';
       qaItem.innerHTML = `
@@ -228,7 +231,7 @@ function highlightParagraph(paragraphNumber) {
 }
 
 // Sync scroll position
-function syncScrollPosition(source) {
+export function syncScrollPosition(source) {
   const sourceEl = source === 'article' ? elements.articleContent : elements.summaryContent;
   const targetEl = source === 'article' ? elements.summaryContent : elements.articleContent;
 
@@ -239,7 +242,7 @@ function syncScrollPosition(source) {
 }
 
 // Switch summary tab
-function switchSummaryTab(tabName) {
+export function switchSummaryTab(tabName) {
   // Update tab buttons
   document.querySelectorAll('.summary-tab').forEach(tab => {
     tab.classList.remove('active');
@@ -262,7 +265,7 @@ function switchSummaryTab(tabName) {
 // Display summary in tab
 function displaySummaryInTab(summary) {
   // Controlla se il PDF è dalla cache
-  const isFromCache = currentData?.isFromCache || currentData?.metadata?.fromCache || false;
+  const isFromCache = state.currentData?.isFromCache || state.currentData?.metadata?.fromCache || false;
   const cacheBadge = isFromCache ? '<span class="cache-badge" style="background: #4caf50; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 12px; display: inline-block;">⚡ Da Cache!</span>' : '';
 
   elements.summaryTabContent.innerHTML = `
@@ -307,7 +310,7 @@ function displayKeypointsInTab(keyPoints) {
 }
 
 // Switch article view (iframe vs text)
-function switchArticleView(view) {
+export function switchArticleView(view) {
   if (view === 'iframe') {
     // Hide error message if present
     const errorDiv = document.querySelector('.iframe-error');
@@ -322,7 +325,7 @@ function switchArticleView(view) {
     elements.viewTextBtn.classList.remove('active');
 
     // Disable sync scroll (iframe can't sync)
-    syncScroll = false;
+    state.syncScroll = false;
 
   } else {
     // Show text, hide iframe and error
@@ -337,22 +340,22 @@ function switchArticleView(view) {
     elements.viewTextBtn.classList.add('active');
 
     // Enable sync scroll
-    syncScroll = true;
+    state.syncScroll = true;
   }
 }
 
 // Display PDF content
-function displayPDFContent() {
-  console.log('📄 Rendering PDF content:', currentData);
+export function displayPDFContent() {
+  console.log('📄 Rendering PDF content:', state.currentData);
 
   // Update header
   document.querySelector('.reading-header h1').textContent = '📄 Analisi PDF';
 
   // Update metadata - gestisci diverse strutture dati
-  const pageCount = currentData.pageCount || currentData.pdf?.pages || 0;
-  const filename = currentData.filename || currentData.pdf?.name || 'PDF';
-  const provider = currentData.apiProvider || currentData.metadata?.provider || 'AI';
-  const language = currentData.metadata?.language || 'it';
+  const pageCount = state.currentData.pageCount || state.currentData.pdf?.pages || 0;
+  const filename = state.currentData.filename || state.currentData.pdf?.name || 'PDF';
+  const provider = state.currentData.apiProvider || state.currentData.metadata?.provider || 'AI';
+  const language = state.currentData.metadata?.language || 'it';
 
   elements.articleWordCount.textContent = `${pageCount} pagine`;
   elements.articleReadTime.textContent = filename;
@@ -368,16 +371,16 @@ function displayPDFContent() {
   if (viewToggle) viewToggle.style.display = 'none';
 
   // Show extracted text - gestisci diverse strutture dati
-  const extractedText = currentData.extractedText || currentData.pdf?.text || '';
+  const extractedText = state.currentData.extractedText || state.currentData.pdf?.text || '';
   displayExtractedText(extractedText);
 
   // Right panel: Show analysis
-  displaySummaryInTab(currentData.summary);
-  displayKeypointsInTab(currentData.keyPoints);
+  displaySummaryInTab(state.currentData.summary);
+  displayKeypointsInTab(state.currentData.keyPoints);
 
   // Show quotes if available
-  if (currentData.quotes && currentData.quotes.length > 0) {
-    displayQuotesInTab(currentData.quotes);
+  if (state.currentData.quotes && state.currentData.quotes.length > 0) {
+    displayQuotesInTab(state.currentData.quotes);
   }
 }
 
@@ -456,4 +459,31 @@ function displayQuotesInTab(quotes) {
   if (citationsTab) {
     citationsTab.innerHTML = html;
   }
+}
+
+// Helper — get language name
+function getLanguageName(code) {
+  const languages = {
+    'it': 'Italiano',
+    'en': 'English',
+    'es': 'Español',
+    'fr': 'Français',
+    'de': 'Deutsch'
+  };
+  return languages[code] || code;
+}
+
+// Show error in both panels
+export function showError(message) {
+  const safeMessage = HtmlSanitizer.escape(message);
+  elements.articleContent.innerHTML = `
+    <div class="loading-state">
+      <p style="color: var(--text-primary);">❌ ${safeMessage}</p>
+    </div>
+  `;
+  elements.summaryContent.innerHTML = `
+    <div class="loading-state">
+      <p style="color: var(--text-primary);">❌ ${safeMessage}</p>
+    </div>
+  `;
 }

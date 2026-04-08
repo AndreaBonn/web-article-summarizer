@@ -3,7 +3,7 @@
  * @module utils/tts-manager
  */
 
-class TTSManager {
+export class TTSManager {
   constructor() {
     this.isSpeaking = false;
     this.isPaused = false;

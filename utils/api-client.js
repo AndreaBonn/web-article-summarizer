@@ -1,5 +1,7 @@
 // API Client - Gestione chiamate ai provider LLM
-class APIClient {
+import { PromptRegistry } from './prompt-registry.js';
+
+export class APIClient {
   static async callAPI(provider, apiKey, article, settings) {
     const prompt = this.buildPrompt(provider, article, settings);
     return await this.generateCompletion(

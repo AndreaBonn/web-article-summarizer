@@ -1,0 +1,22 @@
+{
+  "name": "ai-article-summarizer",
+  "version": "2.2.0",
+  "private": true,
+  "description": "Chrome Extension to summarize web articles using AI (Groq, OpenAI, Claude, Gemini)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.4.0",
+    "vite": "^8.0.7"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "jspdf": "^4.2.1",
+    "lz-string": "^1.5.0",
+    "pdfjs-dist": "^5.6.205"
+  }
+}

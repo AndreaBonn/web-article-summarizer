@@ -1,5 +1,5 @@
 // HTML Sanitizer - Previene XSS sanitizzando contenuto prima dell'inserimento nel DOM
-class HtmlSanitizer {
+export class HtmlSanitizer {
   /**
    * Escapa caratteri HTML pericolosi per prevenire XSS
    */

@@ -1,16 +1,20 @@
 // Reading Mode - Export Module
 // Gestisce copia negli appunti ed esportazione PDF
 
-// Copy all content
-async function copyAll() {
-  if (!currentData) return;
+import { state, elements } from './state.js';
+import { HtmlSanitizer } from '../../utils/html-sanitizer.js';
+import { PDFExporter } from '../../utils/pdf-exporter.js';
 
-  const { article, pdf, summary, keyPoints } = currentData;
+// Copy all content
+export async function copyAll() {
+  if (!state.currentData) return;
+
+  const { article, pdf, summary, keyPoints } = state.currentData;
 
   // Gestisci sia articoli che PDF
-  if (currentData.isPDF || pdf) {
-    let text = `PDF: ${pdf?.name || currentData.filename || 'Documento'}\n`;
-    text += `Pagine: ${pdf?.pages || currentData.pageCount || 'N/A'}\n\n`;
+  if (state.currentData.isPDF || pdf) {
+    let text = `PDF: ${pdf?.name || state.currentData.filename || 'Documento'}\n`;
+    text += `Pagine: ${pdf?.pages || state.currentData.pageCount || 'N/A'}\n\n`;
     text += `${'='.repeat(60)}\n\n`;
     text += `RIASSUNTO:\n${summary}\n\n`;
 
@@ -23,26 +27,26 @@ async function copyAll() {
     }
 
     // Aggiungi traduzione se presente
-    if (currentData.translation) {
+    if (state.currentData.translation) {
       text += `${'='.repeat(60)}\n\n`;
-      text += `TRADUZIONE:\n${currentData.translation.text || currentData.translation}\n\n`;
+      text += `TRADUZIONE:\n${state.currentData.translation.text || state.currentData.translation}\n\n`;
     }
 
     // Aggiungi Q&A se presenti
-    if (currentData.qa && currentData.qa.length > 0) {
+    if (state.currentData.qa && state.currentData.qa.length > 0) {
       text += `${'='.repeat(60)}\n\n`;
       text += `DOMANDE E RISPOSTE:\n\n`;
-      currentData.qa.forEach((qa, index) => {
+      state.currentData.qa.forEach((qa, index) => {
         text += `Q${index + 1}: ${qa.question}\n`;
         text += `R${index + 1}: ${qa.answer}\n\n`;
       });
     }
 
     // Aggiungi citazioni se presenti
-    if (currentData.citations && currentData.citations.citations && currentData.citations.citations.length > 0) {
+    if (state.currentData.citations && state.currentData.citations.citations && state.currentData.citations.citations.length > 0) {
       text += `${'='.repeat(60)}\n\n`;
-      text += `CITAZIONI (${currentData.citations.citations.length}):\n\n`;
-      currentData.citations.citations.forEach((citation, index) => {
+      text += `CITAZIONI (${state.currentData.citations.citations.length}):\n\n`;
+      state.currentData.citations.citations.forEach((citation, index) => {
         text += `[${index + 1}] `;
         if (citation.author) text += `${citation.author} `;
         if (citation.year) text += `(${citation.year}) `;
@@ -54,9 +58,9 @@ async function copyAll() {
     }
 
     // Aggiungi note se presenti
-    if (currentData.notes) {
+    if (state.currentData.notes) {
       text += `${'='.repeat(60)}\n\n`;
-      text += `NOTE PERSONALI:\n${currentData.notes}\n\n`;
+      text += `NOTE PERSONALI:\n${state.currentData.notes}\n\n`;
     }
 
     try {
@@ -89,26 +93,26 @@ async function copyAll() {
   }
 
   // Aggiungi traduzione se presente
-  if (currentData.translation) {
+  if (state.currentData.translation) {
     text += `${'='.repeat(60)}\n\n`;
-    text += `TRADUZIONE:\n${currentData.translation.text || currentData.translation}\n\n`;
+    text += `TRADUZIONE:\n${state.currentData.translation.text || state.currentData.translation}\n\n`;
   }
 
   // Aggiungi Q&A se presenti
-  if (currentData.qa && currentData.qa.length > 0) {
+  if (state.currentData.qa && state.currentData.qa.length > 0) {
     text += `${'='.repeat(60)}\n\n`;
     text += `DOMANDE E RISPOSTE:\n\n`;
-    currentData.qa.forEach((qa, index) => {
+    state.currentData.qa.forEach((qa, index) => {
       text += `Q${index + 1}: ${qa.question}\n`;
       text += `R${index + 1}: ${qa.answer}\n\n`;
     });
   }
 
   // Aggiungi citazioni se presenti
-  if (currentData.citations && currentData.citations.citations && currentData.citations.citations.length > 0) {
+  if (state.currentData.citations && state.currentData.citations.citations && state.currentData.citations.citations.length > 0) {
     text += `${'='.repeat(60)}\n\n`;
-    text += `CITAZIONI (${currentData.citations.citations.length}):\n\n`;
-    currentData.citations.citations.forEach((citation, index) => {
+    text += `CITAZIONI (${state.currentData.citations.citations.length}):\n\n`;
+    state.currentData.citations.citations.forEach((citation, index) => {
       text += `[${index + 1}] `;
       if (citation.author) text += `${citation.author} `;
       if (citation.year) text += `(${citation.year}) `;
@@ -120,9 +124,9 @@ async function copyAll() {
   }
 
   // Aggiungi note se presenti
-  if (currentData.notes) {
+  if (state.currentData.notes) {
     text += `${'='.repeat(60)}\n\n`;
-    text += `NOTE PERSONALI:\n${currentData.notes}\n\n`;
+    text += `NOTE PERSONALI:\n${state.currentData.notes}\n\n`;
   }
 
   try {
@@ -140,8 +144,8 @@ async function copyAll() {
 }
 
 // Export to PDF
-async function exportToPDF() {
-  if (!currentData) {
+export async function exportToPDF() {
+  if (!state.currentData) {
     alert('Nessun dato da esportare');
     return;
   }
@@ -158,19 +162,19 @@ async function exportToPDF() {
     elements.exportBtn.textContent = '⏳ Esportazione...';
     elements.exportBtn.disabled = true;
 
-    const { article, pdf, summary, keyPoints, metadata } = currentData;
+    const { article, pdf, summary, keyPoints, metadata } = state.currentData;
 
     // Gestisci sia articoli che PDF
-    const articleData = currentData.isPDF || pdf ? {
-      title: pdf?.name || currentData.filename || 'Documento PDF',
+    const articleData = state.currentData.isPDF || pdf ? {
+      title: pdf?.name || state.currentData.filename || 'Documento PDF',
       url: 'PDF Document',
-      content: currentData.extractedText || pdf?.text || '',
+      content: state.currentData.extractedText || pdf?.text || '',
       wordCount: 0,
       readingTimeMinutes: 0
     } : article;
 
-    const metadataData = metadata || currentData.metadata || {
-      provider: currentData.apiProvider || 'AI',
+    const metadataData = metadata || state.currentData.metadata || {
+      provider: state.currentData.apiProvider || 'AI',
       language: 'it',
       contentType: 'pdf'
     };
@@ -182,9 +186,9 @@ async function exportToPDF() {
         summary,
         keyPoints,
         metadataData,
-        currentData.translation,
-        currentData.qa,
-        currentData.citations
+        state.currentData.translation,
+        state.currentData.qa,
+        state.currentData.citations
       );
     } else {
       // Fallback: export semplice

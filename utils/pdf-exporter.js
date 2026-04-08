@@ -1,5 +1,5 @@
 // PDF Exporter - Genera PDF ben formattati per riassunti e punti chiave
-class PDFExporter {
+export class PDFExporter {
   static async exportToPDF(article, summary, keyPoints, metadata, translation = null, qaList = null, citations = null) {
     // Verifica che jsPDF sia caricato
     if (!window.jspdf || !window.jspdf.jsPDF) {

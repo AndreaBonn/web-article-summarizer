@@ -1,7 +1,7 @@
 // i18n-extended.js - Sistema di internazionalizzazione COMPLETO
 // Questo file contiene TUTTE le chiavi di traduzione, incluse quelle precedentemente hardcoded
 
-const I18n = {
+export const I18n = {
   currentLanguage: 'it',
   
   translations: {

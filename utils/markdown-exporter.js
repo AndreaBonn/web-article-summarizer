@@ -1,5 +1,5 @@
 // Markdown Exporter - Genera file Markdown ben formattati
-class MarkdownExporter {
+export class MarkdownExporter {
   static exportToMarkdown(article, summary, keyPoints, metadata, translation = null, qaList = null, notes = null, citations = null) {
     let markdown = '';
     

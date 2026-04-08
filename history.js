@@ -1,12 +1,25 @@
 // History Page Script
-let currentHistory = [];
-let currentEntry = null;
-let voiceController = null;
 
-// Lazy Loader e Search Optimizer
-let lazyLoader = null;
-let searchOptimizer = new SearchOptimizer();
-let debouncedSearch = null;
+import { state } from './src/history/state.js';
+import { I18n } from './utils/i18n.js';
+import { StorageManager } from './utils/storage-manager.js';
+import { HistoryManager } from './utils/history-manager.js';
+import { DebounceUtility } from './utils/debounce-utility.js';
+import { SearchOptimizer } from './utils/search-optimizer.js';
+import { HistoryLazyLoader } from './utils/history-lazy-loader.js';
+import { VoiceController } from './utils/voice-controller.js';
+import { Modal } from './utils/modal.js';
+import { openDetail, closeModal, switchModalTab, exportCurrentPdf, exportCurrentMarkdown, copyCurrentSummary, deleteCurrentEntry } from './src/history/detail.js';
+import { loadPDFHistory, loadMultiAnalysisHistory } from './src/history/collections.js';
+import { sendCurrentEmail, openReadingModeFromHistory, downloadHistory, importHistory } from './src/history/io.js';
+import { setupVoiceEventListeners, handleModalTTSPlay, handleModalTTSPause, handleModalTTSStop } from './src/history/voice.js';
+
+// Inizializza SearchOptimizer nello state
+state.searchOptimizer = new SearchOptimizer();
+
+// Registra callbacks sullo state per evitare circular imports tra i moduli
+state.loadHistory = () => loadHistory();
+state.loadMultiAnalysisHistory = () => loadMultiAnalysisHistory();
 
 // Modal System — caricato da utils/modal.js
 
@@ -15,8 +28,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await I18n.init();
 
   // Initialize voice controller
-  voiceController = new VoiceController();
-  await voiceController.initialize();
+  state.voiceController = new VoiceController();
+  await state.voiceController.initialize();
 
   // Setup voice event listeners
   setupVoiceEventListeners();
@@ -52,13 +65,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Crea versione debounced della ricerca con feedback visivo
-  debouncedSearch = DebounceUtility.debounceWithFeedback(
+  state.debouncedSearch = DebounceUtility.debounceWithFeedback(
     handleSearch,
     300, // 300ms di attesa
     document.getElementById('searchInput')
   );
 
-  document.getElementById('searchInput').addEventListener('input', debouncedSearch);
+  document.getElementById('searchInput').addEventListener('input', state.debouncedSearch);
   document.getElementById('searchInTitle').addEventListener('change', () => {
     // Ri-esegui ricerca se c'è un query
     const query = document.getElementById('searchInput').value.trim();
@@ -112,20 +125,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
-async function loadHistory() {
-  currentHistory = await HistoryManager.getHistory();
+export async function loadHistory() {
+  state.currentHistory = await HistoryManager.getHistory();
 
   // Inizializza lazy loader se non esiste
-  if (!lazyLoader) {
+  if (!state.lazyLoader) {
     const listEl = document.getElementById('historyList');
-    lazyLoader = new HistoryLazyLoader(listEl, 20); // 20 items per page
+    state.lazyLoader = new HistoryLazyLoader(listEl, 20); // 20 items per page
 
     // Imposta callbacks
-    lazyLoader.onItemClick = openDetail;
-    lazyLoader.onFavoriteToggle = async (id) => {
+    state.lazyLoader.onItemClick = openDetail;
+    state.lazyLoader.onFavoriteToggle = async (id) => {
       const isFavorite = await HistoryManager.toggleFavorite(id);
       // Aggiorna anche in currentHistory
-      const entry = currentHistory.find(e => e.id === id);
+      const entry = state.currentHistory.find(e => e.id === id);
       if (entry) {
         entry.favorite = isFavorite;
       }
@@ -133,7 +146,7 @@ async function loadHistory() {
     };
   }
 
-  displayHistory(currentHistory);
+  displayHistory(state.currentHistory);
 }
 
 function displayHistory(history) {
@@ -149,12 +162,12 @@ function displayHistory(history) {
   emptyEl.classList.add('hidden');
 
   // Usa lazy loader invece di innerHTML
-  if (!lazyLoader) {
-    lazyLoader = new HistoryLazyLoader(listEl, 20);
-    lazyLoader.onItemClick = openDetail;
-    lazyLoader.onFavoriteToggle = async (id) => {
+  if (!state.lazyLoader) {
+    state.lazyLoader = new HistoryLazyLoader(listEl, 20);
+    state.lazyLoader.onItemClick = openDetail;
+    state.lazyLoader.onFavoriteToggle = async (id) => {
       const isFavorite = await HistoryManager.toggleFavorite(id);
-      const entry = currentHistory.find(e => e.id === id);
+      const entry = state.currentHistory.find(e => e.id === id);
       if (entry) {
         entry.favorite = isFavorite;
       }
@@ -162,15 +175,15 @@ function displayHistory(history) {
     };
   }
 
-  lazyLoader.setItems(history);
+  state.lazyLoader.setItems(history);
 }
 
 async function handleSearch(e) {
   const query = e.target.value.trim();
 
   if (query === '') {
-    searchOptimizer.reset();
-    displayHistory(currentHistory);
+    state.searchOptimizer.reset();
+    displayHistory(state.currentHistory);
     return;
   }
 
@@ -180,7 +193,7 @@ async function handleSearch(e) {
   const searchInContent = document.getElementById('searchInContent').checked;
 
   // Usa search optimizer per ricerca incrementale
-  const filtered = searchOptimizer.search(currentHistory, query, {
+  const filtered = state.searchOptimizer.search(state.currentHistory, query, {
     searchInTitle,
     searchInUrl,
     searchInContent
@@ -195,7 +208,7 @@ async function handleFilter() {
   const contentType = document.getElementById('contentTypeFilter').value;
   const favoriteFilter = document.getElementById('favoriteFilter').value;
 
-  let filtered = currentHistory;
+  let filtered = state.currentHistory;
 
   // Applica filtri standard
   const filters = {};
