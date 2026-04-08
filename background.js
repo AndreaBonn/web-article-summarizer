@@ -1,6 +1,7 @@
 // Background Service Worker - Gestisce chiamate API
 importScripts(
   'utils/storage-manager.js',
+  'utils/prompt-registry.js',
   'utils/api-client.js',
   'utils/api-resilience.js',
   'utils/cache-manager.js',
