@@ -12,56 +12,56 @@ Supporta 4 provider LLM: Groq, OpenAI, Anthropic (Claude), Google Gemini.
 - `npm run build` — Production build → `dist/`
 - Chrome loads from `dist/` (not root)
 
-### Entry Points (root)
-- `manifest.json` — Manifest V3 config (read by CRXJS at build time)
-- `background.js` — Service worker (ES module, `type: "module"` in manifest)
-- `content.js` — Content script (bundled as IIFE by CRXJS)
-- `popup.html` → `popup.js` — Extension popup
-- `reading-mode.html` → `reading-mode.js` — Full-page reading mode
-- `history.html` → `history.js` — History management
-- `options.html` → `options.js` — Settings
-- `multi-analysis.html` → `multi-analysis.js` — Multi-article comparison
-- `pdf-analysis.html` → `pdf-analysis.js` — PDF analysis
+### Project Structure
+```
+├── src/
+│   ├── background/service-worker.js    — Service worker (ES module)
+│   ├── content/content-script.js       — Content script (bundled as IIFE)
+│   ├── pages/                          — Each page = HTML + controller JS + CSS + modules
+│   │   ├── popup/                      — Extension popup (main entry point)
+│   │   ├── reading-mode/               — Full-page reading mode
+│   │   ├── history/                    — History management
+│   │   ├── options/                    — Settings
+│   │   ├── multi-analysis/             — Multi-article comparison
+│   │   └── pdf-analysis/               — PDF analysis
+│   ├── shared/styles/                  — Shared CSS (voice-controls.css)
+│   └── utils/                          — Shared utilities by domain
+│       ├── ai/                         — API client, prompts, classification, citations
+│       ├── storage/                    — Chrome storage, cache, compression, history
+│       ├── export/                     — PDF, Markdown, email export
+│       ├── pdf/                        — PDF parsing and caching
+│       ├── i18n/                       — Internationalization
+│       ├── voice/                      — TTS/STT controllers
+│       ├── security/                   — HTML/input sanitization
+│       └── core/                       — Modal, theme, translator, error handling, etc.
+├── public/
+│   ├── icons/                          — Extension icons and backgrounds
+│   └── workers/                        — PDF.js web worker
+├── manifest.json                       — Manifest V3 config
+├── vite.config.js                      — Build config with path aliases
+└── package.json
+```
 
-### Page Modules (`src/`)
+### Page Structure
 Each complex page has a `state.js` shared state module + focused modules:
-- `src/popup/` — state, analysis, export, features, citations, voice
-- `src/reading-mode/` — state, display, features, export, pdf, voice
-- `src/history/` — state, detail, collections, io, voice
+- `src/pages/popup/` — state, analysis, export, features, citations, voice
+- `src/pages/reading-mode/` — state, display, features, export, pdf, voice
+- `src/pages/history/` — state, detail, collections, io, voice
 
 Modules use ES `import`/`export`. Each page controller is the entry point
 and imports its modules + utils.
 
-### Shared Utilities (`utils/`)
-All utilities use ES module exports.
-- `prompt-registry.js` — Centralized AI prompts (single source of truth)
-- `api-client.js` — LLM API calls (Groq, OpenAI, Anthropic, Gemini)
-- `storage-manager.js` — Chrome storage abstraction
-- `cache-manager.js` — Response caching with content hashing
-- `history-manager.js` — Summary history CRUD
-- `i18n.js` / `i18n-extended.js` — Internationalization (inline dictionaries)
-- `input-sanitizer.js` — Input validation for AI prompts
-- `html-sanitizer.js` — XSS prevention for DOM output
-- `modal.js` — Shared modal component
-- `translator.js` — Article translation (delegates to APIClient)
-- `citation-extractor.js` — Citation extraction via AI
-- `content-classifier.js` — AI-based content type classification
-- `voice-controller.js` / `tts-manager.js` / `stt-manager.js` — Voice I/O
-
 ### Third-Party (npm)
 - `@mozilla/readability` — Article content extraction
 - `jspdf` — PDF export
-- `pdfjs-dist` — PDF parsing (worker in `lib/pdf.worker.min.js`)
+- `pdfjs-dist` — PDF parsing (worker in `public/workers/pdf.worker.min.js`)
 - `lz-string` — Compression for storage
-
-### Legacy (`lib/`)
-- `pdf.worker.min.js` — PDF.js worker (web accessible resource)
 
 ## Key Patterns
 
 ### Module Import Order
 ```
-utils/ (shared) → src/{page}/state.js → src/{page}/*.js (modules) → {page}.js (controller)
+src/utils/{domain}/ → src/pages/{page}/state.js → src/pages/{page}/*.js → src/pages/{page}/{page}.js (controller)
 ```
 The controller is the ES module entry point (`<script type="module">`).
 
@@ -73,16 +73,23 @@ state.currentArticle = article; // Mutate properties, not rebind
 ```
 
 ### Prompt System
-All AI prompts are in `utils/prompt-registry.js`. Four public methods:
+All AI prompts are in `src/utils/ai/prompt-registry.js`. Four public methods:
 - `PromptRegistry.getSummarySystemPrompt(provider, contentType)`
 - `PromptRegistry.getKeyPointsSystemPrompt(provider, contentType)`
 - `PromptRegistry.getTranslationSystemPrompt(provider, contentType)`
 - `PromptRegistry.getCitationSystemPrompt(provider)`
 
 ### API Calls
-All LLM calls go through `APIClient.generateCompletion()`.
+All LLM calls go through `APIClient.generateCompletion()` in `src/utils/ai/api-client.js`.
 Provider-specific methods: `callGroqCompletion`, `callOpenAICompletion`,
 `callAnthropicCompletion`, `callGeminiCompletion`.
+
+### Vite Path Aliases
+```js
+'@utils' → 'src/utils'
+'@pages' → 'src/pages'
+'@shared' → 'src/shared'
+```
 
 ## Build & Deploy
 1. `npm install`
@@ -96,8 +103,4 @@ For development with HMR: `npm run dev`
 - CSS class `.hidden { display: none !important; }` required in every page CSS
 - HTML sanitization via `HtmlSanitizer.escape()` for all DOM output
 - Input sanitization via `InputSanitizer.sanitizeForAI()` for all AI inputs
-
-# currentDate
-Today's date is 2026-04-08.
-
-      IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.
+- Chrome page URLs use extension-root-relative paths: `src/pages/{page}/{page}.html`

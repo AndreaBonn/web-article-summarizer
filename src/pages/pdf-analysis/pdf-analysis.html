@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analisi PDF - AI Article Summarizer</title>
+  <link rel="stylesheet" href="pdf-analysis.css">
+  <link rel="stylesheet" href="../../shared/styles/voice-controls.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📄 Analisi PDF</h1>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <div class="font-size-controls">
+          <button id="fontDecreaseBtn" class="icon-btn" title="Riduci dimensione testo">A-</button>
+          <span id="fontSizeLabel" class="font-size-label">M</span>
+          <button id="fontIncreaseBtn" class="icon-btn" title="Aumenta dimensione testo">A+</button>
+        </div>
+        <select id="uiLanguageSelect" class="ui-language-select" title="Lingua Interfaccia">
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="en">🇺🇸 English</option>
+        </select>
+        <button id="themeToggleBtn" class="btn-back" title="Cambia Tema">🌙</button>
+        <button id="backBtn" class="btn-back">← Indietro</button>
+      </div>
+    </header>
+
+    <!-- Upload Section -->
+    <div id="uploadSection" class="upload-section">
+      <div class="pdf-upload-area">
+        <!-- Drop zone -->
+        <div class="drop-zone" id="pdfDropZone">
+          <div class="drop-zone-icon">📄</div>
+          <div class="drop-zone-text">
+            Trascina il PDF qui<br>
+            oppure
+          </div>
+          <input type="file" id="pdfFileInput" accept=".pdf" style="display:none">
+          <button class="browse-button" id="pdfBrowseBtn">Sfoglia file...</button>
+        </div>
+        
+        <!-- File selezionato -->
+        <div class="selected-file" id="selectedFileInfo" style="display:none">
+          <div class="file-icon">📄</div>
+          <div class="file-details">
+            <div class="file-name" id="fileName"></div>
+            <div class="file-size" id="fileSize"></div>
+          </div>
+          <button class="remove-file" id="removeFileBtn">✕</button>
+        </div>
+
+        <!-- Opzioni analisi -->
+        <div class="analysis-options" id="analysisOptions" style="display:none">
+          <div class="option-row">
+            <label for="providerSelect">Provider AI:</label>
+            <select id="providerSelect">
+              <option value="groq">Groq</option>
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Claude</option>
+              <option value="gemini">Gemini</option>
+            </select>
+          </div>
+          
+          <div class="option-row">
+            <label for="languageSelect">🌍 Lingua Output:</label>
+            <select id="languageSelect">
+              <option value="it">Italiano</option>
+              <option value="en">Inglese</option>
+              <option value="es">Spagnolo</option>
+              <option value="fr">Francese</option>
+              <option value="de">Tedesco</option>
+            </select>
+          </div>
+          
+          <div class="option-row">
+            <label for="summaryLengthSelect">📏 Lunghezza:</label>
+            <select id="summaryLengthSelect">
+              <option value="short">📝 Breve (40%)</option>
+              <option value="medium">📄 Medio (60%)</option>
+              <option value="detailed" selected>📋 Dettagliato (75%)</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Pulsante analisi -->
+        <button class="analyze-button" id="analyzePdfBtn" disabled>
+          Analizza PDF
+        </button>
+        
+        <!-- Progress -->
+        <div class="progress-container" id="analysisProgress" style="display:none">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text" id="progressText">
+            Preparazione...
+          </div>
+        </div>
+      </div>
+      
+      <!-- Avvisi -->
+      <div class="info-box">
+        ℹ️ Il contenuto del PDF sarà inviato a <span id="currentProvider">Claude</span> per l'analisi.
+        Non caricare documenti confidenziali.
+      </div>
+    </div>
+
+    <!-- Results Section (hidden initially) -->
+    <div id="resultsSection" class="results-section hidden">
+      <!-- Will be populated by reading-mode.html content -->
+    </div>
+  </div>
+
+  <!-- Custom Modal -->
+  <div id="customModal" class="custom-modal hidden">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content">
+      <div class="custom-modal-icon" id="modalIcon">ℹ️</div>
+      <h3 id="modalTitle" class="custom-modal-title">Titolo</h3>
+      <p id="modalMessage" class="custom-modal-message">Messaggio</p>
+      <div class="custom-modal-buttons">
+        <button id="modalCancelBtn" class="modal-btn modal-btn-cancel hidden">Annulla</button>
+        <button id="modalConfirmBtn" class="modal-btn modal-btn-confirm">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="pdf-analysis.js"></script>
+</body>
+</html>

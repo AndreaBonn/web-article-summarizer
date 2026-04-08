@@ -14,18 +14,19 @@ export default defineConfig({
       // Pages opened dynamically via chrome.tabs.create()
       // that are not declared in manifest.json
       input: {
-        'reading-mode': resolve(import.meta.dirname, 'reading-mode.html'),
-        'history': resolve(import.meta.dirname, 'history.html'),
-        'multi-analysis': resolve(import.meta.dirname, 'multi-analysis.html'),
-        'pdf-analysis': resolve(import.meta.dirname, 'pdf-analysis.html'),
+        'reading-mode': resolve(import.meta.dirname, 'src/pages/reading-mode/reading-mode.html'),
+        'history': resolve(import.meta.dirname, 'src/pages/history/history.html'),
+        'multi-analysis': resolve(import.meta.dirname, 'src/pages/multi-analysis/multi-analysis.html'),
+        'pdf-analysis': resolve(import.meta.dirname, 'src/pages/pdf-analysis/pdf-analysis.html'),
       },
     },
   },
   resolve: {
     alias: {
       '@': resolve(import.meta.dirname, '.'),
-      '@utils': resolve(import.meta.dirname, 'utils'),
-      '@src': resolve(import.meta.dirname, 'src'),
+      '@utils': resolve(import.meta.dirname, 'src/utils'),
+      '@pages': resolve(import.meta.dirname, 'src/pages'),
+      '@shared': resolve(import.meta.dirname, 'src/shared'),
     },
   },
   server: {
