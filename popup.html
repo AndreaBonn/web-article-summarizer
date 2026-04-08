@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Article Summarizer</title>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="voice-controls.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1 data-i18n="app.title">🤖 Web Site Summarizer</h1>
+      <div class="header-buttons">
+        <div class="header-row-1">
+          <button id="themeToggleBtn" class="icon-btn" data-i18n-title="theme.toggle" title="Cambia Tema">🌙</button>
+          <select id="uiLanguageSelect" class="ui-language-select" title="Lingua Interfaccia">
+            <option value="it">🇮🇹</option>
+            <option value="en">🇺🇸</option>
+          </select>
+          <button id="settingsBtn" class="icon-btn" data-i18n-title="settings.title" title="Impostazioni">⚙️</button>
+        </div>
+        <div class="header-row-2">
+          <button id="historyBtn" class="icon-btn-large" data-i18n-title="history.title" title="Cronologia">📚</button>
+          <button id="multiAnalysisBtn" class="icon-btn-large" data-i18n-title="multi.analysis" title="Analisi Multi Articolo">🔬</button>
+          <button id="pdfAnalysisBtn" class="icon-btn-large" data-i18n-title="pdf.analysis" title="Analisi PDF">📄</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Article Info -->
+    <div id="articleInfo" class="article-info hidden">
+      <div class="info-row">
+        <span class="label" data-i18n="article.title">📄 Titolo:</span>
+        <span id="articleTitle" class="value"></span>
+      </div>
+      <div class="info-row">
+        <span class="label" data-i18n="article.length">📊 Lunghezza:</span>
+        <span id="articleStats" class="value"></span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls" class="controls hidden">
+      <div class="control-row">
+        <label for="providerSelect" data-i18n="controls.provider">Provider:</label>
+        <select id="providerSelect">
+          <option value="groq">Groq</option>
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Claude</option>
+          <option value="gemini">Gemini</option>
+        </select>
+      </div>
+      
+      <div class="control-row">
+        <label for="languageSelectReady" data-i18n="controls.language">🌍 Lingua:</label>
+        <select id="languageSelectReady" class="compact-select">
+          <option value="it" data-i18n="language.it">Italiano</option>
+          <option value="en" data-i18n="language.en">Inglese</option>
+          <option value="es" data-i18n="language.es">Spagnolo</option>
+          <option value="fr" data-i18n="language.fr">Francese</option>
+          <option value="de" data-i18n="language.de">Tedesco</option>
+        </select>
+      </div>
+      
+      <div class="control-row">
+        <label for="contentTypeSelectReady" data-i18n="controls.contentType">📝 Tipo:</label>
+        <select id="contentTypeSelectReady" class="compact-select">
+          <option value="auto" data-i18n="contentType.auto">🔍 Automatico</option>
+          <option value="general" data-i18n="contentType.general">📄 Generico</option>
+          <option value="scientific" data-i18n="contentType.scientific">🔬 Scientifico</option>
+          <option value="news" data-i18n="contentType.news">📰 News</option>
+          <option value="tutorial" data-i18n="contentType.tutorial">💻 Tutorial</option>
+          <option value="business" data-i18n="contentType.business">💼 Business</option>
+          <option value="opinion" data-i18n="contentType.opinion">💭 Opinione</option>
+        </select>
+      </div>
+      
+      <div class="control-row">
+        <label for="summaryLengthSelect" data-i18n="controls.summaryLength">📏 Lunghezza Riassunto:</label>
+        <select id="summaryLengthSelect" class="compact-select">
+          <option value="short" data-i18n="summaryLength.short">📝 Breve (40%)</option>
+          <option value="medium" data-i18n="summaryLength.medium">📄 Medio (60%)</option>
+          <option value="detailed" data-i18n="summaryLength.detailed" selected>📋 Dettagliato (75%)</option>
+        </select>
+      </div>
+      
+      <button id="generateBtn" class="btn btn-primary" data-i18n="controls.generate">⚡ Genera Riassunto</button>
+    </div>
+
+    <!-- Main Content Area -->
+    <div id="mainContent" class="main-content">
+      <!-- Initial State -->
+      <div id="initialState" class="state-view">
+        <div class="empty-state">
+          <div class="icon">✋</div>
+          
+          <div class="language-selector">
+            <label for="languageSelect" data-i18n="initial.language">🌍 Lingua Output:</label>
+            <select id="languageSelect" class="language-select">
+              <option value="it" data-i18n="language.it">Italiano</option>
+              <option value="en" data-i18n="language.en">Inglese</option>
+              <option value="es" data-i18n="language.es">Spagnolo</option>
+              <option value="fr" data-i18n="language.fr">Francese</option>
+              <option value="de" data-i18n="language.de">Tedesco</option>
+            </select>
+          </div>
+          
+          <div class="content-type-selector">
+            <label for="contentTypeSelect" data-i18n="initial.contentType">📝 Tipologia Articolo:</label>
+            <select id="contentTypeSelect" class="content-type-select">
+              <option value="auto" data-i18n="contentType.auto">🔍 Rilevamento Automatico</option>
+              <option value="general" data-i18n="contentType.general">📄 Articolo Generico</option>
+              <option value="scientific" data-i18n="contentType.scientific">🔬 Articolo Scientifico</option>
+              <option value="news" data-i18n="contentType.news">📰 Notizia</option>
+              <option value="tutorial" data-i18n="contentType.tutorial">💻 Tutorial/Guida</option>
+              <option value="business" data-i18n="contentType.business">💼 Business/Case Study</option>
+              <option value="opinion" data-i18n="contentType.opinion">💭 Opinione/Editoriale</option>
+            </select>
+            <p class="hint" data-i18n="initial.contentType.hint">Seleziona il tipo la tipologia di articolo per risparmiare token, altrimenti lascia "🔍 Rilevamento Automatico" e LLM classificherà il contenuto autonomamente e utilizzerà il prompt più indicato per le analisi.</p>
+          </div>
+          
+          <button id="analyzeBtn" class="btn btn-primary" data-i18n="initial.analyze">🔍 Analizza Pagina</button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingState" class="state-view hidden">
+        <div class="loading">
+          <div class="spinner"></div>
+          <p id="loadingText">Estrazione contenuto in corso...</p>
+          
+          <!-- Progress Bar -->
+          <div class="progress-container">
+            <div class="progress-bar-bg">
+              <div id="progressBar" class="progress-bar-fill"></div>
+            </div>
+            <div id="progressPercent" class="progress-percent">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error State -->
+      <div id="errorState" class="state-view hidden">
+        <div class="error-box">
+          <div class="icon">❌</div>
+          <p id="errorMessage"></p>
+          <button id="retryBtn" class="btn btn-secondary">🔄 Riprova</button>
+        </div>
+      </div>
+
+      <!-- Results State -->
+      <div id="resultsState" class="state-view hidden">
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab active" data-tab="summary" data-i18n="tab.summary">Riassunto</button>
+          <button class="tab" data-tab="keypoints" data-i18n="tab.keypoints">Punti Chiave</button>
+          <button class="tab" data-tab="translation" data-i18n="tab.translation">Traduzione</button>
+          <button class="tab" data-tab="citations" data-i18n="tab.citations">Citazioni</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <div id="summaryTab" class="tab-pane active">
+            <div id="summaryContent" class="content-box"></div>
+          </div>
+          <div id="keypointsTab" class="tab-pane">
+            <div id="keypointsContent" class="content-box"></div>
+          </div>
+          <div id="translationTab" class="tab-pane">
+            <div id="translationContent" class="content-box">
+              <div class="translation-empty">
+                <p data-i18n="translation.empty">Clicca sul pulsante per tradurre l'articolo completo</p>
+                <button id="translateBtn" class="btn btn-primary" data-i18n="translation.button">🌍 Traduci Articolo</button>
+              </div>
+            </div>
+          </div>
+          <div id="citationsTab" class="tab-pane">
+            <div id="citationsContent" class="content-box">
+              <div class="citations-empty">
+                <p data-i18n="citations.empty">📚 Estrai citazioni e riferimenti bibliografici dall'articolo</p>
+                <button id="extractCitationsBtn" class="btn btn-primary" data-i18n="citations.button">📖 Estrai Citazioni</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+          <button id="readingModeBtn" class="btn btn-primary" data-i18n="action.readingMode">📖 Modalità Lettura</button>
+          <button id="exportPdfBtn" class="btn btn-secondary" data-i18n="action.pdf">📄 PDF</button>
+          <button id="exportMdBtn" class="btn btn-secondary" data-i18n="action.md">📝 MD</button>
+          <button id="sendEmailBtn" class="btn btn-secondary" data-i18n="action.email">📧 Email</button>
+          <button id="copyBtn" class="btn btn-secondary" data-i18n="action.copy">📋 Copia</button>
+          <button id="newBtn" class="btn btn-secondary" data-i18n="action.new">🔄 Nuovo</button>
+        </div>
+        
+        <!-- Q&A Section -->
+        <div id="qaSection" class="qa-section">
+          <div class="qa-header">
+            <h3 data-i18n="qa.title">💬 Fai una domanda sull'articolo</h3>
+          </div>
+          <div class="qa-input-group">
+            <input type="text" id="questionInput" data-i18n="qa.placeholder" placeholder="Es: Quali sono le implicazioni pratiche?" />
+            <button id="askBtn" class="btn btn-primary btn-small" data-i18n="qa.ask">Chiedi</button>
+            <button id="voiceQuestionBtn" class="stt-button" title="Fai una domanda vocale">
+              🎤
+            </button>
+          </div>
+          <div class="listening-indicator" id="listeningIndicator">
+            <div class="pulse-dot"></div>
+            <span>In ascolto...</span>
+          </div>
+          <div id="interimTranscript" class="interim-transcript" style="display:none"></div>
+          <div id="qaAnswer" class="qa-answer hidden"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Modal -->
+  <div id="customModal" class="custom-modal hidden">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content">
+      <div class="custom-modal-icon" id="modalIcon">ℹ️</div>
+      <h3 id="modalTitle" class="custom-modal-title">Titolo</h3>
+      <p id="modalMessage" class="custom-modal-message">Messaggio</p>
+      <div class="custom-modal-buttons">
+        <button id="modalCancelBtn" class="modal-btn modal-btn-cancel hidden">Annulla</button>
+        <button id="modalConfirmBtn" class="modal-btn modal-btn-confirm">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Modal -->
+  <div id="emailModal" class="custom-modal hidden">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content email-modal-content">
+      <div class="custom-modal-icon">📧</div>
+      <h3 class="custom-modal-title">Invia Tramite Email</h3>
+      
+      <div class="email-input-section">
+        <label for="emailInput">Email destinatario:</label>
+        <input type="email" id="emailInput" placeholder="esempio@email.com" />
+      </div>
+      
+      <div id="savedEmailsSection" class="saved-emails-section hidden">
+        <label>Email salvate:</label>
+        <div id="savedEmailsList" class="saved-emails-list"></div>
+      </div>
+      
+      <div class="export-options-section">
+        <label>Contenuto da includere:</label>
+        <div class="export-options-list">
+          <label class="export-option">
+            <input type="checkbox" id="emailIncludeSummary" checked />
+            <span>📝 Riassunto</span>
+          </label>
+          <label class="export-option">
+            <input type="checkbox" id="emailIncludeKeypoints" checked />
+            <span>🔑 Punti Chiave</span>
+          </label>
+          <label class="export-option" id="emailTranslationOption">
+            <input type="checkbox" id="emailIncludeTranslation" checked />
+            <span>🌍 Traduzione</span>
+          </label>
+          <label class="export-option" id="emailQAOption">
+            <input type="checkbox" id="emailIncludeQA" checked />
+            <span>💬 Domande e Risposte</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="custom-modal-buttons">
+        <button id="emailCancelBtn" class="modal-btn modal-btn-cancel">Annulla</button>
+        <button id="emailSendBtn" class="modal-btn modal-btn-confirm">Invia</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Options Modal (for PDF) -->
+  <div id="exportOptionsModal" class="custom-modal hidden">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content export-modal-content">
+      <div class="custom-modal-icon">📄</div>
+      <h3 class="custom-modal-title">Esporta PDF</h3>
+      
+      <div class="export-options-section">
+        <label>Seleziona contenuto da esportare:</label>
+        <div class="export-options-list">
+          <label class="export-option">
+            <input type="checkbox" id="pdfIncludeSummary" checked />
+            <span>📝 Riassunto</span>
+          </label>
+          <label class="export-option">
+            <input type="checkbox" id="pdfIncludeKeypoints" checked />
+            <span>🔑 Punti Chiave</span>
+          </label>
+          <label class="export-option" id="pdfTranslationOption">
+            <input type="checkbox" id="pdfIncludeTranslation" checked />
+            <span>🌍 Traduzione</span>
+          </label>
+          <label class="export-option" id="pdfQAOption">
+            <input type="checkbox" id="pdfIncludeQA" checked />
+            <span>💬 Domande e Risposte</span>
+          </label>
+          <label class="export-option" id="pdfCitationsOption">
+            <input type="checkbox" id="pdfIncludeCitations" checked />
+            <span>📚 Citazioni</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="custom-modal-buttons">
+        <button id="exportCancelBtn" class="modal-btn modal-btn-cancel">Annulla</button>
+        <button id="exportConfirmBtn" class="modal-btn modal-btn-confirm">Esporta</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="lib/jspdf.umd.min.js"></script>
+  <script src="utils/tts-manager.js"></script>
+  <script src="utils/stt-manager.js"></script>
+  <script src="utils/voice-controller.js"></script>
+  <script src="utils/storage-manager.js"></script>
+  <script src="utils/i18n.js"></script>
+  <script src="utils/theme-manager.js"></script>
+  <script src="utils/history-manager.js"></script>
+  <script src="utils/input-sanitizer.js"></script>
+  <script src="utils/api-client.js"></script>
+  <script src="utils/content-classifier.js"></script>
+  <script src="utils/pdf-exporter.js"></script>
+  <script src="utils/markdown-exporter.js"></script>
+  <script src="utils/email-manager.js"></script>
+  <script src="utils/advanced-analysis.js"></script>
+  <script src="utils/translator.js"></script>
+  <script src="utils/citation-extractor.js"></script>
+  <script src="utils/progress-tracker.js"></script>
+  <!-- 🆕 Nuovi moduli per ottimizzazioni -->
+  <script src="utils/event-cleanup.js"></script>
+  <script src="utils/error-handler.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

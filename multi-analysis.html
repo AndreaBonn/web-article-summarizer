@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="multi.title">Analisi Multi Articolo - AI Article Summarizer</title>
+  <link rel="stylesheet" href="multi-analysis.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 data-i18n="multi.title">🔬 Analisi Multi Articolo</h1>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <select id="uiLanguageSelect" class="ui-language-select" title="Lingua Interfaccia">
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="en">🇺🇸 English</option>
+        </select>
+        <button id="themeToggleBtn" class="btn-back" data-i18n-title="theme.toggle" title="Cambia Tema">🌙</button>
+        <button id="backBtn" class="btn-back" data-i18n="history.back">← Indietro</button>
+      </div>
+    </header>
+
+    <div class="selection-panel">
+      <div class="panel-header">
+        <h2 data-i18n="multi.selectArticles">📚 Seleziona Articoli</h2>
+        <div class="selection-actions">
+          <button id="selectAllBtn" class="btn-secondary" data-i18n="multi.selectAll">Seleziona Tutti</button>
+          <button id="clearSelectionBtn" class="btn-secondary" data-i18n="multi.clearSelection">Deseleziona Tutti</button>
+          <span id="selectionCount" class="selection-count"><span id="selectionCountNumber">0</span> <span data-i18n="multi.selected">articoli selezionati</span></span>
+        </div>
+      </div>
+
+      <div class="search-filter">
+        <input type="text" id="searchArticles" data-i18n="multi.searchArticles" placeholder="🔍 Cerca articoli..." />
+        <select id="filterProvider">
+          <option value="" data-i18n="multi.filterProvider">Tutti i provider</option>
+          <option value="groq">Groq</option>
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Claude</option>
+          <option value="gemini">Gemini</option>
+        </select>
+      </div>
+
+      <div id="articlesList" class="articles-list">
+        <!-- Articles will be loaded here -->
+      </div>
+    </div>
+
+    <div class="analysis-panel">
+      <div class="panel-header">
+        <h2 data-i18n="multi.options">⚙️ Opzioni Analisi</h2>
+      </div>
+
+      <div class="analysis-options">
+        <label class="option-card">
+          <input type="checkbox" id="optGlobalSummary" checked />
+          <div class="option-content">
+            <span class="option-icon">📝</span>
+            <div class="option-text">
+              <strong data-i18n="multi.globalSummary">Riassunto Globale</strong>
+              <small>Sintesi unificata di tutti gli articoli selezionati</small>
+            </div>
+          </div>
+        </label>
+
+        <label class="option-card">
+          <input type="checkbox" id="optComparison" checked />
+          <div class="option-content">
+            <span class="option-icon">⚖️</span>
+            <div class="option-text">
+              <strong data-i18n="multi.comparison">Confronto Idee</strong>
+              <small>Analisi di idee comuni, conflitti e prospettive diverse</small>
+            </div>
+          </div>
+        </label>
+
+        <label class="option-card">
+          <input type="checkbox" id="optQA" checked />
+          <div class="option-content">
+            <span class="option-icon">💬</span>
+            <div class="option-text">
+              <strong data-i18n="multi.qa">Q&A Multi-Articolo</strong>
+              <small>Sistema di domande e risposte basato su tutti gli articoli</small>
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <button id="startAnalysisBtn" class="btn-primary btn-large" data-i18n="multi.startAnalysis" disabled>
+        🚀 Avvia Analisi
+      </button>
+    </div>
+  </div>
+
+  <!-- Analysis Modal -->
+  <div id="analysisModal" class="modal hidden">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h2 id="modalTitle">Analisi Multi Articolo</h2>
+        <button id="closeModal" class="btn-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tabs">
+          <button class="modal-tab active" data-tab="summary">📝 Riassunto</button>
+          <button class="modal-tab" data-tab="comparison">⚖️ Confronto</button>
+          <button class="modal-tab" data-tab="qa">💬 Q&A</button>
+        </div>
+        <div class="modal-tab-content">
+          <div id="tabSummary" class="modal-pane active"></div>
+          <div id="tabComparison" class="modal-pane"></div>
+          <div id="tabQA" class="modal-pane"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="exportPdfBtn" class="btn btn-primary">📄 Esporta PDF</button>
+        <button id="exportMdBtn" class="btn btn-primary">📝 Esporta MD</button>
+        <button id="sendEmailBtn" class="btn btn-primary">📧 Invia Email</button>
+        <button id="copyBtn" class="btn btn-secondary">📋 Copia</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Modal -->
+  <div id="progressModal" class="custom-modal hidden">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content">
+      <div class="custom-modal-icon">⏳</div>
+      <h3 class="custom-modal-title">Analisi in Corso</h3>
+      <p id="progressMessage" class="custom-modal-message">Preparazione analisi...</p>
+      <div class="progress-bar">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+      <p id="progressPercent" class="progress-percent">0%</p>
+    </div>
+  </div>
+
+  <!-- Custom Modal (for alerts) -->
+  <div id="customModal" class="custom-modal hidden">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content">
+      <div class="custom-modal-icon" id="modalIcon">ℹ️</div>
+      <h3 id="modalTitle" class="custom-modal-title">Titolo</h3>
+      <p id="modalMessage" class="custom-modal-message">Messaggio</p>
+      <div class="custom-modal-buttons">
+        <button id="modalCancelBtn" class="modal-btn modal-btn-cancel hidden">Annulla</button>
+        <button id="modalConfirmBtn" class="modal-btn modal-btn-confirm">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unrelated Articles Modal -->
+  <div id="unrelatedModal" class="custom-modal hidden">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content">
+      <div class="custom-modal-icon">⚠️</div>
+      <h3 class="custom-modal-title">Articoli Non Correlati</h3>
+      <p class="custom-modal-message">
+        Gli articoli selezionati sembrano trattare argomenti completamente scollegati.
+      </p>
+      <div id="unrelatedReason" class="unrelated-reason"></div>
+      <p class="custom-modal-message" style="margin-top: 16px;">
+        Come vuoi procedere?
+      </p>
+      <div class="custom-modal-buttons">
+        <button id="unrelatedQAOnly" class="modal-btn modal-btn-secondary">Solo Q&A</button>
+        <button id="unrelatedFullAnalysis" class="modal-btn modal-btn-confirm">Analisi Completa</button>
+        <button id="unrelatedCancel" class="modal-btn modal-btn-cancel">Annulla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Options Modal -->
+  <div id="exportOptionsModal" class="custom-modal hidden">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content export-modal-content">
+      <div class="custom-modal-icon">📄</div>
+      <h3 id="exportModalTitle" class="custom-modal-title">Esporta</h3>
+      
+      <div class="export-options-section">
+        <label>Seleziona contenuto da esportare:</label>
+        <div class="export-options-list">
+          <label class="export-option" id="exportSummaryOption">
+            <input type="checkbox" id="exportIncludeSummary" checked />
+            <span>📝 Riassunto Globale</span>
+          </label>
+          <label class="export-option" id="exportComparisonOption">
+            <input type="checkbox" id="exportIncludeComparison" checked />
+            <span>⚖️ Confronto Idee</span>
+          </label>
+          <label class="export-option" id="exportQAOption">
+            <input type="checkbox" id="exportIncludeQA" checked />
+            <span>💬 Domande e Risposte</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="custom-modal-buttons">
+        <button id="exportCancelBtn" class="modal-btn modal-btn-cancel">Annulla</button>
+        <button id="exportConfirmBtn" class="modal-btn modal-btn-confirm">Esporta</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="utils/storage-manager.js"></script>
+  <script src="utils/i18n.js"></script>
+  <script src="utils/theme-manager.js"></script>
+  <script src="utils/history-manager.js"></script>
+  <script src="utils/api-client.js"></script>
+  <script src="utils/multi-analysis-manager.js"></script>
+  <script src="lib/jspdf.umd.min.js"></script>
+  <script src="utils/pdf-exporter.js"></script>
+  <script src="utils/markdown-exporter.js"></script>
+  <script src="utils/email-manager.js"></script>
+  <script src="multi-analysis.js"></script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="history.title">Cronologia - AI Article Summarizer</title>
+  <link rel="stylesheet" href="history.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 data-i18n="history.title">Cronologia Analisi</h1>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <select id="uiLanguageSelect" class="ui-language-select" title="Lingua Interfaccia">
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="en">🇺🇸 English</option>
+        </select>
+        <button id="themeToggleBtn" class="btn-back" data-i18n-title="theme.toggle" title="Cambia Tema">🌙</button>
+        <button id="backBtn" class="btn-back" data-i18n="history.back">← Indietro</button>
+      </div>
+    </header>
+
+    <!-- Riga 1: Bottoni azioni (occupano tutta la larghezza) -->
+    <div class="action-buttons-row">
+      <button id="downloadHistoryBtn" class="btn-primary btn-full-width" data-i18n="history.download" title="Scarica tutta la cronologia in formato JSON">💾 Download Cronologia</button>
+      <button id="importHistoryBtn" class="btn-primary btn-full-width" data-i18n="history.import" title="Importa cronologia da file JSON">📥 Importa Cronologia</button>
+      <input type="file" id="importFileInput" accept=".json" style="display: none;" />
+      <button id="clearSingleHistoryBtn" class="btn-danger btn-full-width" data-i18n="history.clearSingle">🗑️ Cancella Articoli Singoli</button>
+      <button id="clearPDFHistoryBtn" class="btn-danger btn-full-width hidden">🗑️ Elimina Cronologia PDF</button>
+      <button id="clearMultiHistoryBtn" class="btn-danger btn-full-width" data-i18n="history.clearMulti">🗑️ Cancella Analisi Multiple</button>
+    </div>
+    
+    <!-- Riga 2: Barra di ricerca + Opzioni "Cerca in:" -->
+    <div class="search-row">
+      <input type="text" id="searchInput" data-i18n="history.search" placeholder="🔍 Cerca..." class="search-input-main" />
+      <div class="search-options-inline">
+        <label class="search-option-label" data-i18n="history.searchIn">Cerca in:</label>
+        <label class="search-option">
+          <input type="checkbox" id="searchInTitle" checked />
+          <span data-i18n="history.searchIn.title">Titolo</span>
+        </label>
+        <label class="search-option">
+          <input type="checkbox" id="searchInUrl" checked />
+          <span data-i18n="history.searchIn.url">URL</span>
+        </label>
+        <label class="search-option">
+          <input type="checkbox" id="searchInContent" checked />
+          <span data-i18n="history.searchIn.content">Contenuto</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="history-tabs">
+      <button class="history-tab active" data-tab="single" data-i18n="history.tabs.single">📄 Articoli Singoli</button>
+      <button class="history-tab" data-tab="pdf">📄 PDF</button>
+      <button class="history-tab" data-tab="multi" data-i18n="history.tabs.multi">🔬 Analisi Multi Articolo</button>
+    </div>
+
+    <div class="filters">
+      <select id="providerFilter">
+        <option value="" data-i18n="history.filter.allProviders">Tutti i provider</option>
+        <option value="groq">Groq</option>
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Claude</option>
+        <option value="gemini">Gemini</option>
+      </select>
+      
+      <select id="languageFilter">
+        <option value="" data-i18n="history.filter.allLanguages">Tutte le lingue</option>
+        <option value="it" data-i18n="language.it">Italiano</option>
+        <option value="en" data-i18n="language.en">Inglese</option>
+        <option value="es" data-i18n="language.es">Spagnolo</option>
+        <option value="fr" data-i18n="language.fr">Francese</option>
+        <option value="de" data-i18n="language.de">Tedesco</option>
+      </select>
+      
+      <select id="contentTypeFilter">
+        <option value="" data-i18n="history.filter.allTypes">Tutti i tipi</option>
+        <option value="general" data-i18n="contentType.general">Generico</option>
+        <option value="scientific" data-i18n="contentType.scientific">Scientifico</option>
+        <option value="news" data-i18n="contentType.news">News</option>
+        <option value="tutorial" data-i18n="contentType.tutorial">Tutorial</option>
+        <option value="business" data-i18n="contentType.business">Business</option>
+        <option value="opinion" data-i18n="contentType.opinion">Opinione</option>
+      </select>
+      
+      <select id="favoriteFilter">
+        <option value="" data-i18n="history.filter.all">Tutti gli articoli</option>
+        <option value="favorites" data-i18n="history.filter.favorites">⭐ Solo Preferiti</option>
+        <option value="withNotes" data-i18n="history.filter.withNotes">📝 Con Note</option>
+      </select>
+    </div>
+
+    <div id="historyList" class="history-list">
+      <!-- History items will be inserted here -->
+    </div>
+    
+    <div id="pdfHistoryList" class="history-list hidden">
+      <!-- PDF history items will be inserted here -->
+    </div>
+    
+    <div id="multiAnalysisList" class="history-list hidden">
+      <!-- Multi-analysis items will be inserted here -->
+    </div>
+
+    <div id="emptyState" class="empty-state hidden">
+      <div class="icon">📭</div>
+      <p data-i18n="history.empty">Nessun riassunto nella cronologia</p>
+      <small data-i18n="history.emptyDesc">I tuoi riassunti appariranno qui</small>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle"></h2>
+        <div class="modal-header-actions">
+          <!-- Voice Controls -->
+          <div class="voice-controls-modal">
+            <button id="modalTtsPlayBtn" class="voice-btn-modal" title="Leggi ad alta voce">🔊</button>
+            <button id="modalTtsPauseBtn" class="voice-btn-modal" title="Pausa" style="display: none;">⏸️</button>
+            <button id="modalTtsStopBtn" class="voice-btn-modal" title="Stop" style="display: none;">⏹️</button>
+          </div>
+          <button id="closeModal" class="btn-close">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-meta">
+          <span id="modalDate"></span>
+          <span id="modalProvider"></span>
+          <span id="modalLanguage"></span>
+          <span id="modalStats"></span>
+        </div>
+        <div class="modal-tabs">
+          <button class="modal-tab active" data-tab="summary">Riassunto</button>
+          <button class="modal-tab" data-tab="keypoints">Punti Chiave</button>
+          <button class="modal-tab" data-tab="translation">Traduzione</button>
+          <button class="modal-tab" data-tab="qa">Q&A</button>
+          <button class="modal-tab" data-tab="citations">📚 Citazioni</button>
+          <button class="modal-tab" data-tab="notes">📌 Note</button>
+        </div>
+        <div class="modal-tab-content">
+          <div id="modalSummary" class="modal-pane active"></div>
+          <div id="modalKeypoints" class="modal-pane"></div>
+          <div id="modalTranslation" class="modal-pane"></div>
+          <div id="modalQA" class="modal-pane"></div>
+          <div id="modalCitations" class="modal-pane"></div>
+          <div id="modalNotes" class="modal-pane"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="readingModeBtn" class="btn btn-primary" data-i18n="action.readingMode">📖 Modalità Lettura</button>
+        <button id="exportPdfBtn" class="btn btn-primary">📄 PDF</button>
+        <button id="exportMdBtn" class="btn btn-primary">📝 MD</button>
+        <button id="sendEmailBtn" class="btn btn-primary">📧 Email</button>
+        <button id="copyModalBtn" class="btn btn-secondary">📋 Copia</button>
+        <button id="deleteModalBtn" class="btn btn-danger">🗑️ Elimina</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Modal -->
+  <div id="customModal" class="custom-modal hidden">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content">
+      <div class="custom-modal-icon" id="modalIcon">ℹ️</div>
+      <h3 id="modalTitle" class="custom-modal-title">Titolo</h3>
+      <p id="modalMessage" class="custom-modal-message">Messaggio</p>
+      <div class="custom-modal-buttons">
+        <button id="modalCancelBtn" class="modal-btn modal-btn-cancel hidden">Annulla</button>
+        <button id="modalConfirmBtn" class="modal-btn modal-btn-confirm">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Modal -->
+  <div id="emailModal" class="custom-modal hidden">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content email-modal-content">
+      <div class="custom-modal-icon">📧</div>
+      <h3 class="custom-modal-title">Invia Tramite Email</h3>
+      
+      <div class="email-input-section">
+        <label for="emailInput">Email destinatario:</label>
+        <input type="email" id="emailInput" placeholder="esempio@email.com" />
+      </div>
+      
+      <div id="savedEmailsSection" class="saved-emails-section hidden">
+        <label>Email salvate:</label>
+        <div id="savedEmailsList" class="saved-emails-list"></div>
+      </div>
+      
+      <div class="export-options-section">
+        <label>Contenuto da includere:</label>
+        <div class="export-options-list">
+          <label class="export-option">
+            <input type="checkbox" id="emailIncludeSummary" checked />
+            <span>📝 Riassunto</span>
+          </label>
+          <label class="export-option">
+            <input type="checkbox" id="emailIncludeKeypoints" checked />
+            <span>🔑 Punti Chiave</span>
+          </label>
+          <label class="export-option" id="emailTranslationOption">
+            <input type="checkbox" id="emailIncludeTranslation" checked />
+            <span>🌍 Traduzione</span>
+          </label>
+          <label class="export-option" id="emailQAOption">
+            <input type="checkbox" id="emailIncludeQA" checked />
+            <span>💬 Domande e Risposte</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="custom-modal-buttons">
+        <button id="emailCancelBtn" class="modal-btn modal-btn-cancel">Annulla</button>
+        <button id="emailSendBtn" class="modal-btn modal-btn-confirm">Invia</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Options Modal (for PDF) -->
+  <div id="exportOptionsModal" class="custom-modal hidden">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content export-modal-content">
+      <div class="custom-modal-icon">📄</div>
+      <h3 class="custom-modal-title">Esporta PDF</h3>
+      
+      <div class="export-options-section">
+        <label>Seleziona contenuto da esportare:</label>
+        <div class="export-options-list">
+          <label class="export-option">
+            <input type="checkbox" id="pdfIncludeSummary" checked />
+            <span>📝 Riassunto</span>
+          </label>
+          <label class="export-option">
+            <input type="checkbox" id="pdfIncludeKeypoints" checked />
+            <span>🔑 Punti Chiave</span>
+          </label>
+          <label class="export-option" id="pdfTranslationOption">
+            <input type="checkbox" id="pdfIncludeTranslation" checked />
+            <span>🌍 Traduzione</span>
+          </label>
+          <label class="export-option" id="pdfQAOption">
+            <input type="checkbox" id="pdfIncludeQA" checked />
+            <span>💬 Domande e Risposte</span>
+          </label>
+          <label class="export-option" id="pdfCitationsOption">
+            <input type="checkbox" id="pdfIncludeCitations" checked />
+            <span>📚 Citazioni</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="custom-modal-buttons">
+        <button id="exportCancelBtn" class="modal-btn modal-btn-cancel">Annulla</button>
+        <button id="exportConfirmBtn" class="modal-btn modal-btn-confirm">Esporta</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="utils/storage-manager.js"></script>
+  <script src="utils/i18n.js"></script>
+  <script src="utils/theme-manager.js"></script>
+  <script src="utils/history-manager.js"></script>
+  <script src="utils/citation-extractor.js"></script>
+  <script src="lib/jspdf.umd.min.js"></script>
+  <script src="utils/pdf-exporter.js"></script>
+  <script src="utils/markdown-exporter.js"></script>
+  <script src="utils/email-manager.js"></script>
+  <script src="utils/debounce-utility.js"></script>
+  <script src="utils/search-optimizer.js"></script>
+  <script src="utils/history-lazy-loader.js"></script>
+  <script src="utils/tts-manager.js"></script>
+  <script src="utils/stt-manager.js"></script>
+  <script src="utils/voice-controller.js"></script>
+  <script src="history.js"></script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+/* Voice Controls CSS */
+
+/* Pulsante TTS (Text-to-Speech) */
+.tts-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  margin-left: 8px;
+}
+
+.tts-button:hover {
+  background: #3367d6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.tts-button.active {
+  background: #ea4335;
+  animation: pulse 1.5s infinite;
+}
+
+.tts-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Icona speaker */
+.icon-speaker {
+  width: 20px;
+  height: 20px;
+}
+
+/* Controlli TTS (play, pause, stop) */
+.tts-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tts-control-btn {
+  padding: 6px 12px;
+  background: #f1f3f4;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 13px;
+}
+
+.tts-control-btn:hover {
+  background: #e8eaed;
+}
+
+.tts-control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Pulsante microfono (STT) */
+.stt-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #34a853;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  margin-left: 8px;
+}
+
+.stt-button:hover {
+  background: #2d8e47;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.stt-button.listening {
+  background: #ea4335;
+  animation: pulse-mic 1s infinite;
+}
+
+.stt-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@keyframes pulse-mic {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* Icona microfono */
+.icon-microphone {
+  width: 20px;
+  height: 20px;
+}
+
+/* Indicatore ascolto */
+.listening-indicator {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #fef7e0;
+  border: 1px solid #f9ab00;
+  border-radius: 6px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #5f6368;
+}
+
+.listening-indicator.active {
+  display: flex;
+}
+
+.listening-indicator .pulse-dot {
+  width: 12px;
+  height: 12px;
+  background: #ea4335;
+  border-radius: 50%;
+  animation: pulse-dot 1.5s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+/* Trascrizione provvisoria */
+.interim-transcript {
+  padding: 12px;
+  background: #f8f9fa;
+  border: 1px dashed #dadce0;
+  border-radius: 6px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #5f6368;
+  font-style: italic;
+  min-height: 40px;
+}
+
+/* Sezione Q&A con voce */
+.qa-voice-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+/* Notifica errore vocale */
+.voice-error-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 16px 20px;
+  background: #ea4335;
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  font-size: 14px;
+  z-index: 10000;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Tema scuro */
+body.dark-theme .tts-control-btn {
+  background: #3c4043;
+  border-color: #5f6368;
+  color: #e8eaed;
+}
+
+body.dark-theme .tts-control-btn:hover {
+  background: #5f6368;
+}
+
+body.dark-theme .listening-indicator {
+  background: #3c4043;
+  border-color: #f9ab00;
+  color: #e8eaed;
+}
+
+body.dark-theme .interim-transcript {
+  background: #3c4043;
+  border-color: #5f6368;
+  color: #e8eaed;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .tts-button,
+  .stt-button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .tts-controls {
+    flex-wrap: wrap;
+  }
+  
+  .qa-voice-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+
+/* TTS Button Container */
+.tts-button-container {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-left: 8px;
+}
+
+.tts-voice-select-btn {
+  padding: 6px 10px;
+  background: #f1f3f4;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.tts-voice-select-btn:hover {
+  background: #e8eaed;
+  transform: scale(1.1);
+}
+
+/* Voice List in Modal */
+.voice-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 12px;
+}
+
+.voice-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 4px;
+  margin-bottom: 2px;
+  background: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.voice-item:hover {
+  background: #e8eaed;
+  border-color: #667eea;
+}
+
+.voice-item.selected {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: #667eea;
+}
+
+.voice-info {
+  flex: 1;
+}
+
+.voice-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #2d3436;
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+
+.voice-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.voice-lang {
+  color: #636e72;
+}
+
+.badge-local {
+  padding: 2px 6px;
+  background: #4caf50;
+  color: white;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.badge-remote {
+  padding: 2px 6px;
+  background: #ff9800;
+  color: white;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.voice-check {
+  font-size: 18px;
+  color: #4caf50;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+/* Dark mode */
+body.dark-theme .voice-item {
+  background: #3c4043;
+  border-color: #5f6368;
+}
+
+body.dark-theme .voice-item:hover {
+  background: #5f6368;
+}
+
+body.dark-theme .voice-item.selected {
+  background: rgba(102, 126, 234, 0.2);
+}
+
+body.dark-theme .voice-name {
+  color: #e8eaed;
+}
+
+body.dark-theme .tts-voice-select-btn {
+  background: #3c4043;
+  border-color: #5f6368;
+  color: #e8eaed;
+}
+
+body.dark-theme .tts-voice-select-btn:hover {
+  background: #5f6368;
+}

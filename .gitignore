@@ -1,0 +1,29 @@
+# Node modules (se usi npm)
+node_modules/
+
+# File temporanei
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build
+dist/
+build/
+
+# Secrets (non committare mai API keys!)
+.env
+secrets.json
+__00_NOTES.txt
+
+# Chrome extension files
+*.crx
+*.pem
+
+00___SUGGERIMENTI.md

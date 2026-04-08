@@ -1,0 +1,763 @@
+// Citation Extractor - Estrazione citazioni da articoli
+const CitationExtractor = {
+  /**
+   * Estrae citazioni dall'articolo usando AI
+   */
+  async extractCitations(article, provider, apiKey, settings) {
+    const systemPrompt = this.getSystemPrompt(provider);
+    const userPrompt = this.getUserPrompt(article);
+    
+    try {
+      const response = await APIClient.generateCompletion(
+        provider,
+        apiKey,
+        systemPrompt,
+        userPrompt,
+        {
+          temperature: 0.1,
+          maxTokens: provider === 'gemini' ? 8000 : 4000,  // Più token per Gemini
+          responseFormat: 'json'  // Forza output JSON valido
+        }
+      );
+      
+      return this.parseCitations(response, article);
+    } catch (error) {
+      console.error('Errore estrazione citazioni:', error);
+      throw new Error('Impossibile estrarre le citazioni: ' + error.message);
+    }
+  },
+  
+  getSystemPrompt(provider = 'openai') {
+    // Prompt specifico per Gemini (più dettagliato e strutturato)
+    if (provider === 'gemini') {
+      return `Sei un esperto bibliotecario accademico e ricercatore specializzato nell'identificazione sistematica e catalogazione precisa di citazioni, riferimenti bibliografici e fonti all'interno di testi accademici, scientifici e articoli.
+
+IL TUO COMPITO PRINCIPALE:
+Analizza l'articolo fornito e identifica con precisione assoluta TUTTE le citazioni, riferimenti e fonti presenti nel testo, senza eccezioni.
+
+## TIPOLOGIE DI CITAZIONI DA IDENTIFICARE:
+
+1. **CITAZIONI DIRETTE** (direct_quote)
+   - Testo esatto tra virgolette ("...") attribuito a una persona/fonte specifica
+   - Quote virgolettate di esperti, autori, intervistati
+   - Dichiarazioni testuali riportate
+
+2. **CITAZIONI INDIRETTE** (indirect_quote)
+   - Parafrasi o riformulazioni di idee/affermazioni altrui
+   - "Secondo X...", "Come afferma Y...", "X sostiene che..."
+
+3. **RIFERIMENTI A STUDI/RICERCHE** (study_reference)
+   - Paper scientifici, ricerche, esperimenti
+   - Formato: (Smith et al., 2023), [1], [2-5]
+   - Dataset, protocolli, metodologie standard
+
+4. **STATISTICHE CON FONTE** (statistic_with_source)
+   - Dati numerici con attribuzione esplicita
+   - "Secondo [fonte], il 67% di..."
+
+5. **RIFERIMENTI A ESPERTI** (expert_reference)
+   - Opinioni di autorità nel campo
+   - Specialisti, professori, ricercatori
+
+6. **RIFERIMENTI A OPERE** (work_reference)
+   - Libri, articoli, documenti citati
+
+7. **RIFERIMENTI A ORGANIZZAZIONI** (organization_reference)
+   - Report di istituzioni/organizzazioni
+
+8. **FONTI WEB** (web_source)
+   - Siti web, blog, social media
+
+## CRITERI DI VALIDITÀ RIGOROSI:
+
+✅ INCLUDI SOLO SE:
+- Ha fonte esterna identificabile (nome autore/organizzazione/pubblicazione)
+- È chiaramente attribuita (non è opinione dell'autore dell'articolo)
+- Ha contesto verificabile nel testo
+
+❌ ESCLUDI SEMPRE:
+- Opinioni/affermazioni dell'autore dell'articolo stesso
+- Citazioni senza fonte chiara o attribuzione
+- Parafrasi generiche senza riferimento esplicito
+- Frasi tra virgolette senza attribuzione chiara
+
+## INFORMAZIONI DA ESTRARRE (TUTTI I CAMPI):
+
+Per ogni citazione valida:
+- id: numero progressivo
+- type: una delle tipologie sopra elencate
+- quote_text: OBBLIGATORIO - testo esatto o descrizione breve (max 200 caratteri)
+- author: autore/i della fonte (NON l'autore dell'articolo)
+- source: pubblicazione, istituzione, organizzazione
+- year: anno (se menzionato, altrimenti null)
+- paragraph: numero paragrafo §N dove appare
+- context: perché viene citata (1-2 frasi di spiegazione)
+- additional_info: oggetto con dettagli extra (study_title, journal, doi, volume, pages, url)
+
+## FORMATO OUTPUT JSON:
+
+Restituisci SOLO JSON valido (senza markdown, senza introduzioni):
+
+{
+  "article_metadata": {
+    "title": "...",
+    "author": "...",
+    "publication": "...",
+    "date": "..."
+  },
+  "total_citations": 0,
+  "citations": [
+    {
+      "id": 1,
+      "type": "study_reference",
+      "quote_text": "Testo o descrizione (OBBLIGATORIO)",
+      "author": "Cognome, Nome",
+      "source": "Nome fonte",
+      "year": "2024",
+      "context": "Spiegazione del perché viene citata",
+      "paragraph": "3",
+      "additional_info": {
+        "study_title": null,
+        "journal": null,
+        "doi": null,
+        "volume": null,
+        "pages": null,
+        "url": null
+      }
+    }
+  ],
+  "citations_by_type": {
+    "direct_quote": 0,
+    "indirect_quote": 0,
+    "study_reference": 0,
+    "statistic_with_source": 0,
+    "expert_reference": 0,
+    "work_reference": 0,
+    "organization_reference": 0,
+    "web_source": 0
+  },
+  "unique_sources": []
+}
+
+## REGOLE CRITICHE:
+
+1. **quote_text** NON può mai essere null, vuoto o undefined - SEMPRE fornire testo descrittivo
+2. Se un'informazione non è disponibile, usa null (tranne quote_text)
+3. Mantieni ordine di apparizione nel testo (§1, §2, §3...)
+4. Nel quote_text, sostituisci " con ' per evitare errori JSON
+5. Limita quote_text a max 200 caratteri
+6. JSON deve essere VALIDO e COMPLETO
+7. **QUALITÀ > QUANTITÀ**: Meglio 3 citazioni VERE che 10 dubbie
+
+IMPORTANTE: Inizia DIRETTAMENTE con il JSON. NON includere introduzioni come "Ecco le citazioni...", "Certamente...". Output SOLO JSON valido.`;
+    }
+    
+    // Prompt generico per altri provider
+    return `Sei un esperto bibliotecario specializzato nell'identificazione di RIFERIMENTI BIBLIOGRAFICI e FONTI ESTERNE citate negli articoli.
+
+IL TUO COMPITO:
+Identifica SOLO citazioni e riferimenti a FONTI ESTERNE, NON le opinioni dell'autore dell'articolo.
+
+COSA CERCARE (con ALTA PRIORITÀ):
+
+1. **RIFERIMENTI BIBLIOGRAFICI FORMALI**:
+   - Citazioni in formato accademico: (Autore, Anno), [1], (Smith et al., 2023)
+   - Riferimenti a paper scientifici, studi pubblicati, ricerche
+   - Menzioni di articoli, libri, report con autore e anno
+   - DOI, URL, titoli di pubblicazioni
+
+2. **CITAZIONI DIRETTE DA FONTI ESTERNE**:
+   - Frasi tra virgolette attribuite a persone DIVERSE dall'autore
+   - Dichiarazioni di esperti, ricercatori, portavoce
+   - DEVE avere attribuzione chiara (es: "secondo X", "ha dichiarato Y")
+
+3. **DATI E STATISTICHE CON FONTE**:
+   - Numeri/percentuali con fonte esplicita
+   - Es: "secondo l'ISTAT", "dati del WHO", "studio di Harvard"
+
+4. **RIFERIMENTI A STUDI/RICERCHE**:
+   - "Uno studio pubblicato su Nature..."
+   - "Ricerca dell'Università di..."
+   - "Secondo un report di..."
+
+COSA IGNORARE (NON includere):
+❌ Opinioni dell'autore dell'articolo
+❌ Affermazioni generiche senza fonte
+❌ Parafrasi dell'autore senza riferimento a fonte esterna
+❌ Citazioni dell'autore stesso
+❌ Frasi tra virgolette senza attribuzione chiara
+
+CRITERI DI VALIDITÀ:
+✅ Deve avere FONTE IDENTIFICABILE (nome persona/organizzazione/pubblicazione)
+✅ Deve essere ESTERNA all'autore dell'articolo
+✅ Deve avere CONTESTO chiaro (perché viene citata)
+
+INFORMAZIONI DA ESTRARRE (TUTTI I CAMPI OBBLIGATORI):
+- quote_text: OBBLIGATORIO - testo esatto della citazione o descrizione breve (max 200 caratteri). NON lasciare vuoto!
+- author: autore della fonte citata (NON l'autore dell'articolo)
+- source: pubblicazione, istituzione, organizzazione
+- year: anno (se menzionato)
+- paragraph: numero paragrafo §N
+- context: perché viene citata (1-2 frasi)
+- additional_info: journal, doi, volume, pages, url
+
+IMPORTANTE PER IL JSON:
+- Usa virgolette doppie (") per chiavi e valori
+- Escapa virgolette interne: \"
+- Assicurati che il JSON sia valido
+
+OUTPUT: JSON con array di citazioni VERIFICATE.`;
+  },
+  
+  getUserPrompt(article) {
+    // Validazione e normalizzazione dell'oggetto article
+    if (!article || typeof article !== 'object') {
+      throw new Error('Oggetto article non valido');
+    }
+    
+    // Estrai contenuto in modo sicuro
+    let content = '';
+    if (article.content) {
+      content = article.content;
+    } else if (article.paragraphs && Array.isArray(article.paragraphs)) {
+      content = article.paragraphs.map(p => p.text || p).join('\n\n');
+    } else {
+      throw new Error('Nessun contenuto trovato nell\'articolo');
+    }
+    
+    // Dividi il contenuto in paragrafi numerati
+    const paragraphs = content
+      .split('\n\n')
+      .filter(p => p.trim().length > 0)
+      .map((p, i) => `§${i + 1}: ${p.trim()}`)
+      .join('\n\n');
+
+    // Estrai metadati in modo sicuro
+    const title = article.title || 'Titolo non disponibile';
+    const author = article.author || article.byline || 'N/A';
+    const publication = article.siteName || article.publication || article.source || 'N/A';
+    const date = article.publishedDate || article.date || 'N/A';
+
+    return `# ARTICOLO DA ANALIZZARE PER CITAZIONI
+
+**Titolo:** ${title}
+**Autore:** ${author}
+**Pubblicazione:** ${publication}
+**Data:** ${date}
+
+---
+
+## CONTENUTO COMPLETO
+(Ogni paragrafo è numerato)
+
+${paragraphs}
+
+---
+
+# ISTRUZIONI
+
+Analizza questo articolo e identifica SOLO citazioni e riferimenti a FONTI ESTERNE.
+
+⚠️ IMPORTANTE: NON includere opinioni dell'autore dell'articolo. Cerca SOLO:
+- Riferimenti bibliografici formali (paper, studi, libri)
+- Citazioni dirette di persone/esperti ESTERNI
+- Dati/statistiche con fonte esplicita
+- Riferimenti a ricerche/report di organizzazioni
+
+Per ogni citazione VALIDA trovata, estrai:
+- id: numero progressivo
+- type: direct_quote | indirect_quote | study_reference | statistic | expert_opinion | book_reference | article_reference | report_reference | organization_data | web_source
+- quote_text: OBBLIGATORIO - testo esatto citato o descrizione breve (NON lasciare vuoto!)
+- author: autore/i della fonte
+- source: pubblicazione/organizzazione
+- year: anno (se menzionato)
+- context: perché viene citata (1-2 frasi)
+- paragraph: numero paragrafo (§N)
+- additional_info: dettagli extra (study_title, journal, doi, volume, pages, url, etc.)
+
+## FORMATO OUTPUT
+
+Restituisci SOLO un oggetto JSON valido (senza markdown, senza spiegazioni):
+
+{
+  "article_metadata": {
+    "title": "${title}",
+    "author": "${author}",
+    "publication": "${publication}",
+    "date": "${date}"
+  },
+  "total_citations": 0,
+  "citations": [
+    {
+      "id": 1,
+      "type": "study_reference",
+      "quote_text": "Testo esatto della citazione o descrizione breve (OBBLIGATORIO - NON lasciare vuoto!)",
+      "author": "Cognome, Nome",
+      "source": "Nome fonte",
+      "year": "2024",
+      "context": "Breve spiegazione del perché viene citata",
+      "paragraph": "3",
+      "additional_info": {
+        "study_title": null,
+        "journal": null,
+        "doi": null,
+        "volume": null,
+        "pages": null,
+        "url": null
+      }
+    }
+  ]
+}
+
+**REGOLE CRITICHE:**
+✅ INCLUDI SOLO se ha:
+   - Fonte esterna identificabile (nome autore/organizzazione/pubblicazione)
+   - Attribuzione chiara (non è opinione dell'autore dell'articolo)
+   - Contesto verificabile
+
+❌ NON INCLUDERE:
+   - Opinioni/affermazioni dell'autore dell'articolo
+   - Citazioni senza fonte chiara
+   - Parafrasi generiche senza riferimento
+
+**FORMATO:**
+- Se un'informazione non è disponibile, usa null (TRANNE quote_text che è OBBLIGATORIO)
+- Mantieni ordine di apparizione (§1, §2, §3...)
+- Nel quote_text, sostituisci " con ' per evitare errori JSON
+- Limita quote_text a max 200 caratteri
+- quote_text NON può essere null, vuoto o undefined - SEMPRE fornire un testo descrittivo
+- JSON VALIDO e COMPLETO
+
+**QUALITÀ > QUANTITÀ**: Meglio 3 citazioni VERE che 10 dubbie.
+
+Analizza ora e restituisci SOLO il JSON valido.`;
+  },
+  
+  /**
+   * Trova il paragrafo corretto cercando la citazione nel testo
+   */
+  findCitationParagraph(citation, article) {
+    // Estrai i paragrafi dall'articolo
+    let paragraphs = [];
+    
+    if (article.paragraphs && Array.isArray(article.paragraphs)) {
+      paragraphs = article.paragraphs.map((p, i) => ({
+        id: i + 1,
+        text: typeof p === 'string' ? p : (p.text || '')
+      }));
+    } else if (article.content) {
+      paragraphs = article.content
+        .split('\n\n')
+        .filter(p => p.trim().length > 0)
+        .map((p, i) => ({
+          id: i + 1,
+          text: p.trim()
+        }));
+    }
+    
+    if (paragraphs.length === 0) {
+      return '1'; // Fallback
+    }
+    
+    // Estrai il testo della citazione
+    const quoteText = citation.quote_text || '';
+    
+    if (!quoteText || quoteText.length < 10) {
+      return citation.paragraph || '1'; // Usa il paragrafo suggerito dall'AI se la citazione è troppo corta
+    }
+    
+    // Normalizza il testo della citazione per la ricerca
+    const normalizedQuote = this.normalizeText(quoteText);
+    
+    // Cerca la citazione nei paragrafi
+    let bestMatch = null;
+    let bestScore = 0;
+    
+    for (const para of paragraphs) {
+      const normalizedPara = this.normalizeText(para.text);
+      
+      // Calcola similarity score
+      const score = this.calculateSimilarity(normalizedQuote, normalizedPara);
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = para.id;
+      }
+      
+      // Se troviamo una corrispondenza esatta o molto alta, fermiamoci
+      if (score > 0.8) {
+        break;
+      }
+    }
+    
+    // Se abbiamo trovato un match con score > 0.3, usalo
+    if (bestMatch && bestScore > 0.3) {
+      console.log(`✅ Citazione trovata nel paragrafo §${bestMatch} (score: ${bestScore.toFixed(2)})`);
+      return bestMatch.toString();
+    }
+    
+    // Altrimenti, cerca parole chiave
+    const keywords = this.extractKeywords(quoteText);
+    
+    for (const para of paragraphs) {
+      const paraLower = para.text.toLowerCase();
+      let keywordMatches = 0;
+      
+      for (const keyword of keywords) {
+        if (paraLower.includes(keyword.toLowerCase())) {
+          keywordMatches++;
+        }
+      }
+      
+      // Se troviamo almeno 2 keyword match, probabilmente è il paragrafo giusto
+      if (keywordMatches >= Math.min(2, keywords.length)) {
+        console.log(`✅ Citazione trovata nel paragrafo §${para.id} (keyword match: ${keywordMatches}/${keywords.length})`);
+        return para.id.toString();
+      }
+    }
+    
+    // Fallback: usa il paragrafo suggerito dall'AI o il primo
+    console.warn(`⚠️ Impossibile trovare il paragrafo esatto per la citazione: "${quoteText.substring(0, 50)}..."`);
+    return citation.paragraph || '1';
+  },
+  
+  /**
+   * Normalizza testo per confronto
+   */
+  normalizeText(text) {
+    return text
+      .toLowerCase()
+      .replace(/[""''«»]/g, '"') // Normalizza virgolette
+      .replace(/[^\w\s]/g, ' ')  // Rimuovi punteggiatura
+      .replace(/\s+/g, ' ')      // Normalizza spazi
+      .trim();
+  },
+  
+  /**
+   * Calcola similarity tra due testi usando Jaccard similarity
+   */
+  calculateSimilarity(text1, text2) {
+    const words1 = new Set(text1.split(' ').filter(w => w.length > 2));
+    const words2 = new Set(text2.split(' ').filter(w => w.length > 2));
+    
+    const intersection = new Set([...words1].filter(w => words2.has(w)));
+    const union = new Set([...words1, ...words2]);
+    
+    return intersection.size / union.size;
+  },
+  
+  /**
+   * Estrae parole chiave significative da un testo
+   */
+  extractKeywords(text) {
+    // Parole comuni da ignorare (stopwords italiane e inglesi)
+    const stopwords = new Set([
+      'il', 'lo', 'la', 'i', 'gli', 'le', 'un', 'uno', 'una', 'di', 'a', 'da', 'in', 'con', 'su', 'per',
+      'tra', 'fra', 'e', 'o', 'ma', 'se', 'che', 'chi', 'cui', 'non', 'più', 'anche', 'come', 'quando',
+      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from',
+      'è', 'sono', 'ha', 'hanno', 'essere', 'avere', 'fare', 'dire', 'questo', 'quello', 'sua', 'suo'
+    ]);
+    
+    const words = text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 3 && !stopwords.has(w));
+    
+    // Prendi le prime 5 parole più lunghe (probabilmente più significative)
+    return words
+      .sort((a, b) => b.length - a.length)
+      .slice(0, 5);
+  },
+
+  parseCitations(response, article) {
+    try {
+      // Pulisci risposta da eventuali markdown
+      let jsonText = response.trim();
+      
+      // Rimuovi markdown code blocks
+      if (jsonText.startsWith('```json')) {
+        jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+      } else if (jsonText.startsWith('```')) {
+        jsonText = jsonText.replace(/```\n?/g, '').replace(/```\n?$/g, '');
+      }
+      
+      // Trova il JSON valido (tra prima { e ultima })
+      const firstBrace = jsonText.indexOf('{');
+      const lastBrace = jsonText.lastIndexOf('}');
+      
+      if (firstBrace === -1 || lastBrace === -1) {
+        throw new Error('Nessun JSON valido trovato nella risposta');
+      }
+      
+      jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+      
+      // Tenta il parsing
+      let data;
+      try {
+        data = JSON.parse(jsonText);
+      } catch (parseError) {
+        // Se il JSON è troncato, prova a ripararlo
+        console.warn('JSON malformato, tentativo di riparazione...', parseError);
+        
+        // Aggiungi chiusure mancanti
+        let repairedJson = jsonText;
+        
+        // Conta parentesi graffe aperte/chiuse
+        const openBraces = (repairedJson.match(/\{/g) || []).length;
+        const closeBraces = (repairedJson.match(/\}/g) || []).length;
+        
+        // Aggiungi } mancanti
+        if (openBraces > closeBraces) {
+          repairedJson += '}'.repeat(openBraces - closeBraces);
+        }
+        
+        // Conta parentesi quadre aperte/chiuse
+        const openBrackets = (repairedJson.match(/\[/g) || []).length;
+        const closeBrackets = (repairedJson.match(/\]/g) || []).length;
+        
+        // Aggiungi ] mancanti
+        if (openBrackets > closeBrackets) {
+          repairedJson += ']'.repeat(openBrackets - closeBrackets);
+        }
+        
+        // Rimuovi virgole finali prima di } o ]
+        repairedJson = repairedJson.replace(/,(\s*[}\]])/g, '$1');
+        
+        // Tenta nuovamente il parsing
+        try {
+          data = JSON.parse(repairedJson);
+          console.log('JSON riparato con successo');
+        } catch (repairError) {
+          console.error('Impossibile riparare il JSON:', repairError);
+          console.error('JSON originale:', jsonText.substring(0, 500));
+          throw new Error('JSON malformato e non riparabile. Riprova con un articolo più breve o contatta il supporto.');
+        }
+      }
+      
+      // Valida struttura dati
+      if (!data.citations || !Array.isArray(data.citations)) {
+        // Se non ci sono citazioni, restituisci array vuoto
+        console.warn('Nessuna citazione trovata nella risposta');
+        data.citations = [];
+      }
+      
+      // ✨ NUOVO: Verifica e correggi il numero di paragrafo per ogni citazione
+      console.log('🔍 Verifica paragrafi citazioni...');
+      data.citations = data.citations.map(citation => {
+        // ✅ VALIDAZIONE: Assicurati che quote_text esista
+        if (!citation.quote_text && !citation.text) {
+          console.warn('⚠️ Citazione senza testo:', citation);
+          // Prova a generare un testo descrittivo
+          citation.quote_text = citation.context || 
+                               `Riferimento a ${citation.source || 'fonte'} ${citation.author ? 'di ' + citation.author : ''}`.trim();
+        }
+        
+        // Normalizza il campo text -> quote_text
+        if (!citation.quote_text && citation.text) {
+          citation.quote_text = citation.text;
+        }
+        
+        const correctParagraph = this.findCitationParagraph(citation, article);
+        
+        if (correctParagraph !== citation.paragraph) {
+          console.log(`📝 Corretto paragrafo citazione "${citation.quote_text?.substring(0, 30)}..." da §${citation.paragraph} a §${correctParagraph}`);
+        }
+        
+        return {
+          ...citation,
+          paragraph: correctParagraph,
+          originalParagraph: citation.paragraph // Mantieni il paragrafo originale suggerito dall'AI per debug
+        };
+      });
+      
+      // Arricchisci con metadati articolo
+      return {
+        article_metadata: data.article_metadata || {
+          title: article.title,
+          author: article.author || 'N/A',
+          publication: article.siteName || 'N/A',
+          date: article.publishedDate || 'N/A'
+        },
+        total_citations: data.total_citations || data.citations.length,
+        citations: data.citations,
+        extractedAt: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Errore parsing citazioni:', error);
+      console.error('Risposta completa:', response.substring(0, 1000));
+      throw new Error('Errore nel parsing delle citazioni: ' + error.message);
+    }
+  },
+  
+  /**
+   * Formatta citazioni in diversi stili bibliografici
+   */
+  formatCitation(article, style = 'apa') {
+    // Validazione input
+    if (!article || typeof article !== 'object') {
+      return 'Articolo non disponibile';
+    }
+    
+    const author = article.author || article.byline || 'Autore Sconosciuto';
+    const title = article.title || 'Titolo non disponibile';
+    const url = article.url || '';
+    const date = article.publishedDate || article.date || new Date().toISOString().split('T')[0];
+    const accessDate = article.accessDate || new Date().toISOString().split('T')[0];
+    
+    // Estrai nome dominio per il nome del sito
+    let siteName = 'Web';
+    try {
+      const urlObj = new URL(url);
+      siteName = urlObj.hostname.replace('www.', '');
+    } catch (e) {
+      // Ignora errori URL
+    }
+    
+    const year = date.split('-')[0];
+    const [y, m, d] = date.split('-');
+    const [ay, am, ad] = accessDate.split('-');
+    
+    switch (style.toLowerCase()) {
+      case 'apa':
+        // APA 7th Edition
+        return `${author}. (${year}). ${title}. ${siteName}. ${url}`;
+        
+      case 'mla':
+        // MLA 9th Edition
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const accessMonth = monthNames[parseInt(am) - 1];
+        return `${author}. "${title}." ${siteName}, ${d} ${monthNames[parseInt(m) - 1]}. ${year}, ${url}. Accessed ${ad} ${accessMonth}. ${ay}.`;
+        
+      case 'chicago':
+        // Chicago 17th Edition
+        return `${author}. "${title}." ${siteName}. ${date}. ${url}.`;
+        
+      case 'ieee':
+        // IEEE
+        return `${author}, "${title}," ${siteName}, ${date}. [Online]. Available: ${url}. [Accessed: ${accessDate}].`;
+        
+      case 'harvard':
+        // Harvard
+        return `${author} (${year}) ${title}. Available at: ${url} (Accessed: ${accessDate}).`;
+        
+      default:
+        return this.formatCitation(article, 'apa');
+    }
+  },
+  
+  /**
+   * Genera bibliografia completa
+   */
+  generateBibliography(article, citations, style = 'apa') {
+    let bibliography = `# Bibliografia\n\n`;
+    bibliography += `**Stile:** ${style.toUpperCase()}\n\n`;
+    bibliography += `## Articolo Principale\n\n`;
+    bibliography += this.formatCitation(article, style) + '\n\n';
+    
+    if (citations && citations.length > 0) {
+      bibliography += `## Fonti Citate nell'Articolo (${citations.length})\n\n`;
+      citations.forEach((citation, index) => {
+        // Numero citazione
+        bibliography += `${index + 1}. `;
+        
+        // Autore
+        if (citation.author && citation.author !== 'Non specificato' && citation.author !== 'N/A') {
+          bibliography += `**${citation.author}**`;
+        } else {
+          bibliography += `**Fonte non specificata**`;
+        }
+        
+        // Anno
+        if (citation.year) {
+          bibliography += ` (${citation.year})`;
+        }
+        
+        bibliography += '\n';
+        
+        // Testo citazione
+        const quoteText = citation.quote_text || citation.text || '';
+        if (quoteText) {
+          bibliography += `   "${quoteText.substring(0, 150)}${quoteText.length > 150 ? '...' : ''}"\n`;
+        }
+        
+        // Fonte/Pubblicazione
+        if (citation.source && citation.source !== 'N/A') {
+          bibliography += `   📚 Fonte: ${citation.source}\n`;
+        }
+        
+        // Contesto
+        if (citation.context) {
+          bibliography += `   📝 Contesto: ${citation.context}\n`;
+        }
+        
+        // Tipo e posizione
+        const typeLabel = this.getCitationTypeLabel(citation.type);
+        bibliography += `   🏷️ Tipo: ${typeLabel}`;
+        if (citation.paragraph) {
+          bibliography += ` | 📍 Paragrafo: §${citation.paragraph}`;
+        }
+        bibliography += '\n';
+        
+        // Informazioni aggiuntive
+        if (citation.additional_info) {
+          const info = citation.additional_info;
+          const details = [];
+          if (info.study_title) details.push(`Studio: "${info.study_title}"`);
+          if (info.journal) details.push(`Journal: ${info.journal}`);
+          if (info.doi) details.push(`DOI: ${info.doi}`);
+          if (info.url) details.push(`URL: ${info.url}`);
+          
+          if (details.length > 0) {
+            bibliography += `   ℹ️ ${details.join(' | ')}\n`;
+          }
+        }
+        
+        bibliography += '\n';
+      });
+    }
+    
+    return bibliography;
+  },
+  
+  getCitationTypeLabel(type) {
+    const labels = {
+      'direct_quote': 'Citazione Diretta',
+      'indirect_quote': 'Citazione Indiretta',
+      'study_reference': 'Studio/Ricerca',
+      'statistic': 'Statistica',
+      'expert_opinion': 'Opinione Esperto',
+      'book_reference': 'Libro',
+      'article_reference': 'Articolo',
+      'report_reference': 'Report',
+      'organization_data': 'Dati Organizzazione',
+      'web_source': 'Fonte Web'
+    };
+    return labels[type] || 'Altro';
+  },
+  
+  /**
+   * Esporta citazioni in formato BibTeX
+   */
+  exportToBibTeX(article, citations) {
+    let bibtex = '';
+    
+    // Entry principale
+    const key = this.generateBibTeXKey(article.author, article.publishedDate);
+    bibtex += `@online{${key},\n`;
+    bibtex += `  author = {${article.author || 'Unknown'}},\n`;
+    bibtex += `  title = {${article.title}},\n`;
+    bibtex += `  year = {${article.publishedDate?.split('-')[0] || new Date().getFullYear()}},\n`;
+    bibtex += `  url = {${article.url}},\n`;
+    bibtex += `  urldate = {${article.accessDate}}\n`;
+    bibtex += `}\n\n`;
+    
+    return bibtex;
+  },
+  
+  generateBibTeXKey(author, date) {
+    const authorKey = (author || 'unknown').toLowerCase().replace(/\s+/g, '').substring(0, 10);
+    const year = date?.split('-')[0] || new Date().getFullYear();
+    return `${authorKey}${year}`;
+  }
+};
