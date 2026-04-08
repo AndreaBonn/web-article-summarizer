@@ -1,9 +1,6 @@
 // Reading Mode - Side-by-Side View
 // Controller: variabili globali, init, caricamento dati, event listeners, theme, resize
-// Funzioni di visualizzazione  → reading-mode-display.js
-// Traduzioni, citazioni, Q&A  → reading-mode-features.js
-// Export e copia              → reading-mode-export.js
-// Voce e font size            → reading-mode-voice.js
+// Modules loaded before this file: src/reading-mode/ (display, pdf, features, export, voice)
 
 let currentData = null;
 let syncScroll = true;

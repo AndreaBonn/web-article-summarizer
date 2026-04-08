@@ -1,6 +1,6 @@
 // Popup Script - Controller principale
 // Variabili globali di stato, init, event listeners, UI management
-// I moduli caricati prima di questo file (popup-analysis, popup-export, popup-features, popup-voice)
+// Modules loaded before this file: src/popup/ (analysis, export, features, citations, voice)
 // accedono a queste variabili globali direttamente.
 
 let currentArticle = null;
