@@ -93,7 +93,7 @@ async function handleGenerateSummary(article, provider, settings) {
     }
 
     // 2. Chiama API con retry
-    const responseText = await APIClient.callAPIWithRetry(provider, apiKey, article, settings);
+    const responseText = await APIClient.callAPI(provider, apiKey, article, settings);
 
     // 3. Parsa risposta
     const { summary, keyPoints } = APIClient.parseResponse(responseText);
