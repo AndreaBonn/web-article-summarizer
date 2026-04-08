@@ -81,6 +81,210 @@ class APIClient {
     return PromptRegistry.getSummarySystemPrompt(provider, contentType);
   }
 
+  static buildPrompt(provider, article, settings) {
+    // Rileva tipo di contenuto e lingua
+    const contentType = settings.contentType || this.detectContentType(article);
+    const detectedLanguage = this.detectLanguage(article.content);
+
+    // Calcola lunghezza target basata sulla completezza
+    const wordCount = article.wordCount;
+    let targetWords;
+
+    // Nuove percentuali più generose per garantire completezza
+    const lengthMap = {
+      short: Math.floor(wordCount * 0.4),
+      medium: Math.floor(wordCount * 0.6),
+      detailed: Math.floor(wordCount * 0.75)
+    };
+
+    targetWords = lengthMap[settings.summaryLength] || lengthMap.medium;
+    targetWords = Math.max(300, Math.min(targetWords, 3000));
+
+    // Mappa lingua output
+    const languageMap = {
+      it: {
+        name: 'italiano',
+        instruction: 'Scrivi il riassunto in italiano',
+        systemAddition: '\n\nIMPORTANTE: Devi scrivere il riassunto ESCLUSIVAMENTE in ITALIANO, indipendentemente dalla lingua dell\'articolo originale.'
+      },
+      en: {
+        name: 'English',
+        instruction: 'Write the summary in English',
+        systemAddition: '\n\nIMPORTANT: You MUST write the summary EXCLUSIVELY in ENGLISH, regardless of the original article language.'
+      },
+      es: {
+        name: 'español',
+        instruction: 'Escribe el resumen en español',
+        systemAddition: '\n\nIMPORTANTE: Debes escribir el resumen EXCLUSIVAMENTE en ESPAÑOL, independientemente del idioma del artículo original.'
+      },
+      fr: {
+        name: 'français',
+        instruction: 'Écris le résumé en français',
+        systemAddition: '\n\nIMPORTANT: Tu DOIS écrire le résumé EXCLUSIVEMENT en FRANÇAIS, quelle que soit la langue de l\'article original.'
+      },
+      de: {
+        name: 'Deutsch',
+        instruction: 'Schreibe die Zusammenfassung auf Deutsch',
+        systemAddition: '\n\nWICHTIG: Du MUSST die Zusammenfassung AUSSCHLIESSLICH auf DEUTSCH schreiben, unabhängig von der Sprache des Originalartikels.'
+      }
+    };
+
+    const outputLang = languageMap[settings.outputLanguage] || languageMap[detectedLanguage] || languageMap.it;
+
+    // Ottieni system prompt appropriato e aggiungi istruzione lingua
+    let systemPrompt = this.getSystemPrompt(provider, contentType);
+    systemPrompt += outputLang.systemAddition;
+
+    // Formatta articolo
+    const formattedArticle = this.formatArticleForPrompt(article);
+
+    // Costruisci user prompt
+    const userPrompt = `# ARTICOLO DA RIASSUMERE
+
+${formattedArticle}
+
+---
+
+# ISTRUZIONI PER IL RIASSUNTO
+
+## ⚠️ LINGUA DI OUTPUT RICHIESTA: ${outputLang.name.toUpperCase()}
+${outputLang.instruction.toUpperCase()}
+
+## Obiettivo
+Crea un riassunto **COMPLETO ed ESAUSTIVO** che possa SOSTITUIRE completamente la lettura dell'articolo originale.
+
+## Principio Fondamentale: COMPLETEZZA > BREVITÀ
+Il riassunto deve contenere TUTTI gli elementi essenziali per comprendere l'articolo senza doverlo leggere.
+
+## Linee Guida per la Qualità
+
+✅ **DA FARE:**
+- **SCRIVI TUTTO IN ${outputLang.name.toUpperCase()}** - Questa è la priorità assoluta
+- Preserva TUTTI i nomi propri, date, cifre, percentuali e dati specifici
+- Mantieni terminologia tecnica importante (spiega brevemente se necessario)
+- Includi TUTTI gli esempi concreti e i casi citati nell'articolo
+- Mantieni la struttura logica e il flusso narrativo dell'articolo
+- Usa transizioni fluide tra concetti
+- Scrivi in prosa scorrevole e ben strutturata
+- Sii preciso: se l'autore dice "il 67%", scrivi "il 67%", non "la maggioranza"
+- Includi contesto, background e implicazioni discusse nell'articolo
+
+❌ **DA EVITARE:**
+- Generalizzazioni vaghe ("l'articolo parla di...", "vengono discussi vari aspetti")
+- Frasi meta ("l'autore inizia spiegando...") - vai diretto al contenuto
+- Omettere dati, esempi o sezioni importanti
+- Aggiungere opinioni o informazioni non nell'originale
+- Liste bullet point (usa prosa fluida)
+- Riassumere superficialmente sezioni complesse
+- Tagliare informazioni per rispettare un limite di parole rigido
+
+## Note sulla Lunghezza
+- Indicazione: circa ${targetWords} parole (ma è solo una guida)
+- **IMPORTANTE**: Puoi usare più parole se necessario per essere completo ed esaustivo
+- Non sacrificare informazioni importanti per rispettare un limite di parole
+- L'obiettivo è la completezza, non la brevità
+- Rimuovi solo ridondanze e dettagli veramente superflui
+
+---
+
+# PUNTI CHIAVE STRUTTURATI
+
+Dopo il riassunto, crea una sezione con 5-8 punti chiave:
+
+**[Titolo breve e descrittivo]** (§N o §N-M)
+Spiegazione in 2-3 frasi con dettagli specifici e concreti.
+
+Ogni punto deve:
+- Catturare un'idea centrale dell'articolo
+- Essere autosufficiente
+- Includere dettagli specifici (dati, esempi, nomi)
+- Indicare i paragrafi di riferimento
+
+---
+
+# FORMATO OUTPUT
+
+## RIASSUNTO
+
+[Il tuo riassunto COMPLETO ed ESAUSTIVO in prosa fluida. Lunghezza indicativa: ~${targetWords} parole, ma usa più spazio se necessario per essere completo]
+
+## PUNTI CHIAVE
+
+1. **[Titolo]** (§N)
+   [Spiegazione dettagliata]
+
+2. **[Titolo]** (§N-M)
+   [Spiegazione dettagliata]
+
+[...]
+
+---
+
+⚠️ REMINDER: Scrivi TUTTO il riassunto e i punti chiave in ${outputLang.name.toUpperCase()}.
+
+Inizia ora con il riassunto completo.`;
+
+    return { systemPrompt, userPrompt, metadata: { contentType, detectedLanguage, targetWords } };
+  }
+
+  static formatArticleForPrompt(article) {
+    // ✅ SANITIZZA IL TITOLO
+    let cleanTitle;
+    try {
+      cleanTitle = InputSanitizer.sanitizeForAI(article.title, {
+        maxLength: 500,
+        minLength: 1,
+        removeHTML: true,
+        preserveNewlines: false
+      });
+    } catch (error) {
+      console.warn('⚠️ Errore sanitizzazione titolo:', error);
+      cleanTitle = article.title.substring(0, 500);
+    }
+
+    let formatted = `TITOLO: ${cleanTitle}\n\n`;
+    formatted += `ARTICOLO (ogni paragrafo è numerato):\n`;
+
+    const originalLength = article.content ? article.content.length : 0;
+    let totalSanitized = 0;
+    let skippedParagraphs = 0;
+
+    // ✅ SANITIZZA OGNI PARAGRAFO
+    article.paragraphs.forEach(p => {
+      try {
+        const cleanText = InputSanitizer.sanitizeForAI(p.text, {
+          maxLength: 5000,
+          minLength: 5,
+          removeHTML: true,
+          preserveNewlines: true,
+          removeCitations: false
+        });
+
+        formatted += `§${p.id}: ${cleanText}\n\n`;
+        totalSanitized += (p.text.length - cleanText.length);
+      } catch (error) {
+        console.warn(`⚠️ Paragrafo §${p.id} troppo corto o invalido, saltato`);
+        skippedParagraphs++;
+      }
+    });
+
+    formatted += `\nLUNGHEZZA: ${article.wordCount} parole (~${article.readingTimeMinutes} minuti di lettura)`;
+
+    if (totalSanitized > 0 || skippedParagraphs > 0) {
+      const savedTokens = Math.floor(totalSanitized / 4);
+      console.log(`🧹 Sanitizzazione completata:`);
+      console.log(`   - Caratteri rimossi: ${totalSanitized}`);
+      console.log(`   - Token risparmiati: ~${savedTokens}`);
+      if (originalLength > 0) {
+        console.log(`   - Riduzione: ${((totalSanitized/originalLength)*100).toFixed(1)}%`);
+      }
+      if (skippedParagraphs > 0) {
+        console.log(`   - Paragrafi saltati: ${skippedParagraphs}`);
+      }
+    }
+
+    return formatted;
+  }
 
   // Funzione per estrarre solo i punti chiave (senza riassunto)
   static async extractKeyPoints(provider, apiKey, article, settings) {
@@ -564,6 +768,42 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
     return data.content[0].text;
   }
   
+  // Helper per estrarre il testo dalla risposta Gemini
+  static extractGeminiText(data) {
+    console.log('Gemini response structure:', JSON.stringify(data, null, 2));
+
+    if (!data.candidates || data.candidates.length === 0) {
+      console.error('Gemini error - no candidates:', data);
+      const errorMsg = data.error?.message || data.promptFeedback?.blockReason || 'Nessun candidato nella risposta';
+      throw new Error(`Risposta Gemini non valida: ${errorMsg}`);
+    }
+
+    const candidate = data.candidates[0];
+
+    // Controlla se il contenuto è stato bloccato
+    if (candidate.finishReason === 'SAFETY' || candidate.finishReason === 'RECITATION') {
+      throw new Error(`Contenuto bloccato da Gemini: ${candidate.finishReason}`);
+    }
+
+    // Gemini 2.5-pro può terminare con MAX_TOKENS se usa troppi token per il reasoning
+    if (candidate.finishReason === 'MAX_TOKENS') {
+      console.warn('Gemini ha raggiunto il limite di token. Thoughts tokens:', data.usageMetadata?.thoughtsTokenCount);
+      throw new Error('Gemini ha raggiunto il limite di token. Aumenta maxOutputTokens o riduci la lunghezza del prompt.');
+    }
+
+    if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+      console.error('Gemini error - invalid content structure:', candidate);
+      throw new Error('Risposta Gemini non valida: nessun contenuto generato');
+    }
+
+    const text = candidate.content.parts[0].text;
+    if (!text || text.trim().length === 0) {
+      throw new Error('Risposta Gemini vuota');
+    }
+
+    return text;
+  }
+
   static async callGeminiCompletion(apiKey, systemPrompt, userPrompt, options) {
     const requestBody = {
       contents: [{
