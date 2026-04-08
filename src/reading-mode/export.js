@@ -151,12 +151,6 @@ export async function exportToPDF() {
   }
 
   try {
-    // Verifica che jsPDF sia caricato
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-      alert('Libreria PDF non caricata. Ricarica la pagina e riprova.');
-      return;
-    }
-
     // Mostra loading
     const originalText = elements.exportBtn.textContent;
     elements.exportBtn.textContent = '⏳ Esportazione...';
@@ -179,77 +173,15 @@ export async function exportToPDF() {
       contentType: 'pdf'
     };
 
-    // Usa PDFExporter se disponibile, altrimenti fallback
-    if (typeof PDFExporter !== 'undefined') {
-      await PDFExporter.exportToPDF(
-        articleData,
-        summary,
-        keyPoints,
-        metadataData,
-        state.currentData.translation,
-        state.currentData.qa,
-        state.currentData.citations
-      );
-    } else {
-      // Fallback: export semplice
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      let y = 20;
-      const lineHeight = 7;
-      const pageHeight = doc.internal.pageSize.height;
-      const margin = 20;
-      const maxWidth = 170;
-
-      // Helper function to add text with page breaks
-      const addText = (text, fontSize = 11, isBold = false) => {
-        doc.setFontSize(fontSize);
-        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-
-        const lines = doc.splitTextToSize(text, maxWidth);
-        lines.forEach(line => {
-          if (y + lineHeight > pageHeight - margin) {
-            doc.addPage();
-            y = margin;
-          }
-          doc.text(line, margin, y);
-          y += lineHeight;
-        });
-      };
-
-      // Title
-      addText(article.title, 16, true);
-      y += 5;
-
-      // Metadata
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      doc.text(`${article.wordCount || 0} parole • ${article.readingTimeMinutes || 0} min lettura`, margin, y);
-      y += 10;
-      doc.setTextColor(0);
-
-      // Summary
-      addText('RIASSUNTO', 14, true);
-      y += 3;
-      addText(summary);
-      y += 10;
-
-      // Key Points
-      if (keyPoints && keyPoints.length > 0) {
-        addText('PUNTI CHIAVE', 14, true);
-        y += 3;
-
-        keyPoints.forEach((point, index) => {
-          addText(`${index + 1}. ${point.title}`, 11, true);
-          addText(`   ${point.description}`);
-          y += 3;
-        });
-      }
-
-      // Save
-      const filename = `${article.title.substring(0, 50)}_reading-mode.pdf`;
-      doc.save(filename);
-    }
+    await PDFExporter.exportToPDF(
+      articleData,
+      summary,
+      keyPoints,
+      metadataData,
+      state.currentData.translation,
+      state.currentData.qa,
+      state.currentData.citations
+    );
 
     // Successo
     elements.exportBtn.textContent = '✓ Esportato!';

@@ -1,13 +1,9 @@
 // PDF Exporter - Genera PDF ben formattati per riassunti e punti chiave
+import { jsPDF } from 'jspdf';
+import { CitationExtractor } from './citation-extractor.js';
+
 export class PDFExporter {
   static async exportToPDF(article, summary, keyPoints, metadata, translation = null, qaList = null, citations = null) {
-    // Verifica che jsPDF sia caricato
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-      throw new Error('Libreria jsPDF non caricata. Ricarica la pagina e riprova.');
-    }
-    
-    // Usa jsPDF dalla CDN
-    const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
     let yPosition = 20;
@@ -359,12 +355,6 @@ export class PDFExporter {
   }
   
   static async exportKeyPointsOnly(article, keyPoints, metadata) {
-    // Verifica che jsPDF sia caricato
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-      throw new Error('Libreria jsPDF non caricata. Ricarica la pagina e riprova.');
-    }
-    
-    const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
     let yPosition = 20;
@@ -431,18 +421,13 @@ export class PDFExporter {
   }
 
   static async exportMultiAnalysisToPDF(analysis, articles, options = {}) {
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-      throw new Error('Libreria jsPDF non caricata. Ricarica la pagina e riprova.');
-    }
-    
     // Default: include tutto se non specificato
     const {
       includeSummary = true,
       includeComparison = true,
       includeQA = true
     } = options;
-    
-    const { jsPDF } = window.jspdf;
+
     const doc = new jsPDF();
     
     let yPosition = 20;

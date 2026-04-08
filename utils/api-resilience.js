@@ -1,4 +1,6 @@
 // API Resilience Manager - Retry Logic, Fallback Providers, Rate Limiting
+import { APIClient } from './api-client.js';
+
 export class APIResilience {
   constructor() {
     this.requestQueue = [];

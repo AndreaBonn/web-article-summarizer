@@ -1,5 +1,6 @@
 // i18n.js - Sistema di internazionalizzazione COMPLETO
 // Versione 2.0 - Tutte le stringhe tradotte in 5 lingue
+import { StorageManager } from './storage-manager.js';
 
 export const I18n = {
   currentLanguage: 'it',

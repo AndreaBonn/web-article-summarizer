@@ -1,5 +1,8 @@
 // API Client - Gestione chiamate ai provider LLM
 import { PromptRegistry } from './prompt-registry.js';
+import { InputSanitizer } from './input-sanitizer.js';
+import { APIResilience } from './api-resilience.js';
+import { CacheManager } from './cache-manager.js';
 
 export class APIClient {
   static async callAPI(provider, apiKey, article, settings) {

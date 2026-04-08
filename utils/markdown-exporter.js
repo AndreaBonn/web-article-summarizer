@@ -1,4 +1,6 @@
 // Markdown Exporter - Genera file Markdown ben formattati
+import { CitationExtractor } from './citation-extractor.js';
+
 export class MarkdownExporter {
   static exportToMarkdown(article, summary, keyPoints, metadata, translation = null, qaList = null, notes = null, citations = null) {
     let markdown = '';

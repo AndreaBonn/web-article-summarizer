@@ -1,5 +1,7 @@
 // History Lazy Loader - Virtual Scrolling per cronologia
 // Carica progressivamente gli articoli per migliorare performance
+import { HistoryManager } from './history-manager.js';
+import { I18n } from './i18n.js';
 
 export class HistoryLazyLoader {
   constructor(container, itemsPerPage = 20) {
