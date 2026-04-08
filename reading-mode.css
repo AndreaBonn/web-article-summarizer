@@ -1,5 +1,9 @@
 /* Reading Mode - Side-by-Side Layout */
 
+.hidden {
+  display: none !important;
+}
+
 * {
   margin: 0;
   padding: 0;
