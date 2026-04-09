@@ -10,6 +10,7 @@ import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { ContentClassifier } from '../../utils/ai/content-classifier.js';
 import { CitationExtractor } from '../../utils/ai/citation-extractor.js';
 import { ErrorHandler } from '../../utils/core/error-handler.js';
+import { Logger } from '../../utils/core/logger.js';
 import { addTTSButtons } from './voice.js';
 
 export async function analyzeArticle() {
@@ -70,7 +71,7 @@ export async function analyzeArticle() {
       elements.contentTypeSelect.value = savedContentType;
       elements.contentTypeSelectReady.value = savedContentType;
 
-      console.log('📋 Tipo di articolo recuperato dalla cronologia:', savedContentType);
+      Logger.info('📋 Tipo di articolo recuperato dalla cronologia:', savedContentType);
 
       // Show temporary visual feedback
       elements.loadingText.textContent = `${I18n.t('loading.articleType')} ${ContentClassifier.getCategoryLabel(savedContentType)} (${I18n.t('loading.fromHistory')})`;
@@ -79,7 +80,7 @@ export async function analyzeArticle() {
 
     showState('ready');
   } catch (error) {
-    console.error('Errore analisi:', error);
+    Logger.error('Errore analisi:', error);
 
     await ErrorHandler.showError(error, 'Analisi articolo');
   }
@@ -111,13 +112,13 @@ export async function generateSummary() {
     state.progressTracker.setStep('classify');
     let finalContentType = state.selectedContentType;
 
-    console.log('🎯 selectedContentType:', state.selectedContentType);
+    Logger.debug('🎯 selectedContentType:', state.selectedContentType);
 
     if (state.selectedContentType === 'auto') {
-      console.log('🔄 Avvio classificazione automatica...');
+      Logger.debug('🔄 Avvio classificazione automatica...');
       state.progressTracker.setStep('classify', '🔍 Analisi contenuto con AI...');
 
-      console.log('📋 currentArticle:', state.currentArticle);
+      Logger.debug('📋 currentArticle:', state.currentArticle);
 
       try {
         const classification = await ContentClassifier.classifyArticle(
@@ -126,14 +127,14 @@ export async function generateSummary() {
         );
         finalContentType = classification.category;
 
-        console.log('✅ Classificazione completata:', classification);
+        Logger.info('✅ Classificazione completata:', classification);
 
         // Mostra la categoria rilevata
         const categoryLabel = ContentClassifier.getCategoryLabel(finalContentType);
         state.progressTracker.setStep('classify', `✓ Rilevato: ${categoryLabel}`);
         await new Promise((resolve) => setTimeout(resolve, 800));
       } catch (error) {
-        console.error('❌ Errore classificazione:', error);
+        Logger.error('❌ Errore classificazione:', error);
         await ErrorHandler.logError(error, 'Classificazione contenuto');
         finalContentType = 'general';
         state.progressTracker.setStep(
@@ -143,7 +144,7 @@ export async function generateSummary() {
         await new Promise((resolve) => setTimeout(resolve, 1200));
       }
     } else {
-      console.log('👤 Tipo già impostato (manuale o da cronologia):', state.selectedContentType);
+      Logger.debug('👤 Tipo già impostato (manuale o da cronologia):', state.selectedContentType);
       state.progressTracker.setStep('classify', '✓ Tipo già impostato');
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
@@ -231,7 +232,7 @@ export async function displayResults() {
           paragraphNumber: paragraph,
         });
       } catch (error) {
-        console.warn('Impossibile evidenziare il paragrafo nella pagina:', error.message);
+        Logger.warn('Impossibile evidenziare il paragrafo nella pagina:', error.message);
       }
     });
   });
@@ -253,7 +254,7 @@ export async function displayResults() {
       metadata,
     );
   } catch (error) {
-    console.error('Errore salvataggio cronologia:', error);
+    Logger.error('Errore salvataggio cronologia:', error);
   }
 
   showState('results');
@@ -337,7 +338,7 @@ export async function copyToClipboard() {
       elements.copyBtn.textContent = I18n.t('action.copy');
     }, 2000);
   } catch (error) {
-    console.error('Errore copia:', error);
+    Logger.error('Errore copia:', error);
     elements.copyBtn.textContent = '❌ Errore copia';
     setTimeout(() => {
       elements.copyBtn.textContent = I18n.t('action.copy');

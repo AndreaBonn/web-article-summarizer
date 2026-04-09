@@ -1,5 +1,6 @@
 // Content Extractor - Estrazione e parsing articoli
 import { Readability } from '@mozilla/readability';
+import { Logger } from './logger.js';
 
 const MIN_ARTICLE_WORDS = 200;
 const MIN_PARAGRAPH_LENGTH = 20;
@@ -19,7 +20,7 @@ export class ContentExtractor {
         }
       }
     } catch (error) {
-      console.warn('Readability fallito:', error);
+      Logger.warn('Readability fallito:', error);
     }
 
     // Fallback: estrazione manuale

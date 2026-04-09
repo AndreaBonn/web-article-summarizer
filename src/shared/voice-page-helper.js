@@ -3,6 +3,7 @@
 
 import { VoiceController } from '../utils/voice/voice-controller.js';
 import { HtmlSanitizer } from '../utils/security/html-sanitizer.js';
+import { Logger } from '../utils/core/logger.js';
 
 // ============================================
 // INIZIALIZZAZIONE
@@ -17,7 +18,11 @@ import { HtmlSanitizer } from '../utils/security/html-sanitizer.js';
  * @param {object|null}   [options.localHolder] - Oggetto con property 'value' per riferimento locale (opzionale)
  * @returns {Promise<VoiceController>}
  */
-export async function initVoiceForPage({ state = null, stateKey = 'voiceController', localHolder = null } = {}) {
+export async function initVoiceForPage({
+  state = null,
+  stateKey = 'voiceController',
+  localHolder = null,
+} = {}) {
   const controller = new VoiceController();
   await controller.initialize();
 
@@ -100,7 +105,11 @@ export function updateTTSButtonState(buttonState, { elements = null, getButtons 
  * @param {Function|null} [options.getButtons] - Funzione che ritorna { playBtn, pauseBtn, stopBtn }
  * @param {Function}      [options.onError]    - Callback per errori TTS: (errorDetail) => void
  */
-export function setupTTSEventListeners({ elements = null, getButtons = null, onError = null } = {}) {
+export function setupTTSEventListeners({
+  elements = null,
+  getButtons = null,
+  onError = null,
+} = {}) {
   const resolveOptions = { elements, getButtons };
 
   window.addEventListener('tts:started', () => {
@@ -124,7 +133,7 @@ export function setupTTSEventListeners({ elements = null, getButtons = null, onE
   });
 
   window.addEventListener('tts:error', (event) => {
-    console.error('TTS Error:', event.detail);
+    Logger.error('TTS Error:', event.detail);
     updateTTSButtonState('stopped', resolveOptions);
     if (onError) {
       onError(event.detail);

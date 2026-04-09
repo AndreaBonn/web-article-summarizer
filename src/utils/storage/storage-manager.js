@@ -1,5 +1,6 @@
 // Storage Manager - Gestione API keys e impostazioni
 // Le API key sono salvate in chrome.storage.local che è sandboxed per estensione.
+import { Logger } from '../core/logger.js';
 // Non viene usata cifratura custom perché in un'estensione Chrome il codice sorgente
 // è sempre leggibile — un segreto hardcoded non offre protezione reale.
 
@@ -27,7 +28,7 @@ export class StorageManager {
         await this.saveApiKey(provider, plainKey);
         return plainKey;
       } catch (e) {
-        console.error(`Migrazione API key ${provider} fallita:`, e);
+        Logger.error(`Migrazione API key ${provider} fallita:`, e);
         throw new Error(
           `La API key di ${provider} è in un formato obsoleto e non può essere letta. Reinserisci la chiave nelle impostazioni.`,
         );

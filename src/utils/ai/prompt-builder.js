@@ -1,6 +1,7 @@
 // Prompt Builder - Costruzione dei prompt per i provider LLM
 import { PromptRegistry } from './prompt-registry.js';
 import { InputSanitizer } from '../security/input-sanitizer.js';
+import { Logger } from '../core/logger.js';
 
 const LANGUAGE_CONFIGS = {
   it: { name: 'italiano', summaryNoun: 'il riassunto', keyPointsNoun: 'i punti chiave' },
@@ -63,7 +64,7 @@ export class PromptBuilder {
         preserveNewlines: false,
       });
     } catch (error) {
-      console.warn('Errore sanitizzazione titolo:', error);
+      Logger.warn('Errore sanitizzazione titolo:', error);
       cleanTitle = article.title.substring(0, 500);
     }
 
@@ -88,7 +89,7 @@ export class PromptBuilder {
         formatted += `§${p.id}: ${cleanText}\n\n`;
         totalSanitized += p.text.length - cleanText.length;
       } catch (error) {
-        console.warn(`Paragrafo §${p.id} troppo corto o invalido, saltato`);
+        Logger.warn(`Paragrafo §${p.id} troppo corto o invalido, saltato`);
         skippedParagraphs++;
       }
     });

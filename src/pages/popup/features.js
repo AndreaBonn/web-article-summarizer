@@ -12,6 +12,7 @@ import { Translator } from '../../utils/core/translator.js';
 import { Modal } from '../../utils/core/modal.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { createTTSButton } from './voice.js';
+import { Logger } from '../../utils/core/logger.js';
 
 // Translation System — usa un oggetto wrapper per permettere la mutazione cross-modulo
 export const translationState = { value: null };
@@ -20,10 +21,18 @@ export const translationState = { value: null };
 export const citationsState = { value: null };
 
 // Getter/setter per compatibilità con i moduli che importano i valori
-export function getCurrentTranslation() { return translationState.value; }
-export function setCurrentTranslation(val) { translationState.value = val; }
-export function getCurrentCitations() { return citationsState.value; }
-export function setCurrentCitations(val) { citationsState.value = val; }
+export function getCurrentTranslation() {
+  return translationState.value;
+}
+export function setCurrentTranslation(val) {
+  translationState.value = val;
+}
+export function getCurrentCitations() {
+  return citationsState.value;
+}
+export function setCurrentCitations(val) {
+  citationsState.value = val;
+}
 
 // Q&A System
 export async function askQuestion() {
@@ -43,13 +52,10 @@ export async function askQuestion() {
   try {
     cleanQuestion = InputSanitizer.sanitizeUserPrompt(question, {
       maxLength: 500,
-      minLength: 3
+      minLength: 3,
     });
   } catch (error) {
-    await Modal.error(
-      'La domanda non è valida: ' + error.message,
-      'Input Non Valido'
-    );
+    await Modal.error('La domanda non è valida: ' + error.message, 'Input Non Valido');
     return;
   }
 
@@ -71,12 +77,12 @@ export async function askQuestion() {
     settings.outputLanguage = state.selectedLanguage;
 
     const answer = await AdvancedAnalysis.askQuestion(
-      cleanQuestion,  // ← Usa versione sanitizzata
+      cleanQuestion, // ← Usa versione sanitizzata
       state.currentArticle,
       state.currentResults.summary,
       provider,
       apiKey,
-      settings
+      settings,
     );
 
     elements.qaAnswer.classList.remove('loading');
@@ -103,7 +109,7 @@ export async function askQuestion() {
     state.currentQA.push({
       question: cleanQuestion,
       answer: answer,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Aggiorna anche la cronologia con le Q&A
@@ -112,9 +118,8 @@ export async function askQuestion() {
     }
 
     elements.questionInput.value = '';
-
   } catch (error) {
-    console.error('Errore Q&A:', error);
+    Logger.error('Errore Q&A:', error);
     elements.qaAnswer.classList.remove('loading');
     elements.qaAnswer.textContent = I18n.t('feedback.error') + ' ' + error.message;
   } finally {
@@ -131,14 +136,14 @@ function detectArticleLanguage(text) {
     en: ['the', 'and', 'that', 'this', 'with', 'from', 'have', 'been', 'which', 'their'],
     es: ['que', 'del', 'los', 'las', 'esta', 'este', 'para', 'con', 'una', 'por'],
     fr: ['que', 'les', 'des', 'cette', 'dans', 'pour', 'avec', 'sont', 'qui', 'pas'],
-    de: ['der', 'die', 'das', 'und', 'ist', 'des', 'dem', 'den', 'nicht', 'sich']
+    de: ['der', 'die', 'das', 'und', 'ist', 'des', 'dem', 'den', 'nicht', 'sich'],
   };
 
   let maxScore = 0;
   let detectedLang = 'en';
 
   for (const [lang, words] of Object.entries(patterns)) {
-    const score = words.filter(word => sample.includes(` ${word} `)).length;
+    const score = words.filter((word) => sample.includes(` ${word} `)).length;
     if (score > maxScore) {
       maxScore = score;
       detectedLang = lang;
@@ -158,7 +163,8 @@ export async function translateArticle() {
   elements.translateBtn.textContent = I18n.t('feedback.translating');
 
   // Mostra loading
-  elements.translationContent.innerHTML = '<div class="translation-loading">Traduzione in corso... Questo potrebbe richiedere 10-30 secondi.</div>';
+  elements.translationContent.innerHTML =
+    '<div class="translation-loading">Traduzione in corso... Questo potrebbe richiedere 10-30 secondi.</div>';
 
   try {
     const provider = elements.providerSelect.value;
@@ -177,7 +183,7 @@ export async function translateArticle() {
     const cached = await StorageManager.getCachedTranslation(
       state.currentArticle.url,
       provider,
-      targetLanguage
+      targetLanguage,
     );
 
     let translation;
@@ -186,14 +192,14 @@ export async function translateArticle() {
     if (cached) {
       translation = cached.translation;
       fromCache = true;
-      console.log('Traduzione caricata da cache');
+      Logger.info('Traduzione caricata da cache');
     } else {
       // Se la lingua è già quella target, avvisa
       if (originalLanguage === targetLanguage) {
         const confirmed = await Modal.confirm(
           `L'articolo sembra già essere in ${targetLanguage}. Vuoi comunque tradurlo?`,
           'Conferma Traduzione',
-          '🌍'
+          '🌍',
         );
 
         if (!confirmed) {
@@ -213,7 +219,7 @@ export async function translateArticle() {
         state.currentArticle,
         targetLanguage,
         provider,
-        apiKey
+        apiKey,
       );
 
       // Salva in cache
@@ -222,7 +228,7 @@ export async function translateArticle() {
         provider,
         targetLanguage,
         translation,
-        originalLanguage
+        originalLanguage,
       );
 
       // Salva nello storico
@@ -230,15 +236,14 @@ export async function translateArticle() {
         state.currentArticle.url,
         translation,
         targetLanguage,
-        originalLanguage
+        originalLanguage,
       );
     }
 
     translationState.value = translation;
     displayTranslation(translation, targetLanguage, originalLanguage, fromCache);
-
   } catch (error) {
-    console.error('Errore traduzione:', error);
+    Logger.error('Errore traduzione:', error);
     elements.translationContent.innerHTML = `
       <div class="translation-empty">
         <p style="color: #d63031;">❌ Errore durante la traduzione: ${HtmlSanitizer.escape(error.message)}</p>
@@ -258,7 +263,7 @@ function displayTranslation(translation, targetLang, originalLang, fromCache = f
     en: 'Inglese',
     es: 'Spagnolo',
     fr: 'Francese',
-    de: 'Tedesco'
+    de: 'Tedesco',
   };
 
   const targetName = languageNames[targetLang] || targetLang;
@@ -285,7 +290,7 @@ function displayTranslation(translation, targetLang, originalLang, fromCache = f
     const confirmed = await Modal.confirm(
       'Vuoi generare una nuova traduzione? Quella in cache verrà sostituita.',
       'Rigenera Traduzione',
-      '🔄'
+      '🔄',
     );
 
     if (confirmed) {
@@ -297,7 +302,11 @@ function displayTranslation(translation, targetLang, originalLang, fromCache = f
 
 async function clearTranslationCache() {
   const provider = elements.providerSelect.value;
-  await StorageManager.clearTranslationCacheEntry(state.currentArticle.url, provider, state.selectedLanguage);
+  await StorageManager.clearTranslationCacheEntry(
+    state.currentArticle.url,
+    provider,
+    state.selectedLanguage,
+  );
 }
 
 function resetTranslationButton() {
@@ -317,6 +326,6 @@ async function copyTranslation() {
       btn.textContent = originalText;
     }, 2000);
   } catch (error) {
-    console.error('Errore copia:', error);
+    Logger.error('Errore copia:', error);
   }
 }

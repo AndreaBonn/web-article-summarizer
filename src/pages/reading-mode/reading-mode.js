@@ -4,6 +4,7 @@
 import { state, elements, initElements } from './state.js';
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
+import { Logger } from '../../utils/core/logger.js';
 
 import {
   displayContent,
@@ -15,11 +16,7 @@ import {
 
 import { copyAll, exportToPDF } from './export.js';
 
-import {
-  translateArticle,
-  extractCitations,
-  askQuestion,
-} from './features.js';
+import { translateArticle, extractCitations, askQuestion } from './features.js';
 
 import {
   setupVoiceEventListeners,
@@ -59,9 +56,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Display content
     displayContent();
-
   } catch (error) {
-    console.error('Initialization error:', error);
+    Logger.error('Initialization error:', error);
 
     if (error.message === 'NODATA') {
       showNoDataMessage();
@@ -87,7 +83,7 @@ async function loadData() {
         state.currentData.isPDF = true;
         // Clean up after loading
         await chrome.storage.local.remove(['pdfReadingMode']);
-        console.log('📄 Dati PDF caricati:', state.currentData);
+        Logger.info('📄 Dati PDF caricati:', state.currentData);
         return;
       }
     }
@@ -96,13 +92,13 @@ async function loadData() {
       // Load from history using chrome.storage (use summaryHistory)
       const result = await chrome.storage.local.get(['summaryHistory']);
       const history = result.summaryHistory || [];
-      state.currentData = history.find(item => item.id === parseInt(historyId));
+      state.currentData = history.find((item) => item.id === parseInt(historyId));
 
       if (!state.currentData) {
         throw new Error('Riassunto non trovato nella cronologia');
       }
 
-      console.log('📖 Dati caricati dalla cronologia:', state.currentData);
+      Logger.info('📖 Dati caricati dalla cronologia:', state.currentData);
     } else if (typeof chrome !== 'undefined' && chrome.storage) {
       // Try to load from chrome.storage (passed from popup)
       const result = await chrome.storage.local.get(['readingModeData']);
@@ -127,7 +123,7 @@ async function loadData() {
     if (error.message === 'NODATA') {
       throw error;
     }
-    console.error('Error loading data:', error);
+    Logger.error('Error loading data:', error);
     throw error;
   }
 }
@@ -157,7 +153,7 @@ function setupEventListeners() {
   }
 
   // Summary tabs
-  document.querySelectorAll('.summary-tab').forEach(tab => {
+  document.querySelectorAll('.summary-tab').forEach((tab) => {
     tab.addEventListener('click', () => switchSummaryTab(tab.dataset.tab));
   });
 

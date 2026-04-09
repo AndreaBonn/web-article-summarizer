@@ -1,4 +1,6 @@
 // Provider Caller - Comunicazione con i provider LLM (Groq, OpenAI, Anthropic, Gemini)
+import { Logger } from '../core/logger.js';
+
 const FETCH_TIMEOUT_MS = 60000;
 
 export class ProviderCaller {
@@ -141,7 +143,7 @@ export class ProviderCaller {
   // Helper per estrarre il testo dalla risposta Gemini
   static extractGeminiText(data) {
     if (!data.candidates || data.candidates.length === 0) {
-      console.error('Gemini error - no candidates:', data);
+      Logger.error('Gemini error - no candidates:', data);
       const errorMsg =
         data.error?.message ||
         data.promptFeedback?.blockReason ||
@@ -158,7 +160,7 @@ export class ProviderCaller {
 
     // Gemini 2.5-pro può terminare con MAX_TOKENS se usa troppi token per il reasoning
     if (candidate.finishReason === 'MAX_TOKENS') {
-      console.warn(
+      Logger.warn(
         'Gemini ha raggiunto il limite di token. Thoughts tokens:',
         data.usageMetadata?.thoughtsTokenCount,
       );
@@ -168,7 +170,7 @@ export class ProviderCaller {
     }
 
     if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
-      console.error('Gemini error - invalid content structure:', candidate);
+      Logger.error('Gemini error - invalid content structure:', candidate);
       throw new Error('Risposta Gemini non valida: nessun contenuto generato');
     }
 

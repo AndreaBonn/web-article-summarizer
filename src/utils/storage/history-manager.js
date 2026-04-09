@@ -1,4 +1,6 @@
 // History Manager - Gestione cronologia riassunti
+import { Logger } from '../core/logger.js';
+
 const MAX_HISTORY_ENTRIES = 50;
 const MAX_MULTI_ANALYSIS_ENTRIES = 30;
 const MAX_PDF_ENTRIES = 30;
@@ -255,10 +257,10 @@ export class HistoryManager {
   // ===== MULTI-ANALYSIS HISTORY =====
 
   static async saveMultiAnalysis(analysis, articles) {
-    console.log('saveMultiAnalysis chiamato con:', { analysis, articles });
+    Logger.debug('saveMultiAnalysis chiamato con:', { analysis, articles });
     const result = await chrome.storage.local.get(['multiAnalysisHistory']);
     let history = result.multiAnalysisHistory || [];
-    console.log('Cronologia esistente:', history.length, 'items');
+    Logger.debug('Cronologia esistente:', history.length, 'items');
 
     const entry = {
       id: Date.now(),
@@ -293,7 +295,7 @@ export class HistoryManager {
     }
 
     await this._safeStorageSet({ multiAnalysisHistory: history });
-    console.log('✓ Analisi multi-articolo salvata. Totale:', history.length);
+    Logger.info('✓ Analisi multi-articolo salvata. Totale:', history.length);
     return entry.id;
   }
 
@@ -408,7 +410,7 @@ export class HistoryManager {
     }
 
     await this._safeStorageSet({ pdfHistory: history });
-    console.log('✓ PDF salvato in cronologia. Totale:', history.length);
+    Logger.info('✓ PDF salvato in cronologia. Totale:', history.length);
     return entry.id;
   }
 

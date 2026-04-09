@@ -75,7 +75,7 @@ export class AutoMaintenance {
         results.cacheExpired = await cacheManager.cleanExpired();
         Logger.debug(`Cache scadute pulite: ${results.cacheExpired}`);
       } catch (error) {
-        console.error('Errore pulizia cache scadute:', error);
+        Logger.error('Errore pulizia cache scadute:', error);
         results.errors.push({ step: 'cleanExpired', error: error.message });
       }
 
@@ -83,9 +83,9 @@ export class AutoMaintenance {
       try {
         const cacheManager = new CacheManager();
         results.cacheLRU = await cacheManager.cleanLRU(100);
-        console.log(`✅ Cache LRU pulite: ${results.cacheLRU}`);
+        Logger.info(`Cache LRU pulite: ${results.cacheLRU}`);
       } catch (error) {
-        console.error('Errore pulizia cache LRU:', error);
+        Logger.error('Errore pulizia cache LRU:', error);
         results.errors.push({ step: 'cleanLRU', error: error.message });
       }
 
@@ -96,13 +96,13 @@ export class AutoMaintenance {
 
           // Comprimi cronologia > 30 giorni
           results.historyCompressed = await compressionManager.compressOldHistory(30);
-          console.log(`✅ Cronologie compresse: ${results.historyCompressed}`);
+          Logger.info(`Cronologie compresse: ${results.historyCompressed}`);
 
           // Comprimi cache > 7 giorni
           results.cacheCompressed = await compressionManager.compressOldCache(7);
-          console.log(`✅ Cache compresse: ${results.cacheCompressed}`);
+          Logger.info(`Cache compresse: ${results.cacheCompressed}`);
         } catch (error) {
-          console.error('Errore compressione:', error);
+          Logger.error('Errore compressione:', error);
           results.errors.push({ step: 'compression', error: error.message });
         }
       }
@@ -110,9 +110,9 @@ export class AutoMaintenance {
       // 4. Elimina cronologia molto vecchia (> 180 giorni)
       try {
         results.historyDeleted = await this.deleteOldHistory(180);
-        console.log(`✅ Cronologie eliminate: ${results.historyDeleted}`);
+        Logger.info(`Cronologie eliminate: ${results.historyDeleted}`);
       } catch (error) {
-        console.error('Errore eliminazione cronologia:', error);
+        Logger.error('Errore eliminazione cronologia:', error);
         results.errors.push({ step: 'deleteHistory', error: error.message });
       }
 
@@ -122,11 +122,11 @@ export class AutoMaintenance {
         lastMaintenanceResults: results,
       });
 
-      console.log('✅ Manutenzione completata:', results);
+      Logger.info('Manutenzione completata:', results);
 
       return results;
     } catch (error) {
-      console.error('Errore durante manutenzione:', error);
+      Logger.error('Errore durante manutenzione:', error);
       throw error;
     }
   }
@@ -150,7 +150,7 @@ export class AutoMaintenance {
 
       return deletedCount;
     } catch (error) {
-      console.error('Errore eliminazione cronologia:', error);
+      Logger.error('Errore eliminazione cronologia:', error);
       return 0;
     }
   }
@@ -168,7 +168,7 @@ export class AutoMaintenance {
         }
       );
     } catch (error) {
-      console.error('Errore lettura impostazioni:', error);
+      Logger.error('Errore lettura impostazioni:', error);
       return {
         autoCleanup: true,
         enableCompression: true,
@@ -185,7 +185,7 @@ export class AutoMaintenance {
       this.runMaintenance()
         .then(() => this.scheduleMaintenance())
         .catch((error) => {
-          console.error('Manutenzione automatica fallita:', error);
+          Logger.error('Manutenzione automatica fallita:', error);
           this.scheduleMaintenance();
         });
     }, this.maintenanceInterval);
@@ -209,7 +209,7 @@ export class AutoMaintenance {
           : null,
       };
     } catch (error) {
-      console.error('Errore lettura statistiche manutenzione:', error);
+      Logger.error('Errore lettura statistiche manutenzione:', error);
       return null;
     }
   }
@@ -229,7 +229,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
   // Inizializza dopo 1 minuto dal caricamento
   setTimeout(() => {
     autoMaintenance.initialize().catch((error) => {
-      console.error('Errore inizializzazione auto-maintenance:', error);
+      Logger.error('Errore inizializzazione auto-maintenance:', error);
     });
   }, 60000); // 1 minuto
 }

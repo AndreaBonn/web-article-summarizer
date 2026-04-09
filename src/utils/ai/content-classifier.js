@@ -1,9 +1,9 @@
 // Content Classifier - Sistema di riconoscimento automatico del tipo di articolo tramite AI
 import { StorageManager } from '../storage/storage-manager.js';
 import { APIClient } from './api-client.js';
+import { Logger } from '../core/logger.js';
 
 export class ContentClassifier {
-
   /**
    * Classifica un articolo
    */
@@ -13,7 +13,7 @@ export class ContentClassifier {
       return {
         category: userSelection,
         confidence: 100,
-        method: 'manual'
+        method: 'manual',
       };
     }
 
@@ -22,27 +22,25 @@ export class ContentClassifier {
       const aiResult = await this.aiClassification(article);
       return {
         ...aiResult,
-        method: 'ai'
+        method: 'ai',
       };
     } catch (error) {
-      console.error('Errore classificazione AI:', error);
+      Logger.error('Errore classificazione AI:', error);
       // Fallback a 'general' in caso di errore
       return {
         category: 'general',
         confidence: 50,
         method: 'fallback',
-        error: error.message
+        error: error.message,
       };
     }
   }
-
-
 
   /**
    * Classificazione tramite AI
    */
   static async aiClassification(article) {
-    console.log('🔍 Inizio classificazione AI...');
+    Logger.debug('Inizio classificazione AI...');
     const settings = await StorageManager.getSettings();
     const provider = settings.selectedProvider || 'groq';
     const apiKey = await StorageManager.getApiKey(provider);
@@ -54,7 +52,13 @@ export class ContentClassifier {
     // Prendi le prime 500 parole del contenuto
     const words = article.content.split(/\s+/);
     const first500Words = words.slice(0, 500).join(' ');
-    console.log('📝 Estratto lunghezza:', words.length, 'parole totali,', first500Words.split(/\s+/).length, 'parole usate');
+    Logger.debug(
+      'Estratto lunghezza:',
+      words.length,
+      'parole totali,',
+      first500Words.split(/\s+/).length,
+      'parole usate',
+    );
 
     // System prompt dettagliato
     const systemPrompt = `Sei un esperto analista di contenuti specializzato nella classificazione di articoli e testi in base alla loro natura, scopo e struttura.
@@ -171,33 +175,33 @@ Analizza questo articolo (basandoti sulle prime 500 parole fornite) e classifica
 
 Rispondi SOLO con il nome della categoria in minuscolo, esattamente come elencata sopra. Nessuna spiegazione, solo la categoria.`;
 
-    console.log('🤖 Invio richiesta a', provider);
+    Logger.debug('Invio richiesta a', provider);
     const response = await APIClient.generateCompletion(
-      provider, 
-      apiKey, 
+      provider,
+      apiKey,
       systemPrompt,
       userPrompt,
       {
         temperature: 0.1, // Bassa temperatura per risposte più deterministiche
-        max_tokens: 20
-      }
+        max_tokens: 20,
+      },
     );
 
-    console.log('📥 Risposta ricevuta:', response);
+    Logger.debug('Risposta ricevuta:', response);
     const category = response.trim().toLowerCase();
-    console.log('🏷️ Categoria estratta:', category);
-    
+    Logger.debug('Categoria estratta:', category);
+
     // Valida la risposta
     const validCategories = ['scientific', 'news', 'tutorial', 'business', 'opinion', 'general'];
     if (!validCategories.includes(category)) {
-      console.warn('⚠️ Categoria non valida:', category);
-      throw new Error('Categoria non valida ricevuta dall\'AI: ' + category);
+      Logger.warn('Categoria non valida:', category);
+      throw new Error("Categoria non valida ricevuta dall'AI: " + category);
     }
 
-    console.log('✅ Classificazione completata:', category);
+    Logger.info('Classificazione completata:', category);
     return {
       category: category,
-      confidence: 85 // Confidenza AI
+      confidence: 85, // Confidenza AI
     };
   }
 
@@ -207,12 +211,12 @@ Rispondi SOLO con il nome della categoria in minuscolo, esattamente come elencat
   static async saveUserCorrection(articleUrl, detectedCategory, userCategory) {
     const result = await chrome.storage.local.get(['classificationCorrections']);
     const corrections = result.classificationCorrections || [];
-    
+
     corrections.push({
       url: articleUrl,
       detected: detectedCategory,
       corrected: userCategory,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Mantieni solo le ultime 100 correzioni
@@ -234,7 +238,7 @@ Rispondi SOLO con il nome della categoria in minuscolo, esattamente come elencat
       tutorial: 'Tutorial',
       business: 'Business',
       opinion: 'Opinione',
-      general: 'Generico'
+      general: 'Generico',
     };
     return labels[category] || category;
   }

@@ -2,6 +2,7 @@
  * STTManager - Gestisce il riconoscimento vocale (Speech-to-Text)
  * @module utils/stt-manager
  */
+import { Logger } from '../core/logger.js';
 
 export class STTManager {
   constructor() {
@@ -12,9 +13,9 @@ export class STTManager {
       lang: 'it-IT',
       continuous: false,
       interimResults: true,
-      maxAlternatives: 1
+      maxAlternatives: 1,
     };
-    
+
     this.initializeRecognition();
   }
 
@@ -22,11 +23,10 @@ export class STTManager {
    * Inizializza Web Speech API
    */
   initializeRecognition() {
-    const SpeechRecognition = window.SpeechRecognition || 
-                              window.webkitSpeechRecognition;
-    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
     if (!SpeechRecognition) {
-      console.error('❌ Speech Recognition non supportato in questo browser');
+      Logger.error('❌ Speech Recognition non supportato in questo browser');
       return;
     }
 
@@ -40,7 +40,7 @@ export class STTManager {
    */
   applyConfig() {
     if (!this.recognition) return;
-    
+
     this.recognition.lang = this.config.lang;
     this.recognition.continuous = this.config.continuous;
     this.recognition.interimResults = this.config.interimResults;
@@ -55,51 +55,55 @@ export class STTManager {
 
     this.recognition.onstart = () => {
       this.isListening = true;
-      console.log('🎤 Riconoscimento vocale avviato');
+      Logger.info('🎤 Riconoscimento vocale avviato');
       window.dispatchEvent(new CustomEvent('stt:started'));
     };
 
     this.recognition.onresult = (event) => {
       const results = event.results;
       const lastResult = results[results.length - 1];
-      
+
       if (lastResult.isFinal) {
         this.transcript = lastResult[0].transcript;
-        console.log('✅ Trascrizione finale:', this.transcript);
-        
-        window.dispatchEvent(new CustomEvent('stt:result', {
-          detail: { 
-            transcript: this.transcript,
-            confidence: lastResult[0].confidence 
-          }
-        }));
+        Logger.info('✅ Trascrizione finale:', this.transcript);
+
+        window.dispatchEvent(
+          new CustomEvent('stt:result', {
+            detail: {
+              transcript: this.transcript,
+              confidence: lastResult[0].confidence,
+            },
+          }),
+        );
       } else {
         // Risultato provvisorio
         const interimTranscript = lastResult[0].transcript;
-        window.dispatchEvent(new CustomEvent('stt:interim', {
-          detail: { transcript: interimTranscript }
-        }));
+        window.dispatchEvent(
+          new CustomEvent('stt:interim', {
+            detail: { transcript: interimTranscript },
+          }),
+        );
       }
     };
 
     this.recognition.onerror = (event) => {
-      console.error('❌ Errore STT:', event.error);
+      Logger.error('❌ Errore STT:', event.error);
       this.handleError(event);
     };
 
     this.recognition.onend = () => {
       this.isListening = false;
-      console.log('⏹️ Riconoscimento vocale terminato');
+      Logger.info('⏹️ Riconoscimento vocale terminato');
       window.dispatchEvent(new CustomEvent('stt:ended'));
     };
 
     this.recognition.onnomatch = () => {
-      console.warn('⚠️ Nessuna corrispondenza trovata');
+      Logger.warn('⚠️ Nessuna corrispondenza trovata');
       window.dispatchEvent(new CustomEvent('stt:nomatch'));
     };
 
     this.recognition.onspeechend = () => {
-      console.log('🔇 Discorso terminato');
+      Logger.debug('🔇 Discorso terminato');
     };
   }
 
@@ -108,12 +112,12 @@ export class STTManager {
    */
   start() {
     if (!this.recognition) {
-      console.error('❌ Speech Recognition non inizializzato');
+      Logger.error('❌ Speech Recognition non inizializzato');
       return;
     }
 
     if (this.isListening) {
-      console.warn('⚠️ Riconoscimento già in corso');
+      Logger.warn('⚠️ Riconoscimento già in corso');
       return;
     }
 
@@ -121,7 +125,7 @@ export class STTManager {
       this.transcript = '';
       this.recognition.start();
     } catch (error) {
-      console.error('❌ Errore avvio riconoscimento:', error);
+      Logger.error('❌ Errore avvio riconoscimento:', error);
       this.handleError(error);
     }
   }
@@ -131,11 +135,11 @@ export class STTManager {
    */
   stop() {
     if (!this.recognition || !this.isListening) return;
-    
+
     try {
       this.recognition.stop();
     } catch (error) {
-      console.error('❌ Errore stop riconoscimento:', error);
+      Logger.error('❌ Errore stop riconoscimento:', error);
     }
   }
 
@@ -144,13 +148,13 @@ export class STTManager {
    */
   abort() {
     if (!this.recognition) return;
-    
+
     try {
       this.recognition.abort();
       this.isListening = false;
       this.transcript = '';
     } catch (error) {
-      console.error('❌ Errore abort riconoscimento:', error);
+      Logger.error('❌ Errore abort riconoscimento:', error);
     }
   }
 
@@ -160,11 +164,11 @@ export class STTManager {
    */
   handleError(error) {
     this.isListening = false;
-    
+
     let errorMessage = 'Errore nel riconoscimento vocale';
-    
+
     const errorType = error.error || error.message;
-    
+
     switch (errorType) {
       case 'no-speech':
         errorMessage = 'Nessun parlato rilevato. Riprova.';
@@ -183,9 +187,11 @@ export class STTManager {
         break;
     }
 
-    window.dispatchEvent(new CustomEvent('stt:error', {
-      detail: { error: errorType, message: errorMessage }
-    }));
+    window.dispatchEvent(
+      new CustomEvent('stt:error', {
+        detail: { error: errorType, message: errorMessage },
+      }),
+    );
   }
 
   /**
@@ -213,7 +219,7 @@ export class STTManager {
     return {
       isListening: this.isListening,
       transcript: this.transcript,
-      isSupported: STTManager.isSupported()
+      isSupported: STTManager.isSupported(),
     };
   }
 }

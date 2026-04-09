@@ -1,5 +1,6 @@
 // Content Script - Esegue nell'ambito della pagina web
 import { ContentExtractor } from '../utils/core/content-extractor.js';
+import { Logger } from '../utils/core/logger.js';
 
 const HIGHLIGHT_DURATION_MS = 3000;
 const CITATION_HIGHLIGHT_DURATION_MS = 8000;
@@ -45,7 +46,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const found = highlightTextInPage(request.text);
       sendResponse({ success: found });
     } catch (error) {
-      console.error('Errore highlight text:', error);
+      Logger.error('Errore highlight text:', error);
       sendResponse({ success: false, error: error.message });
     }
     return false;

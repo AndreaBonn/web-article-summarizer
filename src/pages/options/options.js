@@ -1,4 +1,5 @@
 // Options Script - Gestione impostazioni
+import { Logger } from '../../utils/core/logger.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { ThemeManager } from '../../utils/core/theme-manager.js';
@@ -54,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   } catch (error) {
-    console.error('Errore inizializzazione impostazioni:', error);
+    Logger.error('Errore inizializzazione impostazioni:', error);
     const toast = document.getElementById('toast');
     if (toast) {
       toast.textContent = 'Errore durante il caricamento. Ricarica la pagina.';
@@ -214,7 +215,7 @@ async function testApiKey(provider) {
       showStatus(provider, 'error', `${I18n.t('settings.test.failed')} ${response.error}`);
     }
   } catch (error) {
-    console.error('Errore test API key:', error);
+    Logger.error('Errore test API key:', error);
     showStatus(
       provider,
       'error',
@@ -280,7 +281,7 @@ async function loadPerformanceStats() {
       document.getElementById('totalSize').textContent = compressionStats.totalCompressedSize;
     }
   } catch (error) {
-    console.error('Errore nel caricare statistiche performance:', error);
+    Logger.error('Errore nel caricare statistiche performance:', error);
   }
 }
 
@@ -307,7 +308,7 @@ async function runCleanup() {
     // Refresh stats
     await loadPerformanceStats();
   } catch (error) {
-    console.error('Errore cleanup:', error);
+    Logger.error('Errore cleanup:', error);
     showToast(I18n.t('settings.cleanup.error') || 'Errore durante la pulizia. Riprova.', 'error');
   }
 }

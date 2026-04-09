@@ -1,5 +1,6 @@
 // API Resilience Manager - Retry Logic, Fallback Providers, Rate Limiting
 import { APIClient } from './api-client.js';
+import { Logger } from '../core/logger.js';
 
 const MAX_API_LOGS = 100;
 const MAX_FALLBACK_LOGS = 50;
@@ -350,7 +351,7 @@ export class APIResilience {
 
       await chrome.storage.local.set({ apiLogs: logs });
     } catch (error) {
-      console.error('Errore nel salvare log API:', error);
+      Logger.error('Errore nel salvare log API:', error);
     }
   }
 
@@ -369,7 +370,7 @@ export class APIResilience {
 
       await chrome.storage.local.set({ fallbackLogs: logs });
     } catch (error) {
-      console.error('Errore nel salvare log fallback:', error);
+      Logger.error('Errore nel salvare log fallback:', error);
     }
   }
 

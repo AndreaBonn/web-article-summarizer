@@ -3,6 +3,7 @@ import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { APIClient } from '../../utils/ai/api-client.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { state } from './state.js';
+import { Logger } from '../../utils/core/logger.js';
 
 export async function submitQuestion() {
   const input = document.getElementById('qaInput');
@@ -46,7 +47,7 @@ export async function submitQuestion() {
       try {
         await HistoryManager.updateMultiAnalysisWithQA(state.currentAnalysis.id, question, answer);
       } catch (error) {
-        console.error('Errore aggiornamento cronologia:', error);
+        Logger.error('Errore aggiornamento cronologia:', error);
       }
     }
   } catch (error) {

@@ -1,4 +1,5 @@
 // Multi-Analysis Page Script
+import { Logger } from '../../utils/core/logger.js';
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
@@ -11,7 +12,7 @@ import { exportPdf, exportMarkdown, sendEmail, copyContent } from './export.js';
 import { submitQuestion } from './qa.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('Multi-Analysis: DOMContentLoaded');
+  Logger.info('Multi-Analysis: DOMContentLoaded');
 
   await I18n.initPage();
 
@@ -26,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadArticles();
 
   const startBtn = document.getElementById('startAnalysisBtn');
-  console.log('Start button trovato:', startBtn);
+  Logger.debug('Start button trovato:', startBtn);
 
   document.getElementById('backBtn').addEventListener('click', () => {
     window.close();
@@ -39,11 +40,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (startBtn) {
     startBtn.addEventListener('click', () => {
-      console.log('Click su startAnalysisBtn');
+      Logger.debug('Click su startAnalysisBtn');
       startAnalysis();
     });
   } else {
-    console.error('startAnalysisBtn non trovato!');
+    Logger.error('startAnalysisBtn non trovato!');
   }
 
   document.getElementById('closeModal').addEventListener('click', closeAnalysisModal);
@@ -183,10 +184,10 @@ function filterArticles() {
 }
 
 async function startAnalysis() {
-  console.log('startAnalysis chiamato, articoli selezionati:', state.selectedArticles.length);
+  Logger.debug('startAnalysis chiamato, articoli selezionati:', state.selectedArticles.length);
 
   if (state.selectedArticles.length < 2) {
-    console.log('Troppo pochi articoli selezionati');
+    Logger.debug('Troppo pochi articoli selezionati');
     await Modal.alert(I18n.t('multi.minArticles'), I18n.t('multi.minArticlesTitle'), '⚠️');
     return;
   }
@@ -230,18 +231,18 @@ async function startAnalysis() {
     hideProgress();
 
     try {
-      console.log('Tentativo di salvare analisi...', state.currentAnalysis, articles);
+      Logger.debug('Tentativo di salvare analisi...', state.currentAnalysis, articles);
       const analysisId = await HistoryManager.saveMultiAnalysis(state.currentAnalysis, articles);
       state.currentAnalysis.id = analysisId;
-      console.log('✓ Analisi salvata nella cronologia con ID:', analysisId);
+      Logger.info('Analisi salvata nella cronologia con ID:', analysisId);
     } catch (saveError) {
-      console.error('✗ Errore nel salvataggio cronologia:', saveError);
+      Logger.error('Errore nel salvataggio cronologia:', saveError);
     }
 
     showAnalysisModal();
   } catch (error) {
-    console.error('Errore completo:', error);
-    console.error('Stack trace:', error.stack);
+    Logger.error('Errore completo:', error);
+    Logger.error('Stack trace:', error.stack);
     hideProgress();
     await Modal.alert(
       I18n.t('multi.analysisError') +
@@ -335,8 +336,8 @@ function formatMarkdown(text) {
 function showAnalysisModal() {
   if (!state.currentAnalysis) return;
 
-  console.log('showAnalysisModal - currentAnalysis:', state.currentAnalysis);
-  console.log('currentAnalysis.qa:', state.currentAnalysis.qa);
+  Logger.debug('showAnalysisModal - currentAnalysis:', state.currentAnalysis);
+  Logger.debug('currentAnalysis.qa:', state.currentAnalysis.qa);
 
   if (state.currentAnalysis.globalSummary) {
     document.getElementById('tabSummary').innerHTML = `
@@ -360,11 +361,11 @@ function showAnalysisModal() {
       '<p style="text-align: center; color: #636e72; padding: 40px;">Confronto non generato</p>';
   }
 
-  console.log('Verifica Q&A - qa:', state.currentAnalysis.qa);
-  console.log('Verifica Q&A - interactive:', state.currentAnalysis.qa?.interactive);
+  Logger.debug('Verifica Q&A - qa:', state.currentAnalysis.qa);
+  Logger.debug('Verifica Q&A - interactive:', state.currentAnalysis.qa?.interactive);
 
   if (state.currentAnalysis.qa && state.currentAnalysis.qa.interactive) {
-    console.log('Rendering Q&A interattivo');
+    Logger.debug('Rendering Q&A interattivo');
     document.getElementById('tabQA').innerHTML = `
       <div class="qa-interactive">
         <div class="qa-chat-container" id="qaChatContainer">
@@ -439,7 +440,7 @@ function switchTab(tabName) {
     if (tabElement) {
       tabElement.classList.add('active');
     } else {
-      console.error('Tab element non trovato:', tabId);
+      Logger.error('Tab element non trovato:', tabId);
     }
   }
 }
@@ -447,7 +448,7 @@ function switchTab(tabName) {
 // ===== REOPEN SAVED ANALYSIS =====
 
 async function reopenSavedAnalysis(data) {
-  console.log('Riapertura analisi salvata:', data);
+  Logger.info('Riapertura analisi salvata:', data);
 
   state.currentAnalysis = {
     id: data.id,

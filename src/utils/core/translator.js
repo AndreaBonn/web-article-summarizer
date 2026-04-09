@@ -2,6 +2,7 @@
 import { APIClient } from '../ai/api-client.js';
 import { PromptRegistry } from '../ai/prompt-registry.js';
 import { InputSanitizer } from '../security/input-sanitizer.js';
+import { Logger } from './logger.js';
 
 export class Translator {
   static async translateArticle(article, targetLanguage, provider, apiKey, contentType = null) {
@@ -11,25 +12,24 @@ export class Translator {
     try {
       return await APIClient.generateCompletion(provider, apiKey, systemPrompt, userPrompt, {
         temperature: 0.3,
-        maxTokens: provider === 'gemini' ? 8000 : 4096
+        maxTokens: provider === 'gemini' ? 8000 : 4096,
       });
     } catch (error) {
       throw new Error(`Errore traduzione: ${error.message}`);
     }
   }
 
-  
   static buildUserPrompt(article, targetLanguage, contentType) {
     const languageNames = {
       it: 'Italiano',
       en: 'English',
       es: 'Español',
       fr: 'Français',
-      de: 'Deutsch'
+      de: 'Deutsch',
     };
-    
+
     const langName = languageNames[targetLanguage] || targetLanguage;
-    
+
     // ✅ SANITIZZA IL TITOLO
     let cleanTitle;
     try {
@@ -37,32 +37,32 @@ export class Translator {
         maxLength: 500,
         minLength: 1,
         removeHTML: true,
-        preserveNewlines: false
+        preserveNewlines: false,
       });
     } catch (error) {
-      console.warn('⚠️ Errore sanitizzazione titolo:', error);
+      Logger.warn('Errore sanitizzazione titolo:', error);
       cleanTitle = article.title.substring(0, 500);
     }
-    
+
     // Costruisci il testo completo dell'articolo
     let fullText = `# ${cleanTitle}\n\n`;
-    
+
     // ✅ SANITIZZA OGNI PARAGRAFO
-    article.paragraphs.forEach(p => {
+    article.paragraphs.forEach((p) => {
       try {
         const cleanText = InputSanitizer.sanitizeForAI(p.text, {
           maxLength: 5000,
           minLength: 5,
           removeHTML: true,
           preserveNewlines: true,
-          removeCitations: false
+          removeCitations: false,
         });
         fullText += `${cleanText}\n\n`;
       } catch (error) {
-        console.warn(`⚠️ Paragrafo troppo corto o invalido, saltato`);
+        Logger.warn('Paragrafo troppo corto o invalido, saltato');
       }
     });
-    
+
     // Template specifico per tipo di contenuto
     const templates = {
       general: `Traduci il seguente articolo in ${langName}.
@@ -141,9 +141,9 @@ ISTRUZIONI:
 
 ARTICOLO DA TRADURRE:
 
-${fullText}`
+${fullText}`,
     };
-    
+
     return templates[contentType] || templates.general;
   }
 }

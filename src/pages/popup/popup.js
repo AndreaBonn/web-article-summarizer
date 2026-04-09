@@ -13,11 +13,12 @@ import { I18n } from '../../utils/i18n/i18n.js';
 import { ProgressTracker } from '../../utils/core/progress-tracker.js';
 import { eventCleanup } from '../../utils/core/event-cleanup.js';
 import { ErrorHandler } from '../../utils/core/error-handler.js';
+import { Logger } from '../../utils/core/logger.js';
 
 // Initialization
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    console.log('Popup inizializzato');
+    Logger.info('Popup inizializzato');
 
     // Initialize DOM elements
     initElements();
@@ -137,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       state.selectedLanguage = elements.languageSelect.value;
       elements.languageSelectReady.value = state.selectedLanguage; // Sync
       await StorageManager.saveSelectedLanguage(state.selectedLanguage);
-      console.log('Lingua selezionata:', state.selectedLanguage);
+      Logger.debug('Lingua selezionata:', state.selectedLanguage);
     };
     eventCleanup.addEventListener(elements.languageSelect, 'change', handleLanguageChange);
 
@@ -146,7 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       state.selectedLanguage = elements.languageSelectReady.value;
       elements.languageSelect.value = state.selectedLanguage; // Sync
       await StorageManager.saveSelectedLanguage(state.selectedLanguage);
-      console.log('Lingua selezionata:', state.selectedLanguage);
+      Logger.debug('Lingua selezionata:', state.selectedLanguage);
     };
     eventCleanup.addEventListener(
       elements.languageSelectReady,
@@ -158,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const handleContentTypeChange = () => {
       state.selectedContentType = elements.contentTypeSelect.value;
       elements.contentTypeSelectReady.value = state.selectedContentType; // Sync
-      console.log('Tipo di contenuto selezionato:', state.selectedContentType);
+      Logger.debug('Tipo di contenuto selezionato:', state.selectedContentType);
     };
     eventCleanup.addEventListener(elements.contentTypeSelect, 'change', handleContentTypeChange);
 
@@ -166,7 +167,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const handleContentTypeReadyChange = () => {
       state.selectedContentType = elements.contentTypeSelectReady.value;
       elements.contentTypeSelect.value = state.selectedContentType; // Sync
-      console.log('Tipo di contenuto selezionato:', state.selectedContentType);
+      Logger.debug('Tipo di contenuto selezionato:', state.selectedContentType);
     };
     eventCleanup.addEventListener(
       elements.contentTypeSelectReady,
@@ -174,15 +175,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       handleContentTypeReadyChange,
     );
 
-    console.log('Event listeners configurati con cleanup automatico');
+    Logger.info('Event listeners configurati con cleanup automatico');
 
     // Log listener statistics
     const stats = eventCleanup.getStats();
-    console.log(
+    Logger.debug(
       `📊 Listener registrati: ${stats.totalListeners} su ${stats.totalElements} elementi`,
     );
   } catch (error) {
-    console.error('Errore inizializzazione popup:', error);
+    Logger.error('Errore inizializzazione popup:', error);
     // Use ErrorHandler to display error to the user
     await ErrorHandler.showError(error, 'Inizializzazione popup');
   }

@@ -1,4 +1,5 @@
 // PDF Analysis Page Script
+import { Logger } from '../../utils/core/logger.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { TTSManager } from '../../utils/voice/tts-manager.js';
@@ -18,7 +19,7 @@ let selectedFile = null;
 let pdfAnalyzer = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('PDF Analysis: Inizializzazione...');
+  Logger.info('PDF Analysis: Inizializzazione...');
 
   await I18n.initPage();
 
@@ -26,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL(
     'public/workers/pdf.worker.min.js',
   );
-  console.log('✓ PDF.js configurato con worker:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+  Logger.debug('PDF.js configurato con worker:', pdfjsLib.GlobalWorkerOptions.workerSrc);
 
   // Inizializza PDF Analyzer
   pdfAnalyzer = new PDFAnalyzer();
@@ -92,7 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load font size
   loadFontSize();
 
-  console.log('✓ Event listeners configurati');
+  Logger.debug('Event listeners configurati');
 });
 
 function handleDragOver(e) {
@@ -148,7 +149,7 @@ function handleFile(file) {
   document.getElementById('fileSize').textContent = formatFileSize(file.size);
   document.getElementById('analyzePdfBtn').disabled = false;
 
-  console.log('✓ File selezionato:', file.name);
+  Logger.info('File selezionato:', file.name);
 }
 
 function removeFile() {
@@ -186,7 +187,7 @@ async function startAnalysis() {
     // Analizza PDF
     const result = await pdfAnalyzer.analyzePDF(selectedFile, provider, settings, updateProgress);
 
-    console.log('✓ Analisi completata:', result);
+    Logger.info('Analisi completata:', result);
 
     // Salva nella cronologia PDF
     // La struttura cambia se viene dalla cache o meno
@@ -218,7 +219,7 @@ async function startAnalysis() {
     // Mostra risultati in modalità lettura
     await openReadingMode(result);
   } catch (error) {
-    console.error('✗ Errore analisi:', error);
+    Logger.error('Errore analisi:', error);
     await Modal.error(error.message);
     document.getElementById('analyzePdfBtn').disabled = false;
   } finally {

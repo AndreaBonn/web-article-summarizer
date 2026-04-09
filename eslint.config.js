@@ -22,7 +22,7 @@ export default [
     },
     rules: {
       ...js.configs.recommended.rules,
-      'no-console': 'warn',
+      'no-console': 'error',
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       eqeqeq: 'error',
       'no-eval': 'error',
@@ -31,6 +31,14 @@ export default [
       // È un pattern diffuso nel codebase — abilitare quando si fa cleanup degli error handler.
       'no-throw-literal': 'off',
       'preserve-caught-error': 'off',
+    },
+  },
+
+  // Logger module — unico file autorizzato a usare console.*
+  {
+    files: ['src/utils/core/logger.js'],
+    rules: {
+      'no-console': 'off',
     },
   },
 

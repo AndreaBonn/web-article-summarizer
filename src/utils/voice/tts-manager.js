@@ -2,6 +2,7 @@
  * TTSManager - Gestisce la sintesi vocale (Text-to-Speech)
  * @module utils/tts-manager
  */
+import { Logger } from '../core/logger.js';
 
 export class TTSManager {
   constructor() {
@@ -16,7 +17,7 @@ export class TTSManager {
       lang: 'it-IT', // Lingua di default
     };
 
-    this.initializeEventListeners().catch((err) => console.warn('TTS init fallita:', err));
+    this.initializeEventListeners().catch((err) => Logger.warn('TTS init fallita:', err));
   }
 
   /**
@@ -34,7 +35,7 @@ export class TTSManager {
     return new Promise((resolve) => {
       chrome.tts.getVoices((voices) => {
         this.availableVoices = voices;
-        console.log('🔊 Voci TTS disponibili:', voices.length);
+        Logger.info('🔊 Voci TTS disponibili:', voices.length);
         resolve(voices);
       });
     });
@@ -93,7 +94,7 @@ export class TTSManager {
    */
   speak(text, options = {}) {
     if (!text || text.trim().length === 0) {
-      console.warn('⚠️ Testo vuoto fornito a TTS');
+      Logger.warn('⚠️ Testo vuoto fornito a TTS');
       return;
     }
 
@@ -128,7 +129,7 @@ export class TTSManager {
 
     chrome.tts.speak(cleanText, ttsOptions, () => {
       if (chrome.runtime.lastError) {
-        console.error('❌ Errore TTS:', chrome.runtime.lastError);
+        Logger.error('❌ Errore TTS:', chrome.runtime.lastError);
         this.handleError(chrome.runtime.lastError);
       }
     });
@@ -198,22 +199,22 @@ export class TTSManager {
   handleTTSEvent(event) {
     switch (event.type) {
       case 'start':
-        console.log('▶️ TTS iniziato');
+        Logger.debug('▶️ TTS iniziato');
         break;
       case 'end':
         this.isSpeaking = false;
         this.isPaused = false;
-        console.log('⏹️ TTS terminato');
+        Logger.debug('⏹️ TTS terminato');
         window.dispatchEvent(new CustomEvent('tts:ended'));
         break;
       case 'error':
         this.handleError(event);
         break;
       case 'pause':
-        console.log('⏸️ TTS in pausa');
+        Logger.debug('⏸️ TTS in pausa');
         break;
       case 'resume':
-        console.log('▶️ TTS ripreso');
+        Logger.debug('▶️ TTS ripreso');
         break;
     }
   }
@@ -223,7 +224,7 @@ export class TTSManager {
    * @param {Object} error - Oggetto errore
    */
   handleError(error) {
-    console.error('❌ Errore TTS:', error);
+    Logger.error('❌ Errore TTS:', error);
     this.isSpeaking = false;
     this.isPaused = false;
 

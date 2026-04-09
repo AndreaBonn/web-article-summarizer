@@ -12,7 +12,7 @@ export class ErrorHandler {
     const errorMessage = this.getErrorMessage(error);
     const fullMessage = context ? `${context}: ${errorMessage}` : errorMessage;
 
-    console.error('❌ Errore:', error);
+    Logger.error('Errore:', error);
 
     // Mostra notifica visiva all'utente
     if (typeof Modal !== 'undefined') {
@@ -87,7 +87,7 @@ export class ErrorHandler {
     }
 
     // Errore non riconosciuto — messaggio generico per l'utente
-    console.error('Errore non classificato:', message);
+    Logger.error('Errore non classificato:', message);
     return 'Si è verificato un errore imprevisto. Riprova.';
   }
 
@@ -123,7 +123,7 @@ export class ErrorHandler {
 
       await chrome.storage.local.set({ errorLogs: logs });
     } catch (logError) {
-      console.error('Impossibile salvare log errore:', logError);
+      Logger.error('Impossibile salvare log errore:', logError);
     }
   }
 
@@ -149,7 +149,7 @@ export class ErrorHandler {
         errorTypes,
       };
     } catch (error) {
-      console.error('Errore nel calcolare statistiche errori:', error);
+      Logger.error('Errore nel calcolare statistiche errori:', error);
       return null;
     }
   }

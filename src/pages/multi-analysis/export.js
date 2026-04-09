@@ -5,6 +5,7 @@ import { EmailManager } from '../../utils/export/email-manager.js';
 import { Modal } from '../../utils/core/modal.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { state } from './state.js';
+import { Logger } from '../../utils/core/logger.js';
 
 export async function exportPdf() {
   if (!state.currentAnalysis) return;
@@ -19,7 +20,7 @@ export async function exportPdf() {
       options,
     );
   } catch (error) {
-    console.error('Errore PDF:', error);
+    Logger.error('Errore PDF:', error);
     await Modal.alert("Errore durante l'esportazione PDF: " + error.message, 'Errore', '❌');
   }
 }
@@ -37,7 +38,7 @@ export async function exportMarkdown() {
       options,
     );
   } catch (error) {
-    console.error('Errore Markdown:', error);
+    Logger.error('Errore Markdown:', error);
     await Modal.alert("Errore durante l'esportazione Markdown: " + error.message, 'Errore', '❌');
   }
 }
@@ -89,7 +90,7 @@ export async function sendEmail() {
 
     await EmailManager.showEmailModal(content, 'Analisi Multi Articolo');
   } catch (error) {
-    console.error('Errore email:', error);
+    Logger.error('Errore email:', error);
     await Modal.alert("Errore durante l'invio email: " + error.message, 'Errore', '❌');
   }
 }

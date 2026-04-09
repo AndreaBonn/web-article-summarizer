@@ -1,41 +1,45 @@
 // Multi-Analysis Manager - Gestione analisi multi-articolo
 import { StorageManager } from '../storage/storage-manager.js';
 import { APIClient } from '../ai/api-client.js';
+import { Logger } from './logger.js';
 
 export class MultiAnalysisManager {
-  
   static async checkArticlesRelation(articles) {
     // Usa l'AI per analisi semantica intelligente
     const settings = await StorageManager.getSettings();
     const provider = settings.selectedProvider || 'groq';
     const apiKey = await StorageManager.getApiKey(provider);
-    
+
     if (!apiKey) {
       // Fallback: assume correlati se non c'è API key
-      console.warn('API key non disponibile per verifica correlazione');
+      Logger.warn('API key non disponibile per verifica correlazione');
       return { related: true, reason: null };
     }
-    
+
     try {
       return await this.checkCorrelationWithAI(articles, provider, apiKey);
     } catch (error) {
-      console.error('Errore verifica correlazione:', error);
+      Logger.error('Errore verifica correlazione:', error);
       // Fallback: assume correlati in caso di errore
       return { related: true, reason: null };
     }
   }
-  
+
   static async checkCorrelationWithAI(articles, provider, apiKey) {
     // Prepara sintesi degli articoli per l'analisi
-    const articlesInfo = articles.map((a, index) => {
-      const content = a.translation ? a.translation.text.substring(0, 300) : a.summary.substring(0, 300);
-      return `
+    const articlesInfo = articles
+      .map((a, index) => {
+        const content = a.translation
+          ? a.translation.text.substring(0, 300)
+          : a.summary.substring(0, 300);
+        return `
 ARTICOLO ${index + 1}:
 Titolo: ${a.article.title}
 Estratto: ${content}...
 `;
-    }).join('\n');
-    
+      })
+      .join('\n');
+
     const systemPrompt = `Sei un esperto analista di contenuti specializzato nell'identificare relazioni tematiche tra articoli.
 
 Il tuo compito è determinare se un gruppo di articoli tratta argomenti correlati o completamente scollegati.
@@ -68,7 +72,7 @@ Rispondi SOLO con un JSON in questo formato:
   "motivazione": "Breve spiegazione della decisione",
   "temi_comuni": ["tema1", "tema2", ...] oppure []
 }`;
-    
+
     const userPrompt = `Analizza i seguenti ${articles.length} articoli e determina se sono correlati:
 
 ${articlesInfo}
@@ -76,107 +80,115 @@ ${articlesInfo}
 ---
 
 Rispondi SOLO con il JSON nel formato specificato.`;
-    
-    const response = await APIClient.generateCompletion(provider, apiKey, systemPrompt, userPrompt, {
-      temperature: 0.1, // Bassa temperatura per risposta più deterministica
-      maxTokens: 500
-    });
-    
+
+    const response = await APIClient.generateCompletion(
+      provider,
+      apiKey,
+      systemPrompt,
+      userPrompt,
+      {
+        temperature: 0.1, // Bassa temperatura per risposta più deterministica
+        maxTokens: 500,
+      },
+    );
+
     try {
       // Estrai JSON dalla risposta
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const result = JSON.parse(jsonMatch[0]);
-        
+
         // Log per debugging
-        console.log('Analisi correlazione articoli:', result);
-        
+        Logger.debug('Analisi correlazione articoli:', result);
+
         return {
           related: result.correlati === true,
           reason: result.motivazione || null,
-          commonThemes: result.temi_comuni || []
+          commonThemes: result.temi_comuni || [],
         };
       }
-      
+
       // Fallback: cerca parole chiave nella risposta
       const lowerResponse = response.toLowerCase();
-      const isRelated = lowerResponse.includes('"correlati": true') || 
-                       lowerResponse.includes('"correlati":true') ||
-                       (lowerResponse.includes('correlati') && !lowerResponse.includes('non correlati'));
-      
+      const isRelated =
+        lowerResponse.includes('"correlati": true') ||
+        lowerResponse.includes('"correlati":true') ||
+        (lowerResponse.includes('correlati') && !lowerResponse.includes('non correlati'));
+
       return {
         related: isRelated,
         reason: isRelated ? null : 'Gli articoli trattano argomenti diversi',
-        commonThemes: []
+        commonThemes: [],
       };
     } catch (error) {
-      console.error('Errore parsing risposta correlazione:', error);
+      Logger.error('Errore parsing risposta correlazione:', error);
       // In caso di dubbio, assume correlati
       return { related: true, reason: null, commonThemes: [] };
     }
   }
-  
+
   static async analyzeArticles(articles, options, progressCallback) {
     const result = {
-      articles: articles.map(a => ({
+      articles: articles.map((a) => ({
         id: a.id,
         title: a.article.title,
-        url: a.article.url
+        url: a.article.url,
       })),
       timestamp: Date.now(),
       globalSummary: null,
       comparison: null,
-      qa: null
+      qa: null,
     };
-    
+
     const settings = await StorageManager.getSettings();
     const provider = settings.selectedProvider || 'groq';
     const apiKey = await StorageManager.getApiKey(provider);
-    
+
     if (!apiKey) {
       throw new Error(`API key per ${provider} non configurata`);
     }
-    
+
     let progress = 20;
-    const step = 60 / (Object.values(options).filter(Boolean).length);
-    
+    const step = 60 / Object.values(options).filter(Boolean).length;
+
     if (options.globalSummary) {
       if (progressCallback) progressCallback('Generazione riassunto globale...', progress);
       result.globalSummary = await this.generateGlobalSummary(articles, provider, apiKey);
       progress += step;
     }
-    
+
     if (options.comparison) {
       if (progressCallback) progressCallback('Analisi confronto idee...', progress);
       result.comparison = await this.generateComparison(articles, provider, apiKey);
       progress += step;
     }
-    
+
     if (options.qa) {
       if (progressCallback) progressCallback('Preparazione Q&A interattivo...', progress);
       // Q&A interattivo - non genera domande, prepara il contesto
       result.qa = {
         interactive: true,
-        articles: articles.map(a => ({
+        articles: articles.map((a) => ({
           title: a.article.title,
-          content: a.translation ? a.translation.text : a.summary
-        }))
+          content: a.translation ? a.translation.text : a.summary,
+        })),
       };
       progress += step;
     }
-    
+
     if (progressCallback) progressCallback('Salvataggio risultati...', 95);
     await this.saveAnalysis(result);
-    
+
     if (progressCallback) progressCallback('Completato!', 100);
-    
+
     return result;
   }
-  
+
   static async generateGlobalSummary(articles, provider, apiKey) {
-    const articlesContent = articles.map((a, index) => {
-      const content = a.translation ? a.translation.text : a.summary;
-      return `
+    const articlesContent = articles
+      .map((a, index) => {
+        const content = a.translation ? a.translation.text : a.summary;
+        return `
 ## ARTICOLO ${index + 1}: ${a.article.title}
 
 **URL:** ${a.article.url}
@@ -185,15 +197,20 @@ Rispondi SOLO con il JSON nel formato specificato.`;
 ### Contenuto:
 ${content}
 
-${a.keyPoints && a.keyPoints.length > 0 ? `
+${
+  a.keyPoints && a.keyPoints.length > 0
+    ? `
 ### Punti Chiave:
 ${a.keyPoints.map((kp, i) => `${i + 1}. ${kp.title}: ${kp.description}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 `;
-    }).join('\n\n' + '='.repeat(80) + '\n\n');
-    
+      })
+      .join('\n\n' + '='.repeat(80) + '\n\n');
+
     const systemPrompt = this.getGlobalSummarySystemPrompt(provider);
-    
+
     const userPrompt = `Crea un riassunto globale unificato dei seguenti ${articles.length} articoli:
 
 ${articlesContent}
@@ -201,15 +218,15 @@ ${articlesContent}
 ---
 
 Genera un riassunto globale che integri tutti questi contenuti in una narrazione coerente, organizzata per temi principali piuttosto che per singolo articolo.`;
-    
+
     const options = {
       temperature: 0.3,
-      maxTokens: provider === 'gemini' ? 8192 : 4000
+      maxTokens: provider === 'gemini' ? 8192 : 4000,
     };
-    
+
     return await APIClient.generateCompletion(provider, apiKey, systemPrompt, userPrompt, options);
   }
-  
+
   static getGlobalSummarySystemPrompt(provider) {
     if (provider === 'gemini') {
       return `Sei un esperto analista di contenuti specializzato nel creare riassunti globali che sintetizzano molteplici articoli in un'unica narrazione coerente.
@@ -237,7 +254,7 @@ Scrivi in italiano, con stile chiaro, professionale e scorrevole.
 
 IMPORTANTE: Inizia DIRETTAMENTE con il riassunto. NON includere introduzioni come "Ecco il riassunto...", "Certamente...". Vai dritto al punto con il contenuto.`;
     }
-    
+
     // Prompt generico per altri provider
     return `Sei un esperto analista di contenuti specializzato nel creare riassunti globali che sintetizzano molteplici articoli in un'unica narrazione coerente.
 
@@ -259,20 +276,22 @@ Scrivi in italiano, con stile chiaro e professionale.
 
 IMPORTANTE: Inizia DIRETTAMENTE con il riassunto. NON includere introduzioni. Vai dritto al punto.`;
   }
-  
+
   static async generateComparison(articles, provider, apiKey) {
-    const articlesContent = articles.map((a, index) => {
-      const content = a.translation ? a.translation.text : a.summary;
-      return `
+    const articlesContent = articles
+      .map((a, index) => {
+        const content = a.translation ? a.translation.text : a.summary;
+        return `
 ## ARTICOLO ${index + 1}: ${a.article.title}
 
 ${content}
 `;
-    }).join('\n\n');
-    
+      })
+      .join('\n\n');
+
     // Usa i prompt dal file comparazione_articoli.md
     const systemPrompt = this.getComparisonSystemPrompt(provider);
-    
+
     const userPrompt = `Analizza e confronta le idee presenti nei seguenti ${articles.length} articoli:
 
 ${articlesContent}
@@ -280,25 +299,25 @@ ${articlesContent}
 ---
 
 Genera un'analisi comparativa dettagliata che evidenzi idee comuni, conflitti, prospettive diverse e complementarietà tra gli articoli.`;
-    
+
     // Parametri ottimizzati per provider
     const options = {
       temperature: 0.2,
-      maxTokens: 4000
+      maxTokens: 4000,
     };
-    
+
     // Gemini supporta output più lunghi e contesti più ampi
     if (provider === 'gemini') {
       options.maxTokens = 8000;
       options.model = 'gemini-2.5-pro'; // Usa il modello 2.5 per analisi più complesse
     }
-    
+
     return await APIClient.generateCompletion(provider, apiKey, systemPrompt, userPrompt, options);
   }
-  
+
   static getComparisonSystemPrompt(provider) {
     // Prompt ottimizzati per provider dal file prompts/comparazione_articoli.md
-    
+
     if (provider === 'gemini') {
       return `Sei un esperto analista critico specializzato nel confrontare e analizzare idee presenti in molteplici articoli.
 
@@ -327,7 +346,7 @@ Scrivi in italiano, con analisi approfondita e obiettiva.
 
 IMPORTANTE: Inizia DIRETTAMENTE con l'analisi. NON includere introduzioni come "Ecco l'analisi...", "Certamente...". Vai dritto al punto con i temi comuni.`;
     }
-    
+
     if (provider === 'groq') {
       return `Sei un analista esperto specializzato nel confrontare e analizzare criticamente contenuti multipli per identificare convergenze, divergenze e sfumature tra diverse prospettive.
 
@@ -357,7 +376,7 @@ PRINCIPI FONDAMENTALI:
 
 Sei preciso, analitico e mantieni una prospettiva critica equilibrata.`;
     }
-    
+
     if (provider === 'openai') {
       return `You are an expert analyst specialized in comparing and critically analyzing multiple content pieces to identify convergences, divergences, and nuances between different perspectives.
 
@@ -389,7 +408,7 @@ You are precise, analytical, and maintain a balanced critical perspective.
 
 Write the analysis in Italian.`;
     }
-    
+
     if (provider === 'anthropic') {
       return `You are an expert comparative analyst with deep expertise in synthesizing multiple sources, identifying patterns of agreement and disagreement, and producing comprehensive analytical reports that illuminate how different perspectives relate to each other.
 
@@ -423,7 +442,7 @@ ANALYTICAL PRINCIPLES:
 
 Write the analysis in Italian.`;
     }
-    
+
     // Fallback per altri provider
     return `Sei un analista esperto specializzato nel confrontare e analizzare criticamente contenuti multipli per identificare convergenze, divergenze e sfumature tra diverse prospettive.
 
@@ -438,19 +457,21 @@ Il tuo obiettivo è produrre un'ANALISI COMPARATIVA COMPLETA che permetta al let
 
 Scrivi in italiano, con analisi approfondita e obiettiva.`;
   }
-  
+
   static async generateQA(articles, provider, apiKey) {
-    const articlesContent = articles.map((a, index) => {
-      const content = a.translation ? a.translation.text : a.summary;
-      return `
+    const articlesContent = articles
+      .map((a, index) => {
+        const content = a.translation ? a.translation.text : a.summary;
+        return `
 ## ARTICOLO ${index + 1}: ${a.article.title}
 
 ${content}
 `;
-    }).join('\n\n');
-    
+      })
+      .join('\n\n');
+
     const systemPrompt = this.getQASystemPrompt(provider);
-    
+
     const userPrompt = `Genera 8-10 domande e risposte basate sui seguenti ${articles.length} articoli:
 
 ${articlesContent}
@@ -464,33 +485,39 @@ Genera domande che richiedano di:
 - Analizzare implicazioni complessive
 
 IMPORTANTE: Rispondi SOLO con il JSON nel formato specificato, senza markup markdown o testo aggiuntivo.`;
-    
+
     const options = {
       temperature: 0.2,
-      maxTokens: provider === 'gemini' ? 4096 : 3000
+      maxTokens: provider === 'gemini' ? 4096 : 3000,
     };
-    
-    const response = await APIClient.generateCompletion(provider, apiKey, systemPrompt, userPrompt, options);
-    
+
+    const response = await APIClient.generateCompletion(
+      provider,
+      apiKey,
+      systemPrompt,
+      userPrompt,
+      options,
+    );
+
     try {
       // Pulizia response per Gemini (rimuove markdown)
       let cleanedResponse = response
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
-      
+
       const jsonMatch = cleanedResponse.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
       }
-      
+
       return this.parseQAFromText(response);
     } catch (error) {
-      console.error('Errore parsing Q&A:', error);
+      Logger.error('Errore parsing Q&A:', error);
       return this.parseQAFromText(response);
     }
   }
-  
+
   static getQASystemPrompt(provider) {
     if (provider === 'gemini') {
       return `Sei un esperto nell'analisi di contenuti e nella generazione di domande e risposte significative basate su molteplici fonti.
@@ -527,7 +554,7 @@ IMPORTANTE PER GEMINI:
 - Cita sempre gli articoli nelle risposte: "L'articolo 1...", "Come evidenziato nell'articolo 2..."
 - Assicurati che il JSON sia perfettamente valido e parsabile`;
     }
-    
+
     // Prompt generico per altri provider
     return `Sei un esperto nell'analisi di contenuti e nella generazione di domande e risposte significative.
 
@@ -550,17 +577,17 @@ Genera SOLO un array JSON con questa struttura:
 
 IMPORTANTE: Rispondi SOLO con il JSON, senza testo aggiuntivo prima o dopo.`;
   }
-  
+
   static parseQAFromText(text) {
     const qa = [];
     const lines = text.split('\n');
     let currentQ = null;
     let currentA = '';
-    
+
     for (const line of lines) {
       const qMatch = line.match(/^Q\d+[:\.]?\s*(.+)/i);
       const aMatch = line.match(/^R\d+[:\.]?\s*(.+)/i);
-      
+
       if (qMatch) {
         if (currentQ && currentA) {
           qa.push({ question: currentQ, answer: currentA.trim() });
@@ -573,47 +600,50 @@ IMPORTANTE: Rispondi SOLO con il JSON, senza testo aggiuntivo prima o dopo.`;
         currentA += ' ' + line.trim();
       }
     }
-    
+
     if (currentQ && currentA) {
       qa.push({ question: currentQ, answer: currentA.trim() });
     }
-    
-    return qa.length > 0 ? qa : [
-      {
-        question: "Quali sono i temi principali trattati negli articoli?",
-        answer: "Gli articoli trattano diversi temi interconnessi che richiedono un'analisi approfondita."
-      }
-    ];
+
+    return qa.length > 0
+      ? qa
+      : [
+          {
+            question: 'Quali sono i temi principali trattati negli articoli?',
+            answer:
+              "Gli articoli trattano diversi temi interconnessi che richiedono un'analisi approfondita.",
+          },
+        ];
   }
-  
+
   static async saveAnalysis(analysis) {
     const result = await chrome.storage.local.get(['multiAnalysisHistory']);
     let history = result.multiAnalysisHistory || [];
-    
+
     analysis.id = Date.now();
-    
+
     history.unshift(analysis);
-    
+
     if (history.length > 30) {
       history = history.slice(0, 30);
     }
-    
+
     await chrome.storage.local.set({ multiAnalysisHistory: history });
   }
-  
+
   static async getAnalysisHistory() {
     const result = await chrome.storage.local.get(['multiAnalysisHistory']);
     return result.multiAnalysisHistory || [];
   }
-  
+
   static async getAnalysisById(id) {
     const history = await this.getAnalysisHistory();
-    return history.find(a => a.id === id);
+    return history.find((a) => a.id === id);
   }
-  
+
   static async deleteAnalysis(id) {
     const history = await this.getAnalysisHistory();
-    const filtered = history.filter(a => a.id !== id);
+    const filtered = history.filter((a) => a.id !== id);
     await chrome.storage.local.set({ multiAnalysisHistory: filtered });
   }
 }

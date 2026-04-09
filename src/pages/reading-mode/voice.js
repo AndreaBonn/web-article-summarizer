@@ -4,6 +4,7 @@
 import { state, elements } from './state.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { STTManager } from '../../utils/voice/stt-manager.js';
+import { Logger } from '../../utils/core/logger.js';
 import {
   setupTTSEventListeners,
   handleTTSPlay as helperTTSPlay,
@@ -66,7 +67,7 @@ export function setupVoiceEventListeners() {
   });
 
   window.addEventListener('stt:error', (event) => {
-    console.error('STT Error:', event.detail);
+    Logger.error('STT Error:', event.detail);
     if (elements.qaVoiceBtn) {
       elements.qaVoiceBtn.classList.remove('listening');
       elements.qaVoiceBtn.textContent = '🎤';
@@ -174,7 +175,7 @@ export async function handleVoiceInput() {
     const voiceLang = VoiceController.mapLanguageCode(lang);
     await state.voiceController.startListening(voiceLang);
   } catch (error) {
-    console.error('Voice input error:', error);
+    Logger.error('Voice input error:', error);
   }
 }
 

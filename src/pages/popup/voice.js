@@ -13,6 +13,7 @@ import {
   createTTSToggleButton,
   buildVoiceSelectorHTML,
 } from '../../shared/voice-page-helper.js';
+import { Logger } from '../../utils/core/logger.js';
 
 // Voice Controller locale (il popup non usa state.voiceController)
 const voiceHolder = { value: null };
@@ -24,7 +25,7 @@ const voiceHolder = { value: null };
 export async function initVoiceController() {
   if (!voiceHolder.value) {
     await initVoiceForPage({ localHolder: voiceHolder });
-    console.log('Voice Controller inizializzato');
+    Logger.info('Voice Controller inizializzato');
   }
 }
 
@@ -71,7 +72,7 @@ export async function handleVoiceQuestion() {
     elements.questionInput.value = transcript;
     await askQuestion();
   } catch (error) {
-    console.error('Errore domanda vocale:', error);
+    Logger.error('Errore domanda vocale:', error);
     voiceBtn.classList.remove('listening');
     listeningIndicator.classList.remove('active');
     interimTranscript.style.display = 'none';
@@ -165,7 +166,7 @@ export async function showVoiceSelector(lang) {
   const handleConfirm = async () => {
     if (selectedVoice) {
       await voiceHolder.value.ttsManager.setPreferredVoice(lang, selectedVoice);
-      console.log(`Voce impostata per ${lang}:`, selectedVoice);
+      Logger.info(`Voce impostata per ${lang}:`, selectedVoice);
     }
     modal.classList.add('hidden');
     confirmBtn.removeEventListener('click', handleConfirm);

@@ -1,6 +1,7 @@
 // Compression Manager - Compressione dati con LZ-String
 // LZ-String è opzionale: se non disponibile, i dati passano senza compressione.
 import LZString from 'lz-string';
+import { Logger } from '../core/logger.js';
 import { CacheManager } from './cache-manager.js';
 
 export class CompressionManager {
@@ -15,17 +16,17 @@ export class CompressionManager {
     if (typeof data !== 'string') {
       data = JSON.stringify(data);
     }
-    
+
     // Se i dati sono piccoli, non comprimere
     if (data.length < this.compressionThreshold) {
       return {
         compressed: false,
         data: data,
         originalSize: data.length,
-        compressedSize: data.length
+        compressedSize: data.length,
       };
     }
-    
+
     try {
       const compressed = LZString.compressToUTF16(data);
       return {
@@ -33,16 +34,16 @@ export class CompressionManager {
         data: compressed,
         originalSize: data.length,
         compressedSize: compressed.length,
-        ratio: ((1 - compressed.length / data.length) * 100).toFixed(1)
+        ratio: ((1 - compressed.length / data.length) * 100).toFixed(1),
       };
     } catch (error) {
-      console.error('Errore nella compressione:', error);
+      Logger.error('Errore nella compressione:', error);
       return {
         compressed: false,
         data: data,
         originalSize: data.length,
         compressedSize: data.length,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -52,15 +53,15 @@ export class CompressionManager {
    */
   decompress(compressedData) {
     if (!compressedData.compressed) {
-      return typeof compressedData.data === 'string' 
-        ? compressedData.data 
+      return typeof compressedData.data === 'string'
+        ? compressedData.data
         : JSON.stringify(compressedData.data);
     }
-    
+
     try {
       return LZString.decompressFromUTF16(compressedData.data);
     } catch (error) {
-      console.error('Errore nella decompressione:', error);
+      Logger.error('Errore nella decompressione:', error);
       return compressedData.data;
     }
   }
@@ -70,43 +71,43 @@ export class CompressionManager {
    */
   async saveCompressed(key, data, useIndexedDB = this.useIndexedDB) {
     const compressed = this.compress(data);
-    
+
     const entry = {
       ...compressed,
       timestamp: Date.now(),
-      key
+      key,
     };
-    
+
     try {
       if (useIndexedDB && compressed.originalSize > 50000) {
         // Usa IndexedDB per dati grandi
         await this.saveToIndexedDB(key, entry);
-        
+
         // Salva riferimento in chrome.storage
         await chrome.storage.local.set({
           [`${key}_ref`]: {
             inIndexedDB: true,
             timestamp: Date.now(),
-            size: compressed.compressedSize
-          }
+            size: compressed.compressedSize,
+          },
         });
       } else {
         // Usa chrome.storage per dati piccoli
         await chrome.storage.local.set({ [key]: entry });
       }
-      
+
       return {
         success: true,
         compressed: compressed.compressed,
         originalSize: compressed.originalSize,
         compressedSize: compressed.compressedSize,
-        savedTo: useIndexedDB && compressed.originalSize > 50000 ? 'IndexedDB' : 'chrome.storage'
+        savedTo: useIndexedDB && compressed.originalSize > 50000 ? 'IndexedDB' : 'chrome.storage',
       };
     } catch (error) {
-      console.error('Errore nel salvare dati compressi:', error);
+      Logger.error('Errore nel salvare dati compressi:', error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -119,9 +120,9 @@ export class CompressionManager {
       // Controlla se è in IndexedDB
       const refResult = await chrome.storage.local.get([`${key}_ref`]);
       const ref = refResult[`${key}_ref`];
-      
+
       let entry;
-      
+
       if (ref && ref.inIndexedDB) {
         // Carica da IndexedDB
         entry = await this.loadFromIndexedDB(key);
@@ -130,24 +131,24 @@ export class CompressionManager {
         const result = await chrome.storage.local.get([key]);
         entry = result[key];
       }
-      
+
       if (!entry) {
         return null;
       }
-      
+
       const decompressed = this.decompress(entry);
-      
+
       return {
         data: decompressed,
         metadata: {
           compressed: entry.compressed,
           originalSize: entry.originalSize,
           compressedSize: entry.compressedSize,
-          timestamp: entry.timestamp
-        }
+          timestamp: entry.timestamp,
+        },
       };
     } catch (error) {
-      console.error('Errore nel caricare dati compressi:', error);
+      Logger.error('Errore nel caricare dati compressi:', error);
       return null;
     }
   }
@@ -158,20 +159,20 @@ export class CompressionManager {
   async saveToIndexedDB(key, data) {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('AIArticleSummarizer', 1);
-      
+
       request.onerror = () => reject(request.error);
-      
+
       request.onsuccess = (event) => {
         const db = event.target.result;
         const transaction = db.transaction(['compressed_data'], 'readwrite');
         const store = transaction.objectStore('compressed_data');
-        
+
         const putRequest = store.put({ key, ...data });
-        
+
         putRequest.onsuccess = () => resolve();
         putRequest.onerror = () => reject(putRequest.error);
       };
-      
+
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
         if (!db.objectStoreNames.contains('compressed_data')) {
@@ -187,16 +188,16 @@ export class CompressionManager {
   async loadFromIndexedDB(key) {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('AIArticleSummarizer', 1);
-      
+
       request.onerror = () => reject(request.error);
-      
+
       request.onsuccess = (event) => {
         const db = event.target.result;
         const transaction = db.transaction(['compressed_data'], 'readonly');
         const store = transaction.objectStore('compressed_data');
-        
+
         const getRequest = store.get(key);
-        
+
         getRequest.onsuccess = () => resolve(getRequest.result);
         getRequest.onerror = () => reject(getRequest.error);
       };
@@ -210,10 +211,10 @@ export class CompressionManager {
     try {
       const result = await chrome.storage.local.get(['summaryHistory']);
       const history = result.summaryHistory || [];
-      
-      const cutoffDate = Date.now() - (daysOld * 24 * 60 * 60 * 1000);
+
+      const cutoffDate = Date.now() - daysOld * 24 * 60 * 60 * 1000;
       let compressedCount = 0;
-      
+
       for (let entry of history) {
         if (entry.timestamp < cutoffDate && !entry.compressed) {
           // Comprimi il riassunto
@@ -227,14 +228,14 @@ export class CompressionManager {
           }
         }
       }
-      
+
       if (compressedCount > 0) {
         await chrome.storage.local.set({ summaryHistory: history });
       }
-      
+
       return compressedCount;
     } catch (error) {
-      console.error('Errore nella compressione cronologia:', error);
+      Logger.error('Errore nella compressione cronologia:', error);
       return 0;
     }
   }
@@ -246,10 +247,10 @@ export class CompressionManager {
     try {
       const result = await chrome.storage.local.get(['summaryCache']);
       const cache = result.summaryCache || {};
-      
-      const cutoffDate = Date.now() - (daysOld * 24 * 60 * 60 * 1000);
+
+      const cutoffDate = Date.now() - daysOld * 24 * 60 * 60 * 1000;
       let compressedCount = 0;
-      
+
       for (let [key, entry] of Object.entries(cache)) {
         if (entry.timestamp < cutoffDate && !entry.data.compressed) {
           // Comprimi i dati
@@ -258,19 +259,19 @@ export class CompressionManager {
             compressed: compressed.compressed,
             data: compressed.data,
             originalSize: compressed.originalSize,
-            compressedSize: compressed.compressedSize
+            compressedSize: compressed.compressedSize,
           };
           compressedCount++;
         }
       }
-      
+
       if (compressedCount > 0) {
         await chrome.storage.local.set({ summaryCache: cache });
       }
-      
+
       return compressedCount;
     } catch (error) {
-      console.error('Errore nella compressione cache:', error);
+      Logger.error('Errore nella compressione cache:', error);
       return 0;
     }
   }
@@ -283,12 +284,12 @@ export class CompressionManager {
       const result = await chrome.storage.local.get(['summaryHistory', 'summaryCache']);
       const history = result.summaryHistory || [];
       const cache = result.summaryCache || {};
-      
+
       let totalOriginalSize = 0;
       let totalCompressedSize = 0;
       let compressedItems = 0;
       let uncompressedItems = 0;
-      
+
       // Analizza cronologia
       for (let entry of history) {
         if (entry.compressed) {
@@ -302,7 +303,7 @@ export class CompressionManager {
           uncompressedItems++;
         }
       }
-      
+
       // Analizza cache
       for (let entry of Object.values(cache)) {
         if (entry.data && entry.data.compressed) {
@@ -316,13 +317,14 @@ export class CompressionManager {
           uncompressedItems++;
         }
       }
-      
+
       const savedBytes = totalOriginalSize - totalCompressedSize;
       const savedMB = (savedBytes / (1024 * 1024)).toFixed(2);
-      const compressionRatio = totalOriginalSize > 0 
-        ? ((1 - totalCompressedSize / totalOriginalSize) * 100).toFixed(1)
-        : 0;
-      
+      const compressionRatio =
+        totalOriginalSize > 0
+          ? ((1 - totalCompressedSize / totalOriginalSize) * 100).toFixed(1)
+          : 0;
+
       return {
         compressedItems,
         uncompressedItems,
@@ -330,10 +332,10 @@ export class CompressionManager {
         totalOriginalSize: (totalOriginalSize / (1024 * 1024)).toFixed(2) + ' MB',
         totalCompressedSize: (totalCompressedSize / (1024 * 1024)).toFixed(2) + ' MB',
         savedMB: parseFloat(savedMB),
-        compressionRatio: parseFloat(compressionRatio)
+        compressionRatio: parseFloat(compressionRatio),
       };
     } catch (error) {
-      console.error('Errore nel calcolare statistiche compressione:', error);
+      Logger.error('Errore nel calcolare statistiche compressione:', error);
       return null;
     }
   }
@@ -344,46 +346,46 @@ export class CompressionManager {
   async autoCleanup(options = {}) {
     const {
       compressHistoryOlderThan = 30, // giorni
-      compressCacheOlderThan = 7,    // giorni
-      deleteHistoryOlderThan = 180,  // giorni
-      maxCacheEntries = 100
+      compressCacheOlderThan = 7, // giorni
+      deleteHistoryOlderThan = 180, // giorni
+      maxCacheEntries = 100,
     } = options;
-    
+
     const results = {
       compressedHistory: 0,
       compressedCache: 0,
       deletedHistory: 0,
-      cleanedCache: 0
+      cleanedCache: 0,
     };
-    
+
     try {
       // Comprimi cronologia vecchia
       results.compressedHistory = await this.compressOldHistory(compressHistoryOlderThan);
-      
+
       // Comprimi cache vecchia
       results.compressedCache = await this.compressOldCache(compressCacheOlderThan);
-      
+
       // Elimina cronologia molto vecchia
       if (deleteHistoryOlderThan > 0) {
         const result = await chrome.storage.local.get(['summaryHistory']);
         const history = result.summaryHistory || [];
-        const cutoffDate = Date.now() - (deleteHistoryOlderThan * 24 * 60 * 60 * 1000);
-        
-        const filteredHistory = history.filter(entry => entry.timestamp >= cutoffDate);
+        const cutoffDate = Date.now() - deleteHistoryOlderThan * 24 * 60 * 60 * 1000;
+
+        const filteredHistory = history.filter((entry) => entry.timestamp >= cutoffDate);
         results.deletedHistory = history.length - filteredHistory.length;
-        
+
         if (results.deletedHistory > 0) {
           await chrome.storage.local.set({ summaryHistory: filteredHistory });
         }
       }
-      
+
       // Pulisci cache LRU
       const cacheManager = new CacheManager();
       results.cleanedCache = await cacheManager.cleanLRU(maxCacheEntries);
-      
+
       return results;
     } catch (error) {
-      console.error('Errore nell\'auto cleanup:', error);
+      Logger.error("Errore nell'auto cleanup:", error);
       return results;
     }
   }
