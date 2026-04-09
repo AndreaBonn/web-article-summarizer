@@ -9,31 +9,125 @@ import { MarkdownExporter } from '../../utils/export/markdown-exporter.js';
 import { EmailManager } from '../../utils/export/email-manager.js';
 import { Modal } from '../../utils/core/modal.js';
 import { Logger } from '../../utils/core/logger.js';
+import { showExportModal } from '../../shared/export-modal.js';
 
-// Shared helpers to avoid triplicating checkbox logic across PDF/Markdown/Email modals
+function _getAvailability() {
+  return {
+    translation: !!translationState.value,
+    qa: !!(state.currentQA && state.currentQA.length > 0),
+    citations: !!(
+      citationsState.value &&
+      citationsState.value.citations &&
+      citationsState.value.citations.length > 0
+    ),
+  };
+}
 
-function configureExportCheckboxes(prefix) {
-  const hasTrans = !!translationState.value;
-  const hasQA = state.currentQA && state.currentQA.length > 0;
-  const hasCitations =
-    citationsState.value &&
-    citationsState.value.citations &&
-    citationsState.value.citations.length > 0;
+function _buildMetadata() {
+  return {
+    provider: elements.providerSelect.value,
+    language: state.selectedLanguage,
+    contentType: state.selectedContentType !== 'auto' ? state.selectedContentType : 'auto',
+  };
+}
 
+// Export to PDF
+export async function exportToPDF() {
+  if (!state.currentArticle || !state.currentResults) {
+    showError('Nessun riassunto da esportare');
+    return;
+  }
+
+  showExportOptionsModal();
+}
+
+export function showExportOptionsModal() {
+  showExportModal({
+    availability: _getAvailability(),
+    prefix: 'pdf',
+    onConfirm: async (options) => {
+      try {
+        await PDFExporter.exportToPDF(
+          state.currentArticle,
+          options.includeSummary ? state.currentResults.summary : null,
+          options.includeKeypoints ? state.currentResults.keyPoints : null,
+          _buildMetadata(),
+          options.includeTranslation ? translationState.value : null,
+          options.includeQA ? state.currentQA : null,
+          options.includeCitations ? citationsState.value : null,
+        );
+
+        const originalText = elements.exportPdfBtn.textContent;
+        elements.exportPdfBtn.textContent = I18n.t('feedback.exported');
+        setTimeout(() => {
+          elements.exportPdfBtn.textContent = originalText;
+        }, 2000);
+      } catch (error) {
+        Logger.error('Errore esportazione PDF:', error);
+        showError("Errore durante l'esportazione PDF: " + error.message);
+      }
+    },
+  });
+}
+
+// Export to Markdown
+export async function exportToMarkdown() {
+  if (!state.currentArticle || !state.currentResults) {
+    showError('Nessun riassunto da esportare');
+    return;
+  }
+
+  showMarkdownExportModal();
+}
+
+export function showMarkdownExportModal() {
+  showExportModal({
+    title: I18n.t('export.markdown'),
+    resetTitle: I18n.t('export.pdf'),
+    availability: _getAvailability(),
+    prefix: 'pdf',
+    onConfirm: async (options) => {
+      try {
+        MarkdownExporter.exportToMarkdown(
+          state.currentArticle,
+          options.includeSummary ? state.currentResults.summary : null,
+          options.includeKeypoints ? state.currentResults.keyPoints : null,
+          _buildMetadata(),
+          options.includeTranslation ? translationState.value : null,
+          options.includeQA ? state.currentQA : null,
+          null, // notes
+          options.includeCitations ? citationsState.value : null,
+        );
+
+        const originalText = elements.exportMdBtn.textContent;
+        elements.exportMdBtn.textContent = I18n.t('feedback.exported');
+        setTimeout(() => {
+          elements.exportMdBtn.textContent = originalText;
+        }, 2000);
+      } catch (error) {
+        Logger.error('Errore esportazione Markdown:', error);
+        showError("Errore durante l'esportazione Markdown: " + error.message);
+      }
+    },
+  });
+}
+
+// Helpers locali per openEmailModal (checkbox email* nel modal dedicato)
+function _configureEmailCheckboxes() {
+  const availability = _getAvailability();
   const pairs = [
     {
-      option: `${prefix}TranslationOption`,
-      checkbox: `${prefix}IncludeTranslation`,
-      available: hasTrans,
+      option: 'emailTranslationOption',
+      checkbox: 'emailIncludeTranslation',
+      available: availability.translation,
     },
-    { option: `${prefix}QAOption`, checkbox: `${prefix}IncludeQA`, available: hasQA },
+    { option: 'emailQAOption', checkbox: 'emailIncludeQA', available: availability.qa },
     {
-      option: `${prefix}CitationsOption`,
-      checkbox: `${prefix}IncludeCitations`,
-      available: hasCitations,
+      option: 'emailCitationsOption',
+      checkbox: 'emailIncludeCitations',
+      available: availability.citations,
     },
   ];
-
   for (const { option, checkbox, available } of pairs) {
     const optEl = document.getElementById(option);
     const cbEl = document.getElementById(checkbox);
@@ -44,25 +138,22 @@ function configureExportCheckboxes(prefix) {
   }
 }
 
-function collectExportOptions(prefix) {
+function _collectEmailOptions() {
+  const availability = _getAvailability();
   return {
-    includeSummary: document.getElementById(`${prefix}IncludeSummary`).checked,
-    includeKeypoints: document.getElementById(`${prefix}IncludeKeypoints`).checked,
-    includeTranslation:
-      document.getElementById(`${prefix}IncludeTranslation`).checked && translationState.value,
-    includeQA:
-      document.getElementById(`${prefix}IncludeQA`).checked &&
-      state.currentQA &&
-      state.currentQA.length > 0,
-    includeCitations:
-      document.getElementById(`${prefix}IncludeCitations`).checked &&
-      citationsState.value &&
-      citationsState.value.citations &&
-      citationsState.value.citations.length > 0,
+    includeSummary: !!document.getElementById('emailIncludeSummary')?.checked,
+    includeKeypoints: !!document.getElementById('emailIncludeKeypoints')?.checked,
+    includeTranslation: !!(
+      document.getElementById('emailIncludeTranslation')?.checked && availability.translation
+    ),
+    includeQA: !!(document.getElementById('emailIncludeQA')?.checked && availability.qa),
+    includeCitations: !!(
+      document.getElementById('emailIncludeCitations')?.checked && availability.citations
+    ),
   };
 }
 
-function hasAnyOptionSelected(options) {
+function _hasAnySelected(options) {
   return (
     options.includeSummary ||
     options.includeKeypoints ||
@@ -70,179 +161,6 @@ function hasAnyOptionSelected(options) {
     options.includeQA ||
     options.includeCitations
   );
-}
-
-// Export to PDF
-export async function exportToPDF() {
-  if (!state.currentArticle || !state.currentResults) {
-    showError('Nessun riassunto da esportare');
-    return;
-  }
-
-  // Mostra modal di selezione
-  showExportOptionsModal();
-}
-
-export async function showExportOptionsModal() {
-  const modal = document.getElementById('exportOptionsModal');
-  configureExportCheckboxes('pdf');
-  modal.classList.remove('hidden');
-
-  // Handler per conferma
-  const handleConfirm = async () => {
-    const options = collectExportOptions('pdf');
-    if (!hasAnyOptionSelected(options)) {
-      await Modal.warning('Seleziona almeno una sezione da esportare', 'Nessuna Selezione');
-      return;
-    }
-
-    modal.classList.add('hidden');
-
-    try {
-      const metadata = {
-        provider: elements.providerSelect.value,
-        language: state.selectedLanguage,
-        contentType: state.selectedContentType !== 'auto' ? state.selectedContentType : 'auto',
-      };
-
-      await PDFExporter.exportToPDF(
-        state.currentArticle,
-        options.includeSummary ? state.currentResults.summary : null,
-        options.includeKeypoints ? state.currentResults.keyPoints : null,
-        metadata,
-        options.includeTranslation ? translationState.value : null,
-        options.includeQA ? state.currentQA : null,
-        options.includeCitations ? citationsState.value : null,
-      );
-
-      // Visual feedback
-      const originalText = elements.exportPdfBtn.textContent;
-      elements.exportPdfBtn.textContent = I18n.t('feedback.exported');
-      setTimeout(() => {
-        elements.exportPdfBtn.textContent = originalText;
-      }, 2000);
-    } catch (error) {
-      Logger.error('Errore esportazione PDF:', error);
-      showError("Errore durante l'esportazione PDF: " + error.message);
-    }
-
-    cleanup();
-  };
-
-  // Handler per annulla
-  const handleCancel = () => {
-    modal.classList.add('hidden');
-    cleanup();
-  };
-
-  // Handler per overlay
-  const handleOverlay = (e) => {
-    if (e.target.classList.contains('custom-modal-overlay')) {
-      handleCancel();
-    }
-  };
-
-  // Cleanup function
-  const cleanup = () => {
-    document.getElementById('exportConfirmBtn').removeEventListener('click', handleConfirm);
-    document.getElementById('exportCancelBtn').removeEventListener('click', handleCancel);
-    modal.removeEventListener('click', handleOverlay);
-  };
-
-  // Aggiungi event listeners
-  document.getElementById('exportConfirmBtn').addEventListener('click', handleConfirm);
-  document.getElementById('exportCancelBtn').addEventListener('click', handleCancel);
-  modal.addEventListener('click', handleOverlay);
-}
-
-// Export to Markdown
-export async function exportToMarkdown() {
-  if (!state.currentArticle || !state.currentResults) {
-    showError('Nessun riassunto da esportare');
-    return;
-  }
-
-  // Mostra modal di selezione (riusa lo stesso del PDF)
-  showMarkdownExportModal();
-}
-
-export async function showMarkdownExportModal() {
-  const modal = document.getElementById('exportOptionsModal');
-  const modalTitle = modal.querySelector('.custom-modal-title');
-
-  // Cambia titolo per Markdown
-  modalTitle.textContent = I18n.t('export.markdown');
-  configureExportCheckboxes('pdf');
-  modal.classList.remove('hidden');
-
-  // Handler per conferma
-  const handleConfirm = async () => {
-    const options = collectExportOptions('pdf');
-    if (!hasAnyOptionSelected(options)) {
-      await Modal.warning('Seleziona almeno una sezione da esportare', 'Nessuna Selezione');
-      return;
-    }
-
-    modal.classList.add('hidden');
-    modalTitle.textContent = I18n.t('export.pdf'); // Ripristina titolo
-
-    try {
-      const metadata = {
-        provider: elements.providerSelect.value,
-        language: state.selectedLanguage,
-        contentType: state.selectedContentType !== 'auto' ? state.selectedContentType : 'auto',
-      };
-
-      MarkdownExporter.exportToMarkdown(
-        state.currentArticle,
-        options.includeSummary ? state.currentResults.summary : null,
-        options.includeKeypoints ? state.currentResults.keyPoints : null,
-        metadata,
-        options.includeTranslation ? translationState.value : null,
-        options.includeQA ? state.currentQA : null,
-        null, // notes
-        options.includeCitations ? citationsState.value : null,
-      );
-
-      // Visual feedback
-      const originalText = elements.exportMdBtn.textContent;
-      elements.exportMdBtn.textContent = I18n.t('feedback.exported');
-      setTimeout(() => {
-        elements.exportMdBtn.textContent = originalText;
-      }, 2000);
-    } catch (error) {
-      Logger.error('Errore esportazione Markdown:', error);
-      showError("Errore durante l'esportazione Markdown: " + error.message);
-    }
-
-    cleanup();
-  };
-
-  // Handler per annulla
-  const handleCancel = () => {
-    modal.classList.add('hidden');
-    modalTitle.textContent = I18n.t('export.pdf'); // Ripristina titolo
-    cleanup();
-  };
-
-  // Handler per overlay
-  const handleOverlay = (e) => {
-    if (e.target.classList.contains('custom-modal-overlay')) {
-      handleCancel();
-    }
-  };
-
-  // Cleanup function
-  const cleanup = () => {
-    document.getElementById('exportConfirmBtn').removeEventListener('click', handleConfirm);
-    document.getElementById('exportCancelBtn').removeEventListener('click', handleCancel);
-    modal.removeEventListener('click', handleOverlay);
-  };
-
-  // Aggiungi event listeners
-  document.getElementById('exportConfirmBtn').addEventListener('click', handleConfirm);
-  document.getElementById('exportCancelBtn').addEventListener('click', handleCancel);
-  modal.addEventListener('click', handleOverlay);
 }
 
 // Email System
@@ -332,7 +250,7 @@ export async function openEmailModal() {
     savedEmailsSection.classList.add('hidden');
   }
 
-  configureExportCheckboxes('email');
+  _configureEmailCheckboxes();
 
   // Reset input
   emailInput.value = '';
@@ -356,8 +274,8 @@ export async function openEmailModal() {
     }
 
     // Raccogli opzioni selezionate
-    const options = collectExportOptions('email');
-    if (!hasAnyOptionSelected(options)) {
+    const options = _collectEmailOptions();
+    if (!_hasAnySelected(options)) {
       await Modal.warning('Seleziona almeno una sezione da includere', 'Nessuna Selezione');
       return;
     }

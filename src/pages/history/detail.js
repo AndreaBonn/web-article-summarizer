@@ -8,6 +8,7 @@ import { CitationExtractor } from '../../utils/ai/citation-extractor.js';
 import { PDFExporter } from '../../utils/export/pdf-exporter.js';
 import { MarkdownExporter } from '../../utils/export/markdown-exporter.js';
 import { Modal } from '../../utils/core/modal.js';
+import { showExportModal } from '../../shared/export-modal.js';
 
 export async function openDetail(id) {
   state.currentEntry = await HistoryManager.getSummaryById(id);
@@ -208,287 +209,77 @@ export function switchModalTab(tabName) {
   }
 }
 
-export async function exportCurrentPdf() {
+export function exportCurrentPdf() {
   if (!state.currentEntry) return;
 
-  // Mostra modal di selezione
-  showExportOptionsModal();
+  showExportModal({
+    availability: _getEntryAvailability(),
+    prefix: 'pdf',
+    onConfirm: async (options) => {
+      try {
+        const translation =
+          options.includeTranslation && state.currentEntry.translation
+            ? state.currentEntry.translation.text
+            : null;
+
+        await PDFExporter.exportToPDF(
+          state.currentEntry.article,
+          options.includeSummary ? state.currentEntry.summary : null,
+          options.includeKeypoints ? state.currentEntry.keyPoints : null,
+          state.currentEntry.metadata,
+          translation,
+          options.includeQA ? state.currentEntry.qa : null,
+          options.includeCitations ? state.currentEntry.citations : null,
+        );
+      } catch (error) {
+        await Modal.error("Errore durante l'esportazione PDF: " + error.message);
+      }
+    },
+  });
 }
 
-async function showExportOptionsModal() {
-  const modal = document.getElementById('exportOptionsModal');
-  const translationOption = document.getElementById('pdfTranslationOption');
-  const qaOption = document.getElementById('pdfQAOption');
-  const citationsOption = document.getElementById('pdfCitationsOption');
-  const translationCheckbox = document.getElementById('pdfIncludeTranslation');
-  const qaCheckbox = document.getElementById('pdfIncludeQA');
-  const citationsCheckbox = document.getElementById('pdfIncludeCitations');
-
-  // Gestisci disponibilità traduzione
-  if (state.currentEntry.translation) {
-    translationOption.classList.remove('disabled');
-    translationCheckbox.disabled = false;
-    translationCheckbox.checked = true;
-  } else {
-    translationOption.classList.add('disabled');
-    translationCheckbox.disabled = true;
-    translationCheckbox.checked = false;
-  }
-
-  // Gestisci disponibilità Q&A
-  if (state.currentEntry.qa && state.currentEntry.qa.length > 0) {
-    qaOption.classList.remove('disabled');
-    qaCheckbox.disabled = false;
-    qaCheckbox.checked = true;
-  } else {
-    qaOption.classList.add('disabled');
-    qaCheckbox.disabled = true;
-    qaCheckbox.checked = false;
-  }
-
-  // Gestisci disponibilità Citazioni
-  if (
-    state.currentEntry.citations &&
-    state.currentEntry.citations.citations &&
-    state.currentEntry.citations.citations.length > 0
-  ) {
-    citationsOption.classList.remove('disabled');
-    citationsCheckbox.disabled = false;
-    citationsCheckbox.checked = true;
-  } else {
-    citationsOption.classList.add('disabled');
-    citationsCheckbox.disabled = true;
-    citationsCheckbox.checked = false;
-  }
-
-  // Mostra modal
-  modal.classList.remove('hidden');
-
-  // Handler per conferma
-  const handleConfirm = async () => {
-    const options = {
-      includeSummary: document.getElementById('pdfIncludeSummary').checked,
-      includeKeypoints: document.getElementById('pdfIncludeKeypoints').checked,
-      includeTranslation:
-        document.getElementById('pdfIncludeTranslation').checked && state.currentEntry.translation,
-      includeQA:
-        document.getElementById('pdfIncludeQA').checked &&
-        state.currentEntry.qa &&
-        state.currentEntry.qa.length > 0,
-      includeCitations:
-        document.getElementById('pdfIncludeCitations').checked &&
-        state.currentEntry.citations &&
-        state.currentEntry.citations.citations &&
-        state.currentEntry.citations.citations.length > 0,
-    };
-
-    // Verifica che almeno una opzione sia selezionata
-    if (
-      !options.includeSummary &&
-      !options.includeKeypoints &&
-      !options.includeTranslation &&
-      !options.includeQA &&
-      !options.includeCitations
-    ) {
-      await Modal.alert('Seleziona almeno una sezione da esportare', 'Nessuna Selezione', '⚠️');
-      return;
-    }
-
-    modal.classList.add('hidden');
-
-    try {
-      const translation =
-        options.includeTranslation && state.currentEntry.translation
-          ? state.currentEntry.translation.text
-          : null;
-      const qaList = options.includeQA ? state.currentEntry.qa : null;
-      const citations = options.includeCitations ? state.currentEntry.citations : null;
-
-      await PDFExporter.exportToPDF(
-        state.currentEntry.article,
-        options.includeSummary ? state.currentEntry.summary : null,
-        options.includeKeypoints ? state.currentEntry.keyPoints : null,
-        state.currentEntry.metadata,
-        translation,
-        qaList,
-        citations,
-      );
-    } catch (error) {
-      await Modal.error("Errore durante l'esportazione PDF: " + error.message);
-    }
-
-    cleanup();
-  };
-
-  // Handler per annulla
-  const handleCancel = () => {
-    modal.classList.add('hidden');
-    cleanup();
-  };
-
-  // Handler per overlay
-  const handleOverlay = (e) => {
-    if (e.target.classList.contains('custom-modal-overlay')) {
-      handleCancel();
-    }
-  };
-
-  // Cleanup function
-  const cleanup = () => {
-    document.getElementById('exportConfirmBtn').removeEventListener('click', handleConfirm);
-    document.getElementById('exportCancelBtn').removeEventListener('click', handleCancel);
-    modal.removeEventListener('click', handleOverlay);
-  };
-
-  // Aggiungi event listeners
-  document.getElementById('exportConfirmBtn').addEventListener('click', handleConfirm);
-  document.getElementById('exportCancelBtn').addEventListener('click', handleCancel);
-  modal.addEventListener('click', handleOverlay);
-}
-
-export async function exportCurrentMarkdown() {
+export function exportCurrentMarkdown() {
   if (!state.currentEntry) return;
 
-  // Mostra modal di selezione (riusa lo stesso del PDF)
-  showMarkdownExportModalHistory();
+  showExportModal({
+    title: 'Esporta Markdown',
+    resetTitle: 'Esporta PDF',
+    availability: _getEntryAvailability(),
+    prefix: 'pdf',
+    onConfirm: async (options) => {
+      try {
+        const translation =
+          options.includeTranslation && state.currentEntry.translation
+            ? state.currentEntry.translation.text
+            : null;
+
+        MarkdownExporter.exportToMarkdown(
+          state.currentEntry.article,
+          options.includeSummary ? state.currentEntry.summary : null,
+          options.includeKeypoints ? state.currentEntry.keyPoints : null,
+          state.currentEntry.metadata,
+          translation,
+          options.includeQA ? state.currentEntry.qa : null,
+          state.currentEntry.notes || null,
+          options.includeCitations ? state.currentEntry.citations : null,
+        );
+      } catch (error) {
+        await Modal.error("Errore durante l'esportazione Markdown: " + error.message);
+      }
+    },
+  });
 }
 
-async function showMarkdownExportModalHistory() {
-  const modal = document.getElementById('exportOptionsModal');
-  const translationOption = document.getElementById('pdfTranslationOption');
-  const qaOption = document.getElementById('pdfQAOption');
-  const citationsOption = document.getElementById('pdfCitationsOption');
-  const translationCheckbox = document.getElementById('pdfIncludeTranslation');
-  const qaCheckbox = document.getElementById('pdfIncludeQA');
-  const citationsCheckbox = document.getElementById('pdfIncludeCitations');
-  const modalTitle = modal.querySelector('.custom-modal-title');
-
-  // Cambia titolo per Markdown
-  modalTitle.textContent = 'Esporta Markdown';
-
-  // Gestisci disponibilità traduzione
-  if (state.currentEntry.translation) {
-    translationOption.classList.remove('disabled');
-    translationCheckbox.disabled = false;
-    translationCheckbox.checked = true;
-  } else {
-    translationOption.classList.add('disabled');
-    translationCheckbox.disabled = true;
-    translationCheckbox.checked = false;
-  }
-
-  // Gestisci disponibilità Q&A
-  if (state.currentEntry.qa && state.currentEntry.qa.length > 0) {
-    qaOption.classList.remove('disabled');
-    qaCheckbox.disabled = false;
-    qaCheckbox.checked = true;
-  } else {
-    qaOption.classList.add('disabled');
-    qaCheckbox.disabled = true;
-    qaCheckbox.checked = false;
-  }
-
-  // Gestisci disponibilità Citazioni
-  if (
-    state.currentEntry.citations &&
-    state.currentEntry.citations.citations &&
-    state.currentEntry.citations.citations.length > 0
-  ) {
-    citationsOption.classList.remove('disabled');
-    citationsCheckbox.disabled = false;
-    citationsCheckbox.checked = true;
-  } else {
-    citationsOption.classList.add('disabled');
-    citationsCheckbox.disabled = true;
-    citationsCheckbox.checked = false;
-  }
-
-  // Mostra modal
-  modal.classList.remove('hidden');
-
-  // Handler per conferma
-  const handleConfirm = async () => {
-    const options = {
-      includeSummary: document.getElementById('pdfIncludeSummary').checked,
-      includeKeypoints: document.getElementById('pdfIncludeKeypoints').checked,
-      includeTranslation:
-        document.getElementById('pdfIncludeTranslation').checked && state.currentEntry.translation,
-      includeQA:
-        document.getElementById('pdfIncludeQA').checked &&
-        state.currentEntry.qa &&
-        state.currentEntry.qa.length > 0,
-      includeCitations:
-        document.getElementById('pdfIncludeCitations').checked &&
-        state.currentEntry.citations &&
-        state.currentEntry.citations.citations &&
-        state.currentEntry.citations.citations.length > 0,
-    };
-
-    // Verifica che almeno una opzione sia selezionata
-    if (
-      !options.includeSummary &&
-      !options.includeKeypoints &&
-      !options.includeTranslation &&
-      !options.includeQA &&
-      !options.includeCitations
-    ) {
-      await Modal.alert('Seleziona almeno una sezione da esportare', 'Nessuna Selezione', '⚠️');
-      return;
-    }
-
-    modal.classList.add('hidden');
-    modalTitle.textContent = 'Esporta PDF'; // Ripristina titolo
-
-    try {
-      const translation =
-        options.includeTranslation && state.currentEntry.translation
-          ? state.currentEntry.translation.text
-          : null;
-      const qaList = options.includeQA ? state.currentEntry.qa : null;
-      const citations = options.includeCitations ? state.currentEntry.citations : null;
-
-      MarkdownExporter.exportToMarkdown(
-        state.currentEntry.article,
-        options.includeSummary ? state.currentEntry.summary : null,
-        options.includeKeypoints ? state.currentEntry.keyPoints : null,
-        state.currentEntry.metadata,
-        translation,
-        qaList,
-        state.currentEntry.notes || null, // notes - sarà implementato dopo
-        citations,
-      );
-    } catch (error) {
-      await Modal.error("Errore durante l'esportazione Markdown: " + error.message);
-    }
-
-    cleanup();
+function _getEntryAvailability() {
+  return {
+    translation: !!state.currentEntry.translation,
+    qa: !!(state.currentEntry.qa && state.currentEntry.qa.length > 0),
+    citations: !!(
+      state.currentEntry.citations &&
+      state.currentEntry.citations.citations &&
+      state.currentEntry.citations.citations.length > 0
+    ),
   };
-
-  // Handler per annulla
-  const handleCancel = () => {
-    modal.classList.add('hidden');
-    modalTitle.textContent = 'Esporta PDF'; // Ripristina titolo
-    cleanup();
-  };
-
-  // Handler per overlay
-  const handleOverlay = (e) => {
-    if (e.target.classList.contains('custom-modal-overlay')) {
-      handleCancel();
-    }
-  };
-
-  // Cleanup function
-  const cleanup = () => {
-    document.getElementById('exportConfirmBtn').removeEventListener('click', handleConfirm);
-    document.getElementById('exportCancelBtn').removeEventListener('click', handleCancel);
-    modal.removeEventListener('click', handleOverlay);
-  };
-
-  // Aggiungi event listeners
-  document.getElementById('exportConfirmBtn').addEventListener('click', handleConfirm);
-  document.getElementById('exportCancelBtn').addEventListener('click', handleCancel);
-  modal.addEventListener('click', handleOverlay);
 }
 
 export async function copyCurrentSummary() {
