@@ -136,8 +136,6 @@ export class ProviderCaller {
 
   // Helper per estrarre il testo dalla risposta Gemini
   static extractGeminiText(data) {
-    console.log('Gemini response structure:', JSON.stringify(data, null, 2));
-
     if (!data.candidates || data.candidates.length === 0) {
       console.error('Gemini error - no candidates:', data);
       const errorMsg =

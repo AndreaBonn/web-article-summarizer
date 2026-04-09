@@ -10,13 +10,13 @@ export class TTSManager {
     this.currentUtterance = null;
     this.queue = [];
     this.config = {
-      rate: 1.0,      // Velocità (0.1 - 10)
-      pitch: 1.0,     // Tono (0 - 2)
-      volume: 1.0,    // Volume (0 - 1)
-      lang: 'it-IT'   // Lingua di default
+      rate: 1.0, // Velocità (0.1 - 10)
+      pitch: 1.0, // Tono (0 - 2)
+      volume: 1.0, // Volume (0 - 1)
+      lang: 'it-IT', // Lingua di default
     };
-    
-    this.initializeEventListeners();
+
+    this.initializeEventListeners().catch((err) => console.warn('TTS init fallita:', err));
   }
 
   /**
@@ -26,7 +26,7 @@ export class TTSManager {
     await this.loadVoices();
     await this.loadPreferences();
   }
-  
+
   /**
    * Carica le voci disponibili
    */
@@ -39,7 +39,7 @@ export class TTSManager {
       });
     });
   }
-  
+
   /**
    * Carica le preferenze vocali salvate
    */
@@ -51,14 +51,14 @@ export class TTSManager {
       this.preferences = {};
     }
   }
-  
+
   /**
    * Salva le preferenze vocali
    */
   async savePreferences() {
     await chrome.storage.local.set({ ttsPreferences: this.preferences });
   }
-  
+
   /**
    * Imposta la voce preferita per una lingua
    */
@@ -66,21 +66,21 @@ export class TTSManager {
     this.preferences[lang] = voiceName;
     await this.savePreferences();
   }
-  
+
   /**
    * Ottieni la voce preferita per una lingua
    */
   getPreferredVoice(lang) {
     return this.preferences[lang] || null;
   }
-  
+
   /**
    * Ottieni le voci disponibili per una lingua specifica
    */
   getVoicesForLanguage(lang) {
     if (!this.availableVoices) return [];
-    
-    return this.availableVoices.filter(voice => {
+
+    return this.availableVoices.filter((voice) => {
       // Controlla se la voce supporta la lingua
       return voice.lang && voice.lang.startsWith(lang.split('-')[0]);
     });
@@ -99,18 +99,18 @@ export class TTSManager {
 
     // Pulisci il testo da HTML e caratteri speciali
     const cleanText = this.cleanText(text);
-    
+
     // Interrompi eventuali letture in corso
     this.stop();
 
     const lang = options.lang || this.config.lang;
-    
+
     const ttsOptions = {
       lang: lang,
       rate: options.rate || this.config.rate,
       pitch: options.pitch || this.config.pitch,
       volume: options.volume || this.config.volume,
-      onEvent: (event) => this.handleTTSEvent(event)
+      onEvent: (event) => this.handleTTSEvent(event),
     };
 
     // Selezione voce: priorità a quella specificata, poi preferita, poi default
@@ -134,9 +134,11 @@ export class TTSManager {
     });
 
     // Dispatch evento custom
-    window.dispatchEvent(new CustomEvent('tts:started', { 
-      detail: { text: cleanText } 
-    }));
+    window.dispatchEvent(
+      new CustomEvent('tts:started', {
+        detail: { text: cleanText },
+      }),
+    );
   }
 
   /**
@@ -181,11 +183,11 @@ export class TTSManager {
    */
   cleanText(text) {
     return text
-      .replace(/<[^>]+>/g, '')           // Rimuovi tag HTML
-      .replace(/&nbsp;/g, ' ')           // Converti &nbsp;
-      .replace(/&[a-z]+;/gi, '')         // Rimuovi entità HTML
-      .replace(/\s+/g, ' ')              // Normalizza spazi
-      .replace(/[*_~`]/g, '')            // Rimuovi markdown
+      .replace(/<[^>]+>/g, '') // Rimuovi tag HTML
+      .replace(/&nbsp;/g, ' ') // Converti &nbsp;
+      .replace(/&[a-z]+;/gi, '') // Rimuovi entità HTML
+      .replace(/\s+/g, ' ') // Normalizza spazi
+      .replace(/[*_~`]/g, '') // Rimuovi markdown
       .trim();
   }
 
@@ -194,7 +196,7 @@ export class TTSManager {
    * @param {Object} event - Evento TTS
    */
   handleTTSEvent(event) {
-    switch(event.type) {
+    switch (event.type) {
       case 'start':
         console.log('▶️ TTS iniziato');
         break;
@@ -224,10 +226,12 @@ export class TTSManager {
     console.error('❌ Errore TTS:', error);
     this.isSpeaking = false;
     this.isPaused = false;
-    
-    window.dispatchEvent(new CustomEvent('tts:error', { 
-      detail: { error } 
-    }));
+
+    window.dispatchEvent(
+      new CustomEvent('tts:error', {
+        detail: { error },
+      }),
+    );
   }
 
   /**
@@ -238,7 +242,7 @@ export class TTSManager {
     return {
       isSpeaking: this.isSpeaking,
       isPaused: this.isPaused,
-      currentText: this.currentUtterance?.text || null
+      currentText: this.currentUtterance?.text || null,
     };
   }
 

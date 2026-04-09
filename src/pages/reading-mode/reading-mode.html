@@ -1,169 +1,160 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modalità Lettura - AI Article Summarizer</title>
-  <link rel="stylesheet" href="reading-mode.css">
-</head>
-<body>
-  <!-- Header -->
-  <header class="reading-header">
-    <div class="header-left">
-      <button id="backBtn" class="icon-btn" title="Torna al popup">
-        ← Indietro
-      </button>
-      <h1>📖 Modalità Lettura</h1>
-    </div>
-    <div class="header-right">
-      <div class="font-size-controls">
-        <button id="fontDecreaseBtn" class="icon-btn" title="Riduci dimensione testo">
-          A-
-        </button>
-        <span id="fontSizeLabel" class="font-size-label">M</span>
-        <button id="fontIncreaseBtn" class="icon-btn" title="Aumenta dimensione testo">
-          A+
-        </button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modalità Lettura - AI Article Summarizer</title>
+    <link rel="stylesheet" href="reading-mode.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="reading-header">
+      <div class="header-left">
+        <button id="backBtn" class="icon-btn" title="Torna al popup">← Indietro</button>
+        <h1>📖 Modalità Lettura</h1>
       </div>
-      <button id="themeToggleBtn" class="icon-btn" title="Cambia tema">
-        🌙
-      </button>
-      <button id="copyBtn" class="icon-btn" title="Copia tutto">
-        📋
-      </button>
-      <button id="exportBtn" class="icon-btn" title="Esporta PDF">
-        📄 PDF
-      </button>
-    </div>
-  </header>
+      <div class="header-right">
+        <div class="font-size-controls">
+          <button id="fontDecreaseBtn" class="icon-btn" title="Riduci dimensione testo">A-</button>
+          <span id="fontSizeLabel" class="font-size-label">M</span>
+          <button id="fontIncreaseBtn" class="icon-btn" title="Aumenta dimensione testo">A+</button>
+        </div>
+        <button id="themeToggleBtn" class="icon-btn" title="Cambia tema">🌙</button>
+        <button id="copyBtn" class="icon-btn" title="Copia tutto">📋</button>
+        <button id="exportBtn" class="icon-btn" title="Esporta PDF">📄 PDF</button>
+      </div>
+    </header>
 
-  <!-- Main Content -->
-  <main class="reading-container">
-    <!-- Left Panel: Original Article -->
-    <div class="panel article-panel">
-      <div class="panel-header">
-        <h2>📄 Articolo Originale</h2>
-        <div class="article-meta">
-          <span id="articleWordCount">0 parole</span>
-          <span>•</span>
-          <span id="articleReadTime">0 min</span>
-        </div>
-        <div class="view-toggle">
-          <button id="viewIframeBtn" class="view-btn active" title="Vista pagina originale">🌐 Originale</button>
-          <button id="viewTextBtn" class="view-btn" title="Vista testo pulito">📄 Testo</button>
-        </div>
-      </div>
-      <div class="panel-content" id="articleContent">
-        <!-- Iframe view (default) -->
-        <iframe id="articleIframe" class="article-iframe" sandbox="allow-same-origin allow-scripts" allow="encrypted-media"></iframe>
-        
-        <!-- Text view (hidden by default) -->
-        <div id="articleText" class="article-text hidden">
-          <div class="loading-state">
-            <div class="spinner"></div>
-            <p>Caricamento articolo...</p>
+    <!-- Main Content -->
+    <main class="reading-container">
+      <!-- Left Panel: Original Article -->
+      <div class="panel article-panel">
+        <div class="panel-header">
+          <h2>📄 Articolo Originale</h2>
+          <div class="article-meta">
+            <span id="articleWordCount">0 parole</span>
+            <span>•</span>
+            <span id="articleReadTime">0 min</span>
+          </div>
+          <div class="view-toggle">
+            <button id="viewIframeBtn" class="view-btn active" title="Vista pagina originale">
+              🌐 Originale
+            </button>
+            <button id="viewTextBtn" class="view-btn" title="Vista testo pulito">📄 Testo</button>
           </div>
         </div>
-      </div>
-    </div>
+        <div class="panel-content" id="articleContent">
+          <!-- Iframe view (default) -->
+          <iframe
+            id="articleIframe"
+            class="article-iframe"
+            sandbox="allow-same-origin"
+            allow="encrypted-media"
+          ></iframe>
 
-    <!-- Divider -->
-    <div class="divider" id="divider"></div>
-
-    <!-- Right Panel: Summary -->
-    <div class="panel summary-panel">
-      <div class="panel-header">
-        <h2>✨ Analisi Articolo</h2>
-        <div class="summary-meta">
-          <span id="summaryProvider">-</span>
-          <span>•</span>
-          <span id="summaryLanguage">-</span>
-        </div>
-        <!-- Voice Controls -->
-        <div class="voice-controls">
-          <button id="ttsPlayBtn" class="voice-btn" title="Leggi ad alta voce">
-            🔊
-          </button>
-          <button id="ttsPauseBtn" class="voice-btn" title="Pausa" style="display: none;">
-            ⏸️
-          </button>
-          <button id="ttsStopBtn" class="voice-btn" title="Stop" style="display: none;">
-            ⏹️
-          </button>
-        </div>
-      </div>
-      
-      <!-- Tabs for different views -->
-      <div class="summary-tabs">
-        <button class="summary-tab active" data-tab="summary">📝 Riassunto</button>
-        <button class="summary-tab" data-tab="keypoints">🔑 Punti Chiave</button>
-        <button class="summary-tab" data-tab="translation">🌍 Traduzione</button>
-        <button class="summary-tab" data-tab="citations">📚 Citazioni</button>
-        <button class="summary-tab" data-tab="qa">💬 Q&A</button>
-      </div>
-      
-      <div class="panel-content" id="summaryContent">
-        <!-- Summary Tab -->
-        <div id="summaryTabContent" class="summary-tab-content active">
-          <div class="loading-state">
-            <div class="spinner"></div>
-            <p>Caricamento riassunto...</p>
-          </div>
-        </div>
-        
-        <!-- Key Points Tab -->
-        <div id="keypointsTabContent" class="summary-tab-content">
-          <div class="loading-state">
-            <div class="spinner"></div>
-            <p>Caricamento punti chiave...</p>
-          </div>
-        </div>
-        
-        <!-- Translation Tab -->
-        <div id="translationTabContent" class="summary-tab-content">
-          <div class="empty-state">
-            <p>Nessuna traduzione disponibile</p>
-            <button id="translateBtn" class="btn btn-primary">🌍 Traduci Articolo</button>
-          </div>
-        </div>
-        
-        <!-- Citations Tab -->
-        <div id="citationsTabContent" class="summary-tab-content">
-          <div class="empty-state">
-            <p>Nessuna citazione disponibile</p>
-            <button id="extractCitationsBtn" class="btn btn-primary">📖 Estrai Citazioni</button>
-          </div>
-        </div>
-        
-        <!-- Q&A Tab -->
-        <div id="qaTabContent" class="summary-tab-content">
-          <div class="qa-section">
-            <div class="qa-input-group">
-              <input type="text" id="qaInput" placeholder="Fai una domanda sull'articolo..." />
-              <button id="qaVoiceBtn" class="btn btn-voice" title="Domanda vocale">🎤</button>
-              <button id="qaAskBtn" class="btn btn-primary">Chiedi</button>
+          <!-- Text view (hidden by default) -->
+          <div id="articleText" class="article-text hidden">
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <p>Caricamento articolo...</p>
             </div>
-            <div id="qaHistory" class="qa-history"></div>
           </div>
         </div>
       </div>
-    </div>
-  </main>
 
-  <!-- Custom Modal -->
-  <div id="customModal" class="custom-modal hidden">
-    <div class="custom-modal-overlay"></div>
-    <div class="custom-modal-content">
-      <div class="custom-modal-icon" id="modalIcon"></div>
-      <h3 id="modalTitle" class="custom-modal-title">Titolo</h3>
-      <p id="modalMessage" class="custom-modal-message">Messaggio</p>
-      <div class="custom-modal-buttons">
-        <button id="modalCancelBtn" class="modal-btn modal-btn-cancel hidden">Annulla</button>
-        <button id="modalConfirmBtn" class="modal-btn modal-btn-confirm">OK</button>
+      <!-- Divider -->
+      <div class="divider" id="divider"></div>
+
+      <!-- Right Panel: Summary -->
+      <div class="panel summary-panel">
+        <div class="panel-header">
+          <h2>✨ Analisi Articolo</h2>
+          <div class="summary-meta">
+            <span id="summaryProvider">-</span>
+            <span>•</span>
+            <span id="summaryLanguage">-</span>
+          </div>
+          <!-- Voice Controls -->
+          <div class="voice-controls">
+            <button id="ttsPlayBtn" class="voice-btn" title="Leggi ad alta voce">🔊</button>
+            <button id="ttsPauseBtn" class="voice-btn" title="Pausa" style="display: none">
+              ⏸️
+            </button>
+            <button id="ttsStopBtn" class="voice-btn" title="Stop" style="display: none">⏹️</button>
+          </div>
+        </div>
+
+        <!-- Tabs for different views -->
+        <div class="summary-tabs">
+          <button class="summary-tab active" data-tab="summary">📝 Riassunto</button>
+          <button class="summary-tab" data-tab="keypoints">🔑 Punti Chiave</button>
+          <button class="summary-tab" data-tab="translation">🌍 Traduzione</button>
+          <button class="summary-tab" data-tab="citations">📚 Citazioni</button>
+          <button class="summary-tab" data-tab="qa">💬 Q&A</button>
+        </div>
+
+        <div class="panel-content" id="summaryContent">
+          <!-- Summary Tab -->
+          <div id="summaryTabContent" class="summary-tab-content active">
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <p>Caricamento riassunto...</p>
+            </div>
+          </div>
+
+          <!-- Key Points Tab -->
+          <div id="keypointsTabContent" class="summary-tab-content">
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <p>Caricamento punti chiave...</p>
+            </div>
+          </div>
+
+          <!-- Translation Tab -->
+          <div id="translationTabContent" class="summary-tab-content">
+            <div class="empty-state">
+              <p>Nessuna traduzione disponibile</p>
+              <button id="translateBtn" class="btn btn-primary">🌍 Traduci Articolo</button>
+            </div>
+          </div>
+
+          <!-- Citations Tab -->
+          <div id="citationsTabContent" class="summary-tab-content">
+            <div class="empty-state">
+              <p>Nessuna citazione disponibile</p>
+              <button id="extractCitationsBtn" class="btn btn-primary">📖 Estrai Citazioni</button>
+            </div>
+          </div>
+
+          <!-- Q&A Tab -->
+          <div id="qaTabContent" class="summary-tab-content">
+            <div class="qa-section">
+              <div class="qa-input-group">
+                <input type="text" id="qaInput" placeholder="Fai una domanda sull'articolo..." />
+                <button id="qaVoiceBtn" class="btn btn-voice" title="Domanda vocale">🎤</button>
+                <button id="qaAskBtn" class="btn btn-primary">Chiedi</button>
+              </div>
+              <div id="qaHistory" class="qa-history"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Custom Modal -->
+    <div id="customModal" class="custom-modal hidden">
+      <div class="custom-modal-overlay"></div>
+      <div class="custom-modal-content">
+        <div class="custom-modal-icon" id="modalIcon"></div>
+        <h3 id="modalTitle" class="custom-modal-title">Titolo</h3>
+        <p id="modalMessage" class="custom-modal-message">Messaggio</p>
+        <div class="custom-modal-buttons">
+          <button id="modalCancelBtn" class="modal-btn modal-btn-cancel hidden">Annulla</button>
+          <button id="modalConfirmBtn" class="modal-btn modal-btn-confirm">OK</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script type="module" src="reading-mode.js"></script>
-</body>
+    <script type="module" src="reading-mode.js"></script>
+  </body>
 </html>

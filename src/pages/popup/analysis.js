@@ -135,7 +135,12 @@ export async function generateSummary() {
       } catch (error) {
         console.error('❌ Errore classificazione:', error);
         await ErrorHandler.logError(error, 'Classificazione contenuto');
-        finalContentType = 'general'; // Fallback
+        finalContentType = 'general';
+        state.progressTracker.setStep(
+          'classify',
+          '⚠️ Classificazione non disponibile — uso tipo Generale',
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1200));
       }
     } else {
       console.log('👤 Tipo già impostato (manuale o da cronologia):', state.selectedContentType);

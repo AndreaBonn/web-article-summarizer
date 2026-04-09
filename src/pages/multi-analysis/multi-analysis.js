@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const result = await chrome.storage.local.get(['reopenMultiAnalysis']);
   if (result.reopenMultiAnalysis) {
     await reopenSavedAnalysis(result.reopenMultiAnalysis);
-    chrome.storage.local.remove(['reopenMultiAnalysis']);
+    await chrome.storage.local.remove(['reopenMultiAnalysis']);
     return;
   }
 

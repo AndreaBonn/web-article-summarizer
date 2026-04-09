@@ -19,22 +19,32 @@ export async function openDetail(id) {
 
   // Populate modal
   document.getElementById('detailModalTitle').textContent = state.currentEntry.article.title;
-  document.getElementById('modalDate').textContent = new Date(state.currentEntry.timestamp).toLocaleString('it-IT');
-  document.getElementById('modalProvider').textContent = `Provider: ${state.currentEntry.metadata.provider}`;
-  document.getElementById('modalLanguage').textContent = `${I18n.t('controls.language')} ${state.currentEntry.metadata.language}`;
-  document.getElementById('modalStats').textContent = `${state.currentEntry.article.wordCount} ${I18n.t('article.words')} • ${state.currentEntry.article.readingTimeMinutes} ${I18n.t('article.readingTime')}`;
+  document.getElementById('modalDate').textContent = new Date(
+    state.currentEntry.timestamp,
+  ).toLocaleString('it-IT');
+  document.getElementById('modalProvider').textContent =
+    `Provider: ${state.currentEntry.metadata.provider}`;
+  document.getElementById('modalLanguage').textContent =
+    `${I18n.t('controls.language')} ${state.currentEntry.metadata.language}`;
+  document.getElementById('modalStats').textContent =
+    `${state.currentEntry.article.wordCount} ${I18n.t('article.words')} • ${state.currentEntry.article.readingTimeMinutes} ${I18n.t('article.readingTime')}`;
 
   // Summary
-  document.getElementById('modalSummary').innerHTML = `<p>${HtmlSanitizer.escape(state.currentEntry.summary)}</p>`;
+  document.getElementById('modalSummary').innerHTML =
+    `<p>${HtmlSanitizer.escape(state.currentEntry.summary)}</p>`;
 
   // Key points
-  const keypointsHtml = state.currentEntry.keyPoints.map((point, index) => `
+  const keypointsHtml = state.currentEntry.keyPoints
+    .map(
+      (point, index) => `
     <div class="keypoint-modal">
       <div class="keypoint-modal-title">${index + 1}. ${HtmlSanitizer.escape(point.title)}</div>
       <div class="keypoint-modal-ref">§${HtmlSanitizer.escape(String(point.paragraphs))}</div>
       <div class="keypoint-modal-desc">${HtmlSanitizer.escape(point.description)}</div>
     </div>
-  `).join('');
+  `,
+    )
+    .join('');
   document.getElementById('modalKeypoints').innerHTML = keypointsHtml;
 
   // Translation (if available)
@@ -78,7 +88,11 @@ export async function openDetail(id) {
   }
 
   // Citations (if available)
-  if (state.currentEntry.citations && state.currentEntry.citations.citations && state.currentEntry.citations.citations.length > 0) {
+  if (
+    state.currentEntry.citations &&
+    state.currentEntry.citations.citations &&
+    state.currentEntry.citations.citations.length > 0
+  ) {
     let citationsHtml = `
       <div class="citations-info" style="margin-bottom: 16px;">
         <strong>📚 ${state.currentEntry.citations.total_citations || state.currentEntry.citations.citations.length} citazioni trovate</strong>
@@ -94,13 +108,14 @@ export async function openDetail(id) {
       <div class="citations-list" style="display: flex; flex-direction: column; gap: 12px;">
     `;
 
-    state.currentEntry.citations.citations.forEach(citation => {
-      const typeIcon = {
-        'direct_quote': '💬',
-        'reference': '📖',
-        'statistic': '📊',
-        'source': '🔗'
-      }[citation.type] || '📌';
+    state.currentEntry.citations.citations.forEach((citation) => {
+      const typeIcon =
+        {
+          direct_quote: '💬',
+          reference: '📖',
+          statistic: '📊',
+          source: '🔗',
+        }[citation.type] || '📌';
 
       citationsHtml += `
         <div class="citation-item" style="background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 3px solid #667eea;">
@@ -136,7 +151,11 @@ export async function openDetail(id) {
 
   // Add event listener for save notes
   document.getElementById('saveNotesBtn').addEventListener('click', async () => {
-    const notes = document.getElementById('notesTextarea').value.trim();
+    const notesTextarea = document.getElementById('notesTextarea');
+    if (notesTextarea.value.length > 10000) {
+      notesTextarea.value = notesTextarea.value.substring(0, 10000);
+    }
+    const notes = notesTextarea.value.trim();
     await HistoryManager.updateSummaryNotes(state.currentEntry.id, notes || null);
     state.currentEntry.notes = notes || null;
 
@@ -163,14 +182,14 @@ export function closeModal() {
 }
 
 export function switchModalTab(tabName) {
-  document.querySelectorAll('.modal-tab').forEach(tab => {
+  document.querySelectorAll('.modal-tab').forEach((tab) => {
     tab.classList.remove('active');
     if (tab.dataset.tab === tabName) {
       tab.classList.add('active');
     }
   });
 
-  document.querySelectorAll('.modal-pane').forEach(pane => {
+  document.querySelectorAll('.modal-pane').forEach((pane) => {
     pane.classList.remove('active');
   });
 
@@ -228,7 +247,11 @@ async function showExportOptionsModal() {
   }
 
   // Gestisci disponibilità Citazioni
-  if (state.currentEntry.citations && state.currentEntry.citations.citations && state.currentEntry.citations.citations.length > 0) {
+  if (
+    state.currentEntry.citations &&
+    state.currentEntry.citations.citations &&
+    state.currentEntry.citations.citations.length > 0
+  ) {
     citationsOption.classList.remove('disabled');
     citationsCheckbox.disabled = false;
     citationsCheckbox.checked = true;
@@ -246,13 +269,27 @@ async function showExportOptionsModal() {
     const options = {
       includeSummary: document.getElementById('pdfIncludeSummary').checked,
       includeKeypoints: document.getElementById('pdfIncludeKeypoints').checked,
-      includeTranslation: document.getElementById('pdfIncludeTranslation').checked && state.currentEntry.translation,
-      includeQA: document.getElementById('pdfIncludeQA').checked && state.currentEntry.qa && state.currentEntry.qa.length > 0,
-      includeCitations: document.getElementById('pdfIncludeCitations').checked && state.currentEntry.citations && state.currentEntry.citations.citations && state.currentEntry.citations.citations.length > 0
+      includeTranslation:
+        document.getElementById('pdfIncludeTranslation').checked && state.currentEntry.translation,
+      includeQA:
+        document.getElementById('pdfIncludeQA').checked &&
+        state.currentEntry.qa &&
+        state.currentEntry.qa.length > 0,
+      includeCitations:
+        document.getElementById('pdfIncludeCitations').checked &&
+        state.currentEntry.citations &&
+        state.currentEntry.citations.citations &&
+        state.currentEntry.citations.citations.length > 0,
     };
 
     // Verifica che almeno una opzione sia selezionata
-    if (!options.includeSummary && !options.includeKeypoints && !options.includeTranslation && !options.includeQA && !options.includeCitations) {
+    if (
+      !options.includeSummary &&
+      !options.includeKeypoints &&
+      !options.includeTranslation &&
+      !options.includeQA &&
+      !options.includeCitations
+    ) {
       await Modal.alert('Seleziona almeno una sezione da esportare', 'Nessuna Selezione', '⚠️');
       return;
     }
@@ -260,7 +297,10 @@ async function showExportOptionsModal() {
     modal.classList.add('hidden');
 
     try {
-      const translation = options.includeTranslation && state.currentEntry.translation ? state.currentEntry.translation.text : null;
+      const translation =
+        options.includeTranslation && state.currentEntry.translation
+          ? state.currentEntry.translation.text
+          : null;
       const qaList = options.includeQA ? state.currentEntry.qa : null;
       const citations = options.includeCitations ? state.currentEntry.citations : null;
 
@@ -271,10 +311,10 @@ async function showExportOptionsModal() {
         state.currentEntry.metadata,
         translation,
         qaList,
-        citations
+        citations,
       );
     } catch (error) {
-      await Modal.error('Errore durante l\'esportazione PDF: ' + error.message);
+      await Modal.error("Errore durante l'esportazione PDF: " + error.message);
     }
 
     cleanup();
@@ -349,7 +389,11 @@ async function showMarkdownExportModalHistory() {
   }
 
   // Gestisci disponibilità Citazioni
-  if (state.currentEntry.citations && state.currentEntry.citations.citations && state.currentEntry.citations.citations.length > 0) {
+  if (
+    state.currentEntry.citations &&
+    state.currentEntry.citations.citations &&
+    state.currentEntry.citations.citations.length > 0
+  ) {
     citationsOption.classList.remove('disabled');
     citationsCheckbox.disabled = false;
     citationsCheckbox.checked = true;
@@ -367,13 +411,27 @@ async function showMarkdownExportModalHistory() {
     const options = {
       includeSummary: document.getElementById('pdfIncludeSummary').checked,
       includeKeypoints: document.getElementById('pdfIncludeKeypoints').checked,
-      includeTranslation: document.getElementById('pdfIncludeTranslation').checked && state.currentEntry.translation,
-      includeQA: document.getElementById('pdfIncludeQA').checked && state.currentEntry.qa && state.currentEntry.qa.length > 0,
-      includeCitations: document.getElementById('pdfIncludeCitations').checked && state.currentEntry.citations && state.currentEntry.citations.citations && state.currentEntry.citations.citations.length > 0
+      includeTranslation:
+        document.getElementById('pdfIncludeTranslation').checked && state.currentEntry.translation,
+      includeQA:
+        document.getElementById('pdfIncludeQA').checked &&
+        state.currentEntry.qa &&
+        state.currentEntry.qa.length > 0,
+      includeCitations:
+        document.getElementById('pdfIncludeCitations').checked &&
+        state.currentEntry.citations &&
+        state.currentEntry.citations.citations &&
+        state.currentEntry.citations.citations.length > 0,
     };
 
     // Verifica che almeno una opzione sia selezionata
-    if (!options.includeSummary && !options.includeKeypoints && !options.includeTranslation && !options.includeQA && !options.includeCitations) {
+    if (
+      !options.includeSummary &&
+      !options.includeKeypoints &&
+      !options.includeTranslation &&
+      !options.includeQA &&
+      !options.includeCitations
+    ) {
       await Modal.alert('Seleziona almeno una sezione da esportare', 'Nessuna Selezione', '⚠️');
       return;
     }
@@ -382,7 +440,10 @@ async function showMarkdownExportModalHistory() {
     modalTitle.textContent = 'Esporta PDF'; // Ripristina titolo
 
     try {
-      const translation = options.includeTranslation && state.currentEntry.translation ? state.currentEntry.translation.text : null;
+      const translation =
+        options.includeTranslation && state.currentEntry.translation
+          ? state.currentEntry.translation.text
+          : null;
       const qaList = options.includeQA ? state.currentEntry.qa : null;
       const citations = options.includeCitations ? state.currentEntry.citations : null;
 
@@ -394,10 +455,10 @@ async function showMarkdownExportModalHistory() {
         translation,
         qaList,
         state.currentEntry.notes || null, // notes - sarà implementato dopo
-        citations
+        citations,
       );
     } catch (error) {
-      await Modal.error('Errore durante l\'esportazione Markdown: ' + error.message);
+      await Modal.error("Errore durante l'esportazione Markdown: " + error.message);
     }
 
     cleanup();
@@ -456,11 +517,19 @@ export async function copyCurrentSummary() {
   }
 
   // Aggiungi citazioni se presenti
-  if (state.currentEntry.citations && state.currentEntry.citations.citations && state.currentEntry.citations.citations.length > 0) {
+  if (
+    state.currentEntry.citations &&
+    state.currentEntry.citations.citations &&
+    state.currentEntry.citations.citations.length > 0
+  ) {
     text += `\n${'='.repeat(50)}\n\n`;
     text += `CITAZIONI E BIBLIOGRAFIA:\n\n`;
     // Usa stile APA di default per la copia
-    text += CitationExtractor.generateBibliography(state.currentEntry.article, state.currentEntry.citations.citations, 'apa');
+    text += CitationExtractor.generateBibliography(
+      state.currentEntry.article,
+      state.currentEntry.citations.citations,
+      'apa',
+    );
   }
 
   try {
@@ -482,7 +551,7 @@ export async function deleteCurrentEntry() {
   const confirmed = await Modal.confirm(
     I18n.t('history.confirmDelete'),
     I18n.t('history.deleteTitle'),
-    '🗑️'
+    '🗑️',
   );
 
   if (!confirmed) return;

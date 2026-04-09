@@ -6,35 +6,61 @@ import { APIResilience } from '../../utils/ai/api-resilience.js';
 import { CacheManager } from '../../utils/storage/cache-manager.js';
 import { CompressionManager } from '../../utils/storage/compression-manager.js';
 document.addEventListener('DOMContentLoaded', async () => {
-  await I18n.initPage();
+  try {
+    await I18n.initPage();
 
-  await loadSettings();
-  await loadApiKeys();
-  await loadStats();
-  await loadPerformanceStats();
-
-  // Event listeners
-  document.getElementById('saveKeysBtn').addEventListener('click', saveApiKeys);
-  document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
-  document.getElementById('savePerformanceBtn').addEventListener('click', savePerformanceSettings);
-  document.getElementById('clearCacheBtn').addEventListener('click', clearCache);
-  document.getElementById('clearLogsBtn').addEventListener('click', clearLogs);
-  document.getElementById('runCleanupBtn').addEventListener('click', runCleanup);
-
-  // Test API keys
-  document.querySelectorAll('.btn-test').forEach((btn) => {
-    btn.addEventListener('click', () => testApiKey(btn.dataset.provider));
-  });
-
-  // Applica tema in tempo reale quando cambia il checkbox
-  document.getElementById('darkMode').addEventListener('change', (e) => {
-    applyTheme(e.target.checked);
-  });
-
-  // Refresh stats ogni 30 secondi
-  setInterval(async () => {
+    await loadSettings();
+    await loadApiKeys();
+    await loadStats();
     await loadPerformanceStats();
-  }, 30000);
+
+    // Event listeners
+    document.getElementById('saveKeysBtn').addEventListener('click', saveApiKeys);
+    document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+    document
+      .getElementById('savePerformanceBtn')
+      .addEventListener('click', savePerformanceSettings);
+    document.getElementById('clearCacheBtn').addEventListener('click', clearCache);
+    document.getElementById('clearLogsBtn').addEventListener('click', clearLogs);
+    document.getElementById('runCleanupBtn').addEventListener('click', runCleanup);
+
+    // Test API keys
+    document.querySelectorAll('.btn-test').forEach((btn) => {
+      btn.addEventListener('click', () => testApiKey(btn.dataset.provider));
+    });
+
+    // Applica tema in tempo reale quando cambia il checkbox
+    document.getElementById('darkMode').addEventListener('change', (e) => {
+      applyTheme(e.target.checked);
+    });
+
+    // Refresh stats ogni 30 secondi, solo quando la pagina è visibile
+    let statsInterval = setInterval(async () => {
+      if (!document.hidden) {
+        await loadPerformanceStats();
+      }
+    }, 30000);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        clearInterval(statsInterval);
+        statsInterval = null;
+      } else if (!statsInterval) {
+        statsInterval = setInterval(async () => {
+          if (!document.hidden) {
+            await loadPerformanceStats();
+          }
+        }, 30000);
+      }
+    });
+  } catch (error) {
+    console.error('Errore inizializzazione impostazioni:', error);
+    const toast = document.getElementById('toast');
+    if (toast) {
+      toast.textContent = 'Errore durante il caricamento. Ricarica la pagina.';
+      toast.className = 'toast error';
+    }
+  }
 });
 
 async function loadSettings() {
@@ -107,6 +133,13 @@ async function loadStats() {
   document.getElementById('timeSaved').textContent = `${hoursSaved}h`;
 }
 
+const KEY_PREFIXES = {
+  groq: 'gsk_',
+  openai: 'sk-',
+  anthropic: 'sk-ant-',
+  gemini: 'AIza',
+};
+
 async function saveApiKeys() {
   const providers = ['groq', 'openai', 'anthropic', 'gemini'];
 
@@ -116,6 +149,15 @@ async function saveApiKeys() {
 
     // Non salvare se il campo è ancora mascherato (non modificato dall'utente)
     if (key && input.dataset.masked !== 'true') {
+      const expectedPrefix = KEY_PREFIXES[provider];
+      if (expectedPrefix && !key.startsWith(expectedPrefix)) {
+        showStatus(
+          provider,
+          'error',
+          `Formato non valido: la chiave ${provider} deve iniziare con "${expectedPrefix}"`,
+        );
+        continue;
+      }
       await StorageManager.saveApiKey(provider, key);
       showStatus(provider, 'success', I18n.t('settings.status.saved'));
     }

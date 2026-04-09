@@ -95,16 +95,11 @@ export class PromptBuilder {
 
     formatted += `\nLUNGHEZZA: ${article.wordCount} parole (~${article.readingTimeMinutes} minuti di lettura)`;
 
-    if (totalSanitized > 0 || skippedParagraphs > 0) {
-      const savedTokens = Math.floor(totalSanitized / 4);
-      console.log(`Sanitizzazione completata:`);
-      console.log(`   - Caratteri rimossi: ${totalSanitized}`);
-      console.log(`   - Token risparmiati: ~${savedTokens}`);
-      if (originalLength > 0) {
-        console.log(`   - Riduzione: ${((totalSanitized / originalLength) * 100).toFixed(1)}%`);
-      }
-      if (skippedParagraphs > 0) {
-        console.log(`   - Paragrafi saltati: ${skippedParagraphs}`);
+    // Avvisa nel prompt se troppi paragrafi sono stati saltati (>30%)
+    if (skippedParagraphs > 0 && article.paragraphs.length > 0) {
+      const skipRatio = skippedParagraphs / article.paragraphs.length;
+      if (skipRatio > 0.3) {
+        formatted += `\n⚠️ NOTA: ${skippedParagraphs}/${article.paragraphs.length} paragrafi non elaborabili sono stati omessi.`;
       }
     }
 

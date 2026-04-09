@@ -26,7 +26,9 @@ export class StorageManager {
         return plainKey;
       } catch (e) {
         console.error(`Migrazione API key ${provider} fallita:`, e);
-        return null;
+        throw new Error(
+          `La API key di ${provider} è in un formato obsoleto e non può essere letta. Reinserisci la chiave nelle impostazioni.`,
+        );
       }
     }
     return stored;
@@ -38,18 +40,25 @@ export class StorageManager {
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
     const keyMaterial = await crypto.subtle.importKey(
-      'raw', encoder.encode(LEGACY_SECRET), 'PBKDF2', false, ['deriveKey']
+      'raw',
+      encoder.encode(LEGACY_SECRET),
+      'PBKDF2',
+      false,
+      ['deriveKey'],
     );
     const salt = this._base64ToArrayBuffer(encryptedData.salt);
     const key = await crypto.subtle.deriveKey(
       { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
       keyMaterial,
-      { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt'],
     );
     const iv = this._base64ToArrayBuffer(encryptedData.iv);
     const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv }, key,
-      this._base64ToArrayBuffer(encryptedData.encrypted)
+      { name: 'AES-GCM', iv },
+      key,
+      this._base64ToArrayBuffer(encryptedData.encrypted),
     );
     return decoder.decode(decrypted);
   }
@@ -69,25 +78,16 @@ export class StorageManager {
   }
 
   static async getSettings() {
-    try {
-      const result = await chrome.storage.local.get(['settings']);
-      return result.settings || {
+    const result = await chrome.storage.local.get(['settings']);
+    return (
+      result.settings || {
         selectedProvider: 'groq',
         contentType: 'auto',
         summaryLength: 'medium',
         tone: 'neutral',
-        saveHistory: true
-      };
-    } catch (error) {
-      console.error('Errore getSettings:', error);
-      return {
-        selectedProvider: 'groq',
-        contentType: 'auto',
-        summaryLength: 'medium',
-        tone: 'neutral',
-        saveHistory: true
-      };
-    }
+        saveHistory: true,
+      }
+    );
   }
 
   // Language management (output language for AI)
@@ -99,7 +99,7 @@ export class StorageManager {
     const result = await chrome.storage.local.get(['selectedLanguage']);
     return result.selectedLanguage || 'it'; // Default: Italiano
   }
-  
+
   // UI Language management (interface language)
   static async saveUILanguage(language) {
     await chrome.storage.local.set({ uiLanguage: language });
@@ -126,7 +126,7 @@ export class StorageManager {
     const data = encoder.encode(str);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
     return 'tcache_' + hashHex.slice(0, 16);
   }
 
@@ -159,7 +159,7 @@ export class StorageManager {
       provider,
       url,
       targetLanguage,
-      originalLanguage
+      originalLanguage,
     };
 
     // LRU eviction - mantieni max 50 traduzioni
@@ -188,14 +188,14 @@ export class StorageManager {
       totalSummaries: 0,
       totalWords: 0,
       providerUsage: {},
-      totalTime: 0
+      totalTime: 0,
     };
-    
+
     stats.totalSummaries++;
     stats.totalWords += wordCount;
     stats.providerUsage[provider] = (stats.providerUsage[provider] || 0) + 1;
     stats.totalTime += generationTime;
-    
+
     await chrome.storage.local.set({ stats });
   }
 }
