@@ -34,7 +34,7 @@ const NOISE_SELECTORS = [
 // Regex patterns for text-level noise detection
 const NOISE_PATTERNS = [
   // Subscription / paywall / pricing
-  /€\s*\d+[\s,.]*\d*\s*[\/\\]?\s*(anno|mese|year|month)/i,
+  /€\s*\d+[\s,.]*\d*\s*[/\\]?\s*(anno|mese|year|month)/i,
   /€\s*[\d,.]+.*\b(anno|mese|year|month)\b/i,
   /\b(abbonati|subscribe|iscriviti)\b/i,
   /rinnovo\s+automatico/i,
@@ -49,7 +49,7 @@ const NOISE_PATTERNS = [
   /\b(cookie|gdpr|privacy\s+policy|terms\s+of\s+service)\b/i,
   /\b(log\s*in|sign\s*(up|in)|crea\s+account)\b/i,
   // English equivalents
-  /\$([\d,.]+)\s*[\/\\]?\s*(year|month|mo)\b/i,
+  /\$([\d,.]+)\s*[/\\]?\s*(year|month|mo)\b/i,
   /\bfree\s+trial\b/i,
   /\bunsubscribe\s+anytime\b/i,
   /\bcancel\s+anytime\b/i,

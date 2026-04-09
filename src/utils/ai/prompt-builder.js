@@ -71,8 +71,6 @@ export class PromptBuilder {
     let formatted = `TITOLO: ${cleanTitle}\n\n`;
     formatted += `ARTICOLO (ogni paragrafo è numerato):\n`;
 
-    const originalLength = article.content ? article.content.length : 0;
-    let totalSanitized = 0;
     let skippedParagraphs = 0;
 
     // Sanitizza ogni paragrafo
@@ -87,8 +85,7 @@ export class PromptBuilder {
         });
 
         formatted += `§${p.id}: ${cleanText}\n\n`;
-        totalSanitized += p.text.length - cleanText.length;
-      } catch (error) {
+      } catch {
         Logger.warn(`Paragrafo §${p.id} troppo corto o invalido, saltato`);
         skippedParagraphs++;
       }

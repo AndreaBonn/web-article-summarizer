@@ -1,17 +1,9 @@
 // PDF Analysis Page Script
 import { Logger } from '../../utils/core/logger.js';
 import * as pdfjsLib from 'pdfjs-dist';
-import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
-import { TTSManager } from '../../utils/voice/tts-manager.js';
-import { STTManager } from '../../utils/voice/stt-manager.js';
-import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
-import { ThemeManager } from '../../utils/core/theme-manager.js';
-import { PromptRegistry } from '../../utils/ai/prompt-registry.js';
-import { APIClient } from '../../utils/ai/api-client.js';
-import { PDFCacheManager } from '../../utils/pdf/pdf-cache-manager.js';
 import { PDFAnalyzer } from '../../utils/pdf/pdf-analyzer.js';
 import { Modal } from '../../utils/core/modal.js';
 

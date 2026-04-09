@@ -35,7 +35,7 @@ export class CacheManager {
       urlObj.hash = '';
 
       return urlObj.toString();
-    } catch (error) {
+    } catch {
       return url;
     }
   }

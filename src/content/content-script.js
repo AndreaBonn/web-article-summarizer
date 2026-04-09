@@ -228,7 +228,7 @@ function highlightTextInPage(searchText) {
 
   // Evidenzia i nodi trovati
   nodesToHighlight.forEach(
-    ({ node, text, searchText: textToHighlight, exact, keywordMatch }, idx) => {
+    ({ node, text, searchText: textToHighlight, _exact, keywordMatch }, idx) => {
       const parent = node.parentElement;
 
       // Per keyword match, evidenzia tutto il nodo

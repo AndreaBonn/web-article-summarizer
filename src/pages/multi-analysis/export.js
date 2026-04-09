@@ -1,4 +1,3 @@
-import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { PDFExporter } from '../../utils/export/pdf-exporter.js';
 import { MarkdownExporter } from '../../utils/export/markdown-exporter.js';
 import { EmailManager } from '../../utils/export/email-manager.js';
@@ -131,7 +130,7 @@ export async function copyContent() {
     setTimeout(() => {
       btn.textContent = originalText;
     }, 2000);
-  } catch (error) {
+  } catch {
     await Modal.alert(I18n.t('multi.copyError'), I18n.t('multi.errorTitle'), '❌');
   }
 }

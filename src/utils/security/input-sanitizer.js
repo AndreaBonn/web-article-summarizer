@@ -17,7 +17,7 @@ export class InputSanitizer {
       removeHTML = true,
       removeURLs = false,
       preserveNewlines = true,
-      removeCitations = false
+      removeCitations = false,
     } = options;
 
     if (!text || typeof text !== 'string') {
@@ -52,7 +52,7 @@ export class InputSanitizer {
 
     // 7. Valida lunghezza
     cleaned = cleaned.trim();
-    
+
     if (cleaned.length < minLength) {
       throw new Error(`Testo troppo corto (minimo ${minLength} caratteri)`);
     }
@@ -73,20 +73,20 @@ export class InputSanitizer {
 
     // Rimuovi script, style, noscript
     text = text.replace(/<(script|style|noscript)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>/gi, '');
-    
+
     // Rimuovi commenti HTML
     text = text.replace(/<!--[\s\S]*?-->/g, '');
-    
+
     // Converti alcuni tag in newline
     text = text.replace(/<(br|hr)[^>]*>/gi, '\n');
     text = text.replace(/<\/(p|div|h[1-6]|li|tr|td|th|blockquote|pre)>/gi, '\n');
-    
+
     // Rimuovi tutti i tag rimanenti
     text = text.replace(/<[^>]+>/g, ' ');
-    
+
     // Decodifica entità HTML comuni
     text = this.decodeHTMLEntities(text);
-    
+
     return text;
   }
 
@@ -107,7 +107,7 @@ export class InputSanitizer {
       '&hellip;': '...',
       '&copy;': '©',
       '&reg;': '®',
-      '&trade;': '™'
+      '&trade;': '™',
     };
 
     let decoded = text;
@@ -116,11 +116,9 @@ export class InputSanitizer {
     }
 
     // Decodifica entità numeriche (&#123; o &#x7B;)
-    decoded = decoded.replace(/&#(\d+);/g, (match, dec) => 
-      String.fromCharCode(dec)
-    );
-    decoded = decoded.replace(/&#x([0-9a-f]+);/gi, (match, hex) => 
-      String.fromCharCode(parseInt(hex, 16))
+    decoded = decoded.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
+    decoded = decoded.replace(/&#x([0-9a-f]+);/gi, (match, hex) =>
+      String.fromCharCode(parseInt(hex, 16)),
     );
 
     return decoded;
@@ -131,11 +129,11 @@ export class InputSanitizer {
    */
   static removeURLs(text) {
     // Rimuovi URL completi
-    let cleaned = text.replace(/https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi, '');
-    
+    let cleaned = text.replace(/https?:\/\/[^\s<>"{}|\\^`[\]]+/gi, '');
+
     // Rimuovi www.example.com
-    cleaned = cleaned.replace(/www\.[^\s<>"{}|\\^`\[\]]+/gi, '');
-    
+    cleaned = cleaned.replace(/www\.[^\s<>"{}|\\^`[\]]+/gi, '');
+
     return cleaned;
   }
 
@@ -153,10 +151,10 @@ export class InputSanitizer {
     if (preserveNewlines) {
       // Normalizza spazi orizzontali
       text = text.replace(/[ \t]+/g, ' ');
-      
+
       // Limita newline consecutive a massimo 2
       text = text.replace(/\n{3,}/g, '\n\n');
-      
+
       // Rimuovi spazi a inizio/fine riga
       text = text.replace(/[ \t]+$/gm, '');
       text = text.replace(/^[ \t]+/gm, '');
@@ -173,6 +171,7 @@ export class InputSanitizer {
    */
   static removeControlCharacters(text) {
     // Rimuovi caratteri di controllo tranne tab, newline, carriage return
+    // eslint-disable-next-line no-control-regex
     return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
   }
 
@@ -188,13 +187,13 @@ export class InputSanitizer {
       /system\s*:\s*/gi,
       /assistant\s*:\s*/gi,
       /user\s*:\s*/gi,
-      /<\|.*?\|>/g,  // Special tokens tipo <|endoftext|>
+      /<\|.*?\|>/g, // Special tokens tipo <|endoftext|>
       /\[INST\]/gi,
-      /\[\/INST\]/gi
+      /\[\/INST\]/gi,
     ];
 
     let safe = text;
-    dangerousPatterns.forEach(pattern => {
+    dangerousPatterns.forEach((pattern) => {
       safe = safe.replace(pattern, '');
     });
 
@@ -214,9 +213,9 @@ export class InputSanitizer {
     const lastPeriod = truncated.lastIndexOf('.');
     const lastQuestion = truncated.lastIndexOf('?');
     const lastExclamation = truncated.lastIndexOf('!');
-    
+
     const lastSentenceEnd = Math.max(lastPeriod, lastQuestion, lastExclamation);
-    
+
     if (lastSentenceEnd > maxLength * 0.8) {
       // Se troviamo una fine frase nell'ultimo 20%, usa quella
       return truncated.slice(0, lastSentenceEnd + 1);
@@ -237,10 +236,10 @@ export class InputSanitizer {
   static sanitizeWebContent(html, options = {}) {
     return this.sanitizeForAI(html, {
       removeHTML: true,
-      removeURLs: false,  // Mantieni URL per contesto
+      removeURLs: false, // Mantieni URL per contesto
       preserveNewlines: true,
       maxLength: 15000,
-      ...options
+      ...options,
     });
   }
 
@@ -254,7 +253,7 @@ export class InputSanitizer {
       preserveNewlines: false,
       maxLength: 2000,
       minLength: 3,
-      ...options
+      ...options,
     });
   }
 
@@ -289,7 +288,7 @@ export class InputSanitizer {
 
     return {
       valid: issues.length === 0,
-      issues
+      issues,
     };
   }
 }

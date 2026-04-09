@@ -3,7 +3,6 @@
 
 import { state, elements, showError } from './state.js';
 import { translationState, citationsState } from './features.js';
-import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { PDFExporter } from '../../utils/export/pdf-exporter.js';
 import { MarkdownExporter } from '../../utils/export/markdown-exporter.js';
@@ -104,7 +103,6 @@ export async function showExportOptionsModal() {
     modal.classList.add('hidden');
 
     try {
-      const settings = await StorageManager.getSettings();
       const metadata = {
         provider: elements.providerSelect.value,
         language: state.selectedLanguage,
@@ -259,7 +257,6 @@ export async function showMarkdownExportModal() {
     modalTitle.textContent = I18n.t('export.pdf'); // Ripristina titolo
 
     try {
-      const settings = await StorageManager.getSettings();
       const metadata = {
         provider: elements.providerSelect.value,
         language: state.selectedLanguage,

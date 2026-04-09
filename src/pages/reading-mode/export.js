@@ -2,7 +2,6 @@
 // Gestisce copia negli appunti ed esportazione PDF
 
 import { state, elements } from './state.js';
-import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { PDFExporter } from '../../utils/export/pdf-exporter.js';
 import { Logger } from '../../utils/core/logger.js';
 

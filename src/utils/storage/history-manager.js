@@ -315,10 +315,6 @@ export class HistoryManager {
     await this._safeStorageSet({ multiAnalysisHistory: filtered });
   }
 
-  static async clearMultiAnalysisHistory() {
-    await this._safeStorageSet({ multiAnalysisHistory: [] });
-  }
-
   static async updateMultiAnalysisWithQA(analysisId, question, answer) {
     const history = await this.getMultiAnalysisHistory();
     const entry = history.find((e) => e.id === analysisId);

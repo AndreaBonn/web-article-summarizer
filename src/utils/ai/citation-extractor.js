@@ -7,7 +7,7 @@ export const CitationExtractor = {
   /**
    * Estrae citazioni dall'articolo usando AI
    */
-  async extractCitations(article, provider, apiKey, settings) {
+  async extractCitations(article, provider, apiKey, _settings) {
     const systemPrompt = PromptRegistry.getCitationSystemPrompt(provider);
     const userPrompt = this.getUserPrompt(article);
 
@@ -38,7 +38,7 @@ export const CitationExtractor = {
     }
 
     // Estrai contenuto in modo sicuro
-    let content = '';
+    let content;
     if (article.content) {
       content = article.content;
     } else if (article.paragraphs && Array.isArray(article.paragraphs)) {
@@ -494,12 +494,12 @@ Analizza ora e restituisci SOLO il JSON valido.`;
     try {
       const urlObj = new URL(url);
       siteName = urlObj.hostname.replace('www.', '');
-    } catch (e) {
+    } catch {
       // Ignora errori URL
     }
 
     const year = date.split('-')[0];
-    const [y, m, d] = date.split('-');
+    const [, m, d] = date.split('-');
     const [ay, am, ad] = accessDate.split('-');
 
     switch (style.toLowerCase()) {
@@ -507,7 +507,7 @@ Analizza ora e restituisci SOLO il JSON valido.`;
         // APA 7th Edition
         return `${author}. (${year}). ${title}. ${siteName}. ${url}`;
 
-      case 'mla':
+      case 'mla': {
         // MLA 9th Edition
         const monthNames = [
           'Jan',
@@ -525,6 +525,7 @@ Analizza ora e restituisci SOLO il JSON valido.`;
         ];
         const accessMonth = monthNames[parseInt(am) - 1];
         return `${author}. "${title}." ${siteName}, ${d} ${monthNames[parseInt(m) - 1]}. ${year}, ${url}. Accessed ${ad} ${accessMonth}. ${ay}.`;
+      }
 
       case 'chicago':
         // Chicago 17th Edition
@@ -636,7 +637,7 @@ Analizza ora e restituisci SOLO il JSON valido.`;
   /**
    * Esporta citazioni in formato BibTeX
    */
-  exportToBibTeX(article, citations) {
+  exportToBibTeX(article, _citations) {
     let bibtex = '';
 
     // Entry principale

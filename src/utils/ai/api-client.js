@@ -215,7 +215,7 @@ export class APIClient {
           });
         }
       },
-      onFallback: (fallbackProvider, index) => {
+      onFallback: (fallbackProvider, _index) => {
         if (onProgress) {
           onProgress({
             stage: 'fallback',

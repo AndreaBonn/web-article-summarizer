@@ -251,7 +251,7 @@ export class CompressionManager {
       const cutoffDate = Date.now() - daysOld * 24 * 60 * 60 * 1000;
       let compressedCount = 0;
 
-      for (let [key, entry] of Object.entries(cache)) {
+      for (let [, entry] of Object.entries(cache)) {
         if (entry.timestamp < cutoffDate && !entry.data.compressed) {
           // Comprimi i dati
           const compressed = this.compress(JSON.stringify(entry.data));

@@ -1,7 +1,7 @@
 // Popup Analysis Module - Extracted from popup.js
 // Handles: analyzeArticle, generateSummary, displayResults, switchTab, copyToClipboard
 
-import { state, elements, showState, showError } from './state.js';
+import { state, elements, showState } from './state.js';
 import { translationState, citationsState } from './features.js';
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';

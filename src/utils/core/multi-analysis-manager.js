@@ -173,7 +173,6 @@ Rispondi SOLO con il JSON nel formato specificato.`;
           content: a.translation ? a.translation.text : a.summary,
         })),
       };
-      progress += step;
     }
 
     if (progressCallback) progressCallback('Salvataggio risultati...', 95);
@@ -585,8 +584,8 @@ IMPORTANTE: Rispondi SOLO con il JSON, senza testo aggiuntivo prima o dopo.`;
     let currentA = '';
 
     for (const line of lines) {
-      const qMatch = line.match(/^Q\d+[:\.]?\s*(.+)/i);
-      const aMatch = line.match(/^R\d+[:\.]?\s*(.+)/i);
+      const qMatch = line.match(/^Q\d+[:.]?\s*(.+)/i);
+      const aMatch = line.match(/^R\d+[:.]?\s*(.+)/i);
 
       if (qMatch) {
         if (currentQ && currentA) {

@@ -58,7 +58,7 @@ export class Translator {
           removeCitations: false,
         });
         fullText += `${cleanText}\n\n`;
-      } catch (error) {
+      } catch {
         Logger.warn('Paragrafo troppo corto o invalido, saltato');
       }
     });

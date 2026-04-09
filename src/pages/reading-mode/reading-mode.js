@@ -2,7 +2,6 @@
 // Controller: init, caricamento dati, event listeners, theme, resize
 
 import { state, elements, initElements } from './state.js';
-import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { Logger } from '../../utils/core/logger.js';
 
@@ -229,7 +228,7 @@ function startResize(e) {
   document.body.style.cursor = 'col-resize';
   document.body.style.userSelect = 'none';
 
-  const onMouseMove = (e) => {
+  const onMouseMove = (_e) => {
     if (!state.isResizing) return;
 
     const container = document.querySelector('.reading-container');

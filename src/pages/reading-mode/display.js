@@ -194,7 +194,7 @@ function displayArticle(article) {
         } else {
           Logger.info('✅ Iframe caricato correttamente');
         }
-      } catch (e) {
+      } catch {
         // Cross-origin error = iframe loaded successfully
         Logger.info('✅ Iframe caricato (cross-origin)');
       }

@@ -4,6 +4,7 @@
 
 import { state, elements } from './state.js';
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
+import { InputSanitizer } from '../../utils/security/input-sanitizer.js';
 import { Logger } from '../../utils/core/logger.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
@@ -245,17 +246,17 @@ function showSameLanguageModal(targetLanguage) {
       <div class="custom-modal-overlay"></div>
       <div class="custom-modal-content">
         <div class="custom-modal-icon">ℹ️</div>
-        <h3 class="custom-modal-title">${title}</h3>
-        <p class="custom-modal-message">${message}</p>
+        <h3 class="custom-modal-title">${HtmlSanitizer.escape(title)}</h3>
+        <p class="custom-modal-message">${HtmlSanitizer.escape(message)}</p>
         <div class="custom-modal-buttons" style="flex-direction: column; gap: 8px;">
           <button id="sameLanguageTranslate" class="modal-btn modal-btn-confirm" style="width: 100%;">
-            ${translateBtn}
+            ${HtmlSanitizer.escape(translateBtn)}
           </button>
           <button id="sameLanguageIgnore" class="modal-btn modal-btn-secondary" style="width: 100%; background: var(--secondary-color);">
-            ${useOriginalBtn}
+            ${HtmlSanitizer.escape(useOriginalBtn)}
           </button>
           <button id="sameLanguageCancel" class="modal-btn modal-btn-cancel" style="width: 100%;">
-            ${cancelBtn}
+            ${HtmlSanitizer.escape(cancelBtn)}
           </button>
         </div>
       </div>
@@ -291,8 +292,20 @@ function showSameLanguageModal(targetLanguage) {
 
 // Ask question
 export async function askQuestion() {
-  const question = elements.qaInput.value.trim();
-  if (!question || !state.currentData) return;
+  const rawQuestion = elements.qaInput.value.trim();
+  if (!rawQuestion || !state.currentData) return;
+
+  // Sanitize user input before sending to AI
+  let question;
+  try {
+    question = InputSanitizer.sanitizeUserPrompt(rawQuestion, {
+      maxLength: 500,
+      minLength: 3,
+    });
+  } catch (error) {
+    await Modal.error('La domanda non è valida: ' + error.message, 'Input Non Valido');
+    return;
+  }
 
   // Add question to history
   const qaItem = document.createElement('div');

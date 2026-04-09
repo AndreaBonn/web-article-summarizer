@@ -164,8 +164,7 @@ export const I18n = {
       'email.send': 'Invia',
       'email.error': "Errore durante l'invio email:",
 
-      // Settings
-      'settings.title': 'Impostazioni - AI Article Summarizer',
+      // Settings (settings.title already defined above)
       'settings.apiKeys': '🔑 API Keys',
       'settings.apiKeys.desc': 'Le tue chiavi sono salvate localmente nel tuo browser.',
       'settings.test': '🧪 Test',
@@ -246,8 +245,7 @@ export const I18n = {
       'settings.logs.confirmClear': 'Sei sicuro di voler cancellare i log?',
       'settings.logs.cleared': 'Log cancellati',
 
-      // History
-      'history.title': 'Cronologia Analisi',
+      // History (history.title already defined above)
       'history.modalTitle': 'Cronologia',
       'history.back': '← Indietro',
       'history.search': '🔍 Cerca...',
@@ -519,8 +517,7 @@ export const I18n = {
       'email.send': 'Send',
       'email.error': 'Email sending error:',
 
-      // Settings
-      'settings.title': 'Settings - AI Article Summarizer',
+      // Settings (settings.title already defined above)
       'settings.apiKeys': '🔑 API Keys',
       'settings.apiKeys.desc': 'Your keys are saved locally in your browser.',
       'settings.test': '🧪 Test',
@@ -599,8 +596,7 @@ export const I18n = {
       'settings.logs.confirmClear': 'Are you sure you want to clear the logs?',
       'settings.logs.cleared': 'Logs cleared',
 
-      // History
-      'history.title': 'Analysis History',
+      // History (history.title already defined above)
       'history.modalTitle': 'History',
       'history.back': '← Back',
       'history.search': '🔍 Search...',

@@ -540,7 +540,7 @@ export async function copyCurrentSummary() {
     setTimeout(() => {
       btn.textContent = originalText;
     }, 2000);
-  } catch (error) {
+  } catch {
     await Modal.error(I18n.t('history.copyError'));
   }
 }

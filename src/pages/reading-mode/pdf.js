@@ -76,7 +76,7 @@ ${text}`;
 }
 
 // Extract citations from PDF text
-export async function extractPDFCitations(text, filename, provider, settings) {
+export async function extractPDFCitations(text, filename, provider, _settings) {
   Logger.info('Extracting citations from PDF:', filename);
 
   const apiKey = await StorageManager.getApiKey(provider);

@@ -232,15 +232,6 @@ function getCitationTypeLabel(type) {
   return labels[type] || '📌 Altro';
 }
 
-function getPositionLabel(position) {
-  const labels = {
-    inizio: '📍 Inizio',
-    metà: '📍 Metà',
-    fine: '📍 Fine',
-  };
-  return labels[position] || '📍 Articolo';
-}
-
 async function copyCitationsData(citationsData) {
   if (!citationsData || !state.currentArticle) return;
 

@@ -171,7 +171,7 @@ INFORMAZIONI DA ESTRARRE (TUTTI I CAMPI OBBLIGATORI):
 
 IMPORTANTE PER IL JSON:
 - Usa virgolette doppie (") per chiavi e valori
-- Escapa virgolette interne: \"
+- Escapa virgolette interne: \\"
 - Assicurati che il JSON sia valido
 
 OUTPUT: JSON con array di citazioni VERIFICATE.`;

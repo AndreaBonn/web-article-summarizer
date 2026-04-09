@@ -4,7 +4,6 @@ import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
-import { APIClient } from '../../utils/ai/api-client.js';
 import { MultiAnalysisManager } from '../../utils/core/multi-analysis-manager.js';
 import { Modal } from '../../utils/core/modal.js';
 import { state } from './state.js';
@@ -323,11 +322,11 @@ function showUnrelatedModal(reason = null) {
 }
 
 function formatMarkdown(text) {
-  text = HtmlSanitizer.escape(text);
-  return text
-    .replace(/### (.*)/g, '<h4>$1</h4>')
-    .replace(/## (.*)/g, '<h3>$1</h3>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  const escaped = HtmlSanitizer.escape(text);
+  return escaped
+    .replace(/### (.*)/gm, (_, g1) => `<h4>${g1}</h4>`)
+    .replace(/## (.*)/gm, (_, g1) => `<h3>${g1}</h3>`)
+    .replace(/\*\*(.*?)\*\*/g, (_, g1) => `<strong>${g1}</strong>`)
     .replace(/\n\n/g, '</p><p>')
     .replace(/\n/g, '<br>')
     .replace(/^(.*)$/, '<p>$1</p>');

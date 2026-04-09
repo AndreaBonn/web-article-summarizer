@@ -69,8 +69,13 @@ export class ProviderCaller {
     );
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Errore API Groq');
+      let errorMsg;
+      try {
+        errorMsg = (await response.json()).error?.message;
+      } catch {
+        errorMsg = response.statusText;
+      }
+      throw new Error(errorMsg || `Errore API Groq (HTTP ${response.status})`);
     }
 
     const data = await response.json();
@@ -103,8 +108,13 @@ export class ProviderCaller {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Errore API OpenAI');
+      let errorMsg;
+      try {
+        errorMsg = (await response.json()).error?.message;
+      } catch {
+        errorMsg = response.statusText;
+      }
+      throw new Error(errorMsg || `Errore API OpenAI (HTTP ${response.status})`);
     }
 
     const data = await response.json();
@@ -129,8 +139,13 @@ export class ProviderCaller {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Errore API Claude');
+      let errorMsg;
+      try {
+        errorMsg = (await response.json()).error?.message;
+      } catch {
+        errorMsg = response.statusText;
+      }
+      throw new Error(errorMsg || `Errore API Claude (HTTP ${response.status})`);
     }
 
     const data = await response.json();
@@ -237,8 +252,13 @@ export class ProviderCaller {
     );
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Errore API Gemini');
+      let errorMsg;
+      try {
+        errorMsg = (await response.json()).error?.message;
+      } catch {
+        errorMsg = response.statusText;
+      }
+      throw new Error(errorMsg || `Errore API Gemini (HTTP ${response.status})`);
     }
 
     const data = await response.json();

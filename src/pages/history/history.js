@@ -289,11 +289,7 @@ async function clearMultiHistory() {
 
 // ===== MULTI-ANALYSIS HISTORY =====
 
-let currentTab = 'single';
-
 function switchTab(tab) {
-  currentTab = tab;
-
   // Aggiorna UI dei tab
   document.querySelectorAll('.history-tab').forEach((t) => {
     t.classList.toggle('active', t.dataset.tab === tab);

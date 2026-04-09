@@ -248,7 +248,7 @@ async function openReadingMode() {
   // Save to chrome.storage.local (persists across tabs)
   try {
     await chrome.storage.local.set({ readingModeData: readingData });
-  } catch (error) {
+  } catch {
     showError('Impossibile aprire la modalità lettura: spazio di archiviazione insufficiente.');
     return;
   }

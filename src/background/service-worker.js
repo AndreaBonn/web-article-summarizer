@@ -1,13 +1,9 @@
 // Background Service Worker - Handles API calls
 import { StorageManager } from '../utils/storage/storage-manager.js';
-import { PromptRegistry } from '../utils/ai/prompt-registry.js';
 import { APIClient } from '../utils/ai/api-client.js';
-import { APIResilience } from '../utils/ai/api-resilience.js';
 import { CacheManager } from '../utils/storage/cache-manager.js';
-import { CompressionManager } from '../utils/storage/compression-manager.js';
 import { AutoMaintenance } from '../utils/core/auto-maintenance.js';
 import { CitationExtractor } from '../utils/ai/citation-extractor.js';
-import { InputSanitizer } from '../utils/security/input-sanitizer.js';
 import { ErrorHandler } from '../utils/core/error-handler.js';
 import { Logger } from '../utils/core/logger.js';
 

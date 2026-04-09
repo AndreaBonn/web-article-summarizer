@@ -2,7 +2,6 @@
 import { Logger } from '../../utils/core/logger.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
-import { ThemeManager } from '../../utils/core/theme-manager.js';
 import { APIResilience } from '../../utils/ai/api-resilience.js';
 import { CacheManager } from '../../utils/storage/cache-manager.js';
 import { CompressionManager } from '../../utils/storage/compression-manager.js';
@@ -326,8 +325,6 @@ async function clearLogs() {
   if (confirm(I18n.t('settings.logs.confirmClear'))) {
     const resilience = new APIResilience();
     const cacheManager = new CacheManager();
-    const compressionManager = new CompressionManager();
-
     await resilience.clearLogs();
     await cacheManager.clearLogs();
 
