@@ -1,19 +1,57 @@
 // API Client - Gestione chiamate ai provider LLM
-import { PromptRegistry } from "./prompt-registry.js";
-import { InputSanitizer } from "../security/input-sanitizer.js";
-import { APIResilience } from "./api-resilience.js";
-import { CacheManager } from "../storage/cache-manager.js";
+import { PromptRegistry } from './prompt-registry.js';
+import { InputSanitizer } from '../security/input-sanitizer.js';
+import { APIResilience } from './api-resilience.js';
+import { CacheManager } from '../storage/cache-manager.js';
+
+const LANGUAGE_CONFIGS = {
+  it: { name: 'italiano', summaryNoun: 'il riassunto', keyPointsNoun: 'i punti chiave' },
+  en: { name: 'English', summaryNoun: 'the summary', keyPointsNoun: 'the key points' },
+  es: { name: 'español', summaryNoun: 'el resumen', keyPointsNoun: 'los puntos clave' },
+  fr: { name: 'français', summaryNoun: 'le résumé', keyPointsNoun: 'les points clés' },
+  de: { name: 'Deutsch', summaryNoun: 'die Zusammenfassung', keyPointsNoun: 'die Schlüsselpunkte' },
+};
+
+const LANGUAGE_TEMPLATES = {
+  it: (noun) => ({
+    instruction: `Scrivi ${noun} in italiano`,
+    systemAddition: `\n\nIMPORTANTE: Devi scrivere ${noun} ESCLUSIVAMENTE in ITALIANO, indipendentemente dalla lingua dell'articolo originale.`,
+  }),
+  en: (noun) => ({
+    instruction: `Write ${noun} in English`,
+    systemAddition: `\n\nIMPORTANT: You MUST write ${noun} EXCLUSIVELY in ENGLISH, regardless of the original article language.`,
+  }),
+  es: (noun) => ({
+    instruction: `Escribe ${noun} en español`,
+    systemAddition: `\n\nIMPORTANTE: Debes escribir ${noun} EXCLUSIVAMENTE en ESPAÑOL, independientemente del idioma del artículo original.`,
+  }),
+  fr: (noun) => ({
+    instruction: `Écris ${noun} en français`,
+    systemAddition: `\n\nIMPORTANT: Tu DOIS écrire ${noun} EXCLUSIVEMENT en FRANÇAIS, quelle que soit la langue de l'article original.`,
+  }),
+  de: (noun) => ({
+    instruction: `Schreibe ${noun} auf Deutsch`,
+    systemAddition: `\n\nWICHTIG: Du MUSST ${noun} AUSSCHLIESSLICH auf DEUTSCH schreiben, unabhängig von der Sprache des Originalartikels.`,
+  }),
+};
+
+function buildLanguageMap(outputType) {
+  const nounKey = outputType === 'keypoints' ? 'keyPointsNoun' : 'summaryNoun';
+  const map = {};
+  for (const [lang, config] of Object.entries(LANGUAGE_CONFIGS)) {
+    const template = LANGUAGE_TEMPLATES[lang](config[nounKey]);
+    map[lang] = { name: config.name, ...template };
+  }
+  return map;
+}
 
 export class APIClient {
   static async callAPI(provider, apiKey, article, settings) {
     const prompt = this.buildPrompt(provider, article, settings);
-    return await this.generateCompletion(
-      provider,
-      apiKey,
-      prompt.systemPrompt,
-      prompt.userPrompt,
-      { temperature: 0.3, maxTokens: provider === "gemini" ? 8000 : 4096 },
-    );
+    return await this.generateCompletion(provider, apiKey, prompt.systemPrompt, prompt.userPrompt, {
+      temperature: 0.3,
+      maxTokens: provider === 'gemini' ? 8000 : 4096,
+    });
   }
 
   static detectContentType(article) {
@@ -22,25 +60,23 @@ export class APIClient {
 
     // Scientific: presenza di termini accademici
     if (
-      contentSample.includes("methodology") ||
-      contentSample.includes("hypothesis") ||
-      contentSample.includes("participants") ||
-      contentSample.includes("p <") ||
-      contentSample.includes("study") ||
+      contentSample.includes('methodology') ||
+      contentSample.includes('hypothesis') ||
+      contentSample.includes('participants') ||
+      contentSample.includes('p <') ||
+      contentSample.includes('study') ||
       /\bp\s*=\s*0\.\d+/.test(contentSample)
     )
-      return "scientific";
+      return 'scientific';
 
     // News: riferimenti temporali recenti e fonti
     if (
-      /\b(today|yesterday|breaking|reported|according to|oggi|ieri)\b/.test(
-        contentSample,
-      ) ||
+      /\b(today|yesterday|breaking|reported|according to|oggi|ieri)\b/.test(contentSample) ||
       /\d{1,2}\s+(january|february|march|april|may|june|july|august|september|october|november|december|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\s+\d{4}/i.test(
         contentSample,
       )
     )
-      return "news";
+      return 'news';
 
     // Tutorial: presenza di istruzioni step-by-step
     if (
@@ -51,7 +87,7 @@ export class APIClient {
         contentSample,
       )
     )
-      return "tutorial";
+      return 'tutorial';
 
     // Business: termini aziendali
     if (
@@ -60,7 +96,7 @@ export class APIClient {
       ) ||
       /\$\d+[MBK]|€\d+[MBK]/.test(contentSample)
     )
-      return "business";
+      return 'business';
 
     // Opinion: prima persona e argomenti
     if (
@@ -69,83 +105,28 @@ export class APIClient {
       ) ||
       /\b(opinion|editorial|commentary|opinione|editoriale)\b/.test(titleLower)
     )
-      return "opinion";
+      return 'opinion';
 
-    return "general";
+    return 'general';
   }
 
   static detectLanguage(text) {
     const sample = text.toLowerCase().slice(0, 1000);
 
     const patterns = {
-      it: [
-        "che",
-        "della",
-        "degli",
-        "delle",
-        "questo",
-        "questa",
-        "sono",
-        "essere",
-        "nell",
-        "alla",
-      ],
-      en: [
-        "the",
-        "and",
-        "that",
-        "this",
-        "with",
-        "from",
-        "have",
-        "been",
-        "which",
-        "their",
-      ],
-      es: [
-        "que",
-        "del",
-        "los",
-        "las",
-        "esta",
-        "este",
-        "para",
-        "con",
-        "una",
-        "por",
-      ],
-      fr: [
-        "que",
-        "les",
-        "des",
-        "cette",
-        "dans",
-        "pour",
-        "avec",
-        "sont",
-        "qui",
-        "pas",
-      ],
-      de: [
-        "der",
-        "die",
-        "das",
-        "und",
-        "ist",
-        "des",
-        "dem",
-        "den",
-        "nicht",
-        "sich",
-      ],
+      it: ['che', 'della', 'degli', 'delle', 'questo', 'questa', 'sono', 'essere', 'nell', 'alla'],
+      en: ['the', 'and', 'that', 'this', 'with', 'from', 'have', 'been', 'which', 'their'],
+      es: ['que', 'del', 'los', 'las', 'esta', 'este', 'para', 'con', 'una', 'por'],
+      fr: ['que', 'les', 'des', 'cette', 'dans', 'pour', 'avec', 'sont', 'qui', 'pas'],
+      de: ['der', 'die', 'das', 'und', 'ist', 'des', 'dem', 'den', 'nicht', 'sich'],
     };
 
     let maxScore = 0;
-    let detectedLang = "en";
+    let detectedLang = 'en';
 
     for (const [lang, words] of Object.entries(patterns)) {
       const score = words.filter((word) => {
-        const regex = new RegExp(`\\b${word}\\b`, "g");
+        const regex = new RegExp(`\\b${word}\\b`, 'g');
         return regex.test(sample);
       }).length;
       if (score > maxScore) {
@@ -180,44 +161,10 @@ export class APIClient {
     targetWords = lengthMap[settings.summaryLength] || lengthMap.medium;
     targetWords = Math.max(300, Math.min(targetWords, 3000));
 
-    // Mappa lingua output
-    const languageMap = {
-      it: {
-        name: "italiano",
-        instruction: "Scrivi il riassunto in italiano",
-        systemAddition:
-          "\n\nIMPORTANTE: Devi scrivere il riassunto ESCLUSIVAMENTE in ITALIANO, indipendentemente dalla lingua dell'articolo originale.",
-      },
-      en: {
-        name: "English",
-        instruction: "Write the summary in English",
-        systemAddition:
-          "\n\nIMPORTANT: You MUST write the summary EXCLUSIVELY in ENGLISH, regardless of the original article language.",
-      },
-      es: {
-        name: "español",
-        instruction: "Escribe el resumen en español",
-        systemAddition:
-          "\n\nIMPORTANTE: Debes escribir el resumen EXCLUSIVAMENTE en ESPAÑOL, independientemente del idioma del artículo original.",
-      },
-      fr: {
-        name: "français",
-        instruction: "Écris le résumé en français",
-        systemAddition:
-          "\n\nIMPORTANT: Tu DOIS écrire le résumé EXCLUSIVEMENT en FRANÇAIS, quelle que soit la langue de l'article original.",
-      },
-      de: {
-        name: "Deutsch",
-        instruction: "Schreibe die Zusammenfassung auf Deutsch",
-        systemAddition:
-          "\n\nWICHTIG: Du MUSST die Zusammenfassung AUSSCHLIESSLICH auf DEUTSCH schreiben, unabhängig von der Sprache des Originalartikels.",
-      },
-    };
-
+    // Mappa lingua output (generata dalla costante condivisa)
+    const languageMap = buildLanguageMap('summary');
     const outputLang =
-      languageMap[settings.outputLanguage] ||
-      languageMap[detectedLanguage] ||
-      languageMap.it;
+      languageMap[settings.outputLanguage] || languageMap[detectedLanguage] || languageMap.it;
 
     // Ottieni system prompt appropriato e aggiungi istruzione lingua
     let systemPrompt = this.getSystemPrompt(provider, contentType);
@@ -330,7 +277,7 @@ Inizia ora con il riassunto completo.`;
         preserveNewlines: false,
       });
     } catch (error) {
-      console.warn("⚠️ Errore sanitizzazione titolo:", error);
+      console.warn('⚠️ Errore sanitizzazione titolo:', error);
       cleanTitle = article.title.substring(0, 500);
     }
 
@@ -368,9 +315,7 @@ Inizia ora con il riassunto completo.`;
       console.log(`   - Caratteri rimossi: ${totalSanitized}`);
       console.log(`   - Token risparmiati: ~${savedTokens}`);
       if (originalLength > 0) {
-        console.log(
-          `   - Riduzione: ${((totalSanitized / originalLength) * 100).toFixed(1)}%`,
-        );
+        console.log(`   - Riduzione: ${((totalSanitized / originalLength) * 100).toFixed(1)}%`);
       }
       if (skippedParagraphs > 0) {
         console.log(`   - Paragrafi saltati: ${skippedParagraphs}`);
@@ -383,13 +328,10 @@ Inizia ora con il riassunto completo.`;
   // Funzione per estrarre solo i punti chiave (senza riassunto)
   static async extractKeyPoints(provider, apiKey, article, settings) {
     const prompt = this.buildKeyPointsPrompt(provider, article, settings);
-    return await this.generateCompletion(
-      provider,
-      apiKey,
-      prompt.systemPrompt,
-      prompt.userPrompt,
-      { temperature: 0.3, maxTokens: provider === "gemini" ? 8000 : 4096 },
-    );
+    return await this.generateCompletion(provider, apiKey, prompt.systemPrompt, prompt.userPrompt, {
+      temperature: 0.3,
+      maxTokens: provider === 'gemini' ? 8000 : 4096,
+    });
   }
 
   static getKeyPointsSystemPrompt(provider, contentType) {
@@ -401,44 +343,10 @@ Inizia ora con il riassunto completo.`;
     const contentType = settings.contentType || this.detectContentType(article);
     const detectedLanguage = this.detectLanguage(article.content);
 
-    // Mappa lingua output
-    const languageMap = {
-      it: {
-        name: "italiano",
-        instruction: "Scrivi i punti chiave in italiano",
-        systemAddition:
-          "\n\nIMPORTANTE: Devi scrivere i punti chiave ESCLUSIVAMENTE in ITALIANO, indipendentemente dalla lingua dell'articolo originale.",
-      },
-      en: {
-        name: "English",
-        instruction: "Write the key points in English",
-        systemAddition:
-          "\n\nIMPORTANT: You MUST write the key points EXCLUSIVELY in ENGLISH, regardless of the original article language.",
-      },
-      es: {
-        name: "español",
-        instruction: "Escribe los puntos clave en español",
-        systemAddition:
-          "\n\nIMPORTANTE: Debes escribir los puntos clave EXCLUSIVAMENTE en ESPAÑOL, independientemente del idioma del artículo original.",
-      },
-      fr: {
-        name: "français",
-        instruction: "Écris les points clés en français",
-        systemAddition:
-          "\n\nIMPORTANT: Tu DOIS écrire les points clés EXCLUSIVEMENT en FRANÇAIS, quelle que soit la langue de l'article original.",
-      },
-      de: {
-        name: "Deutsch",
-        instruction: "Schreibe die Schlüsselpunkte auf Deutsch",
-        systemAddition:
-          "\n\nWICHTIG: Du MUSST die Schlüsselpunkte AUSSCHLIESSLICH auf DEUTSCH schreiben, unabhängig von der Sprache des Originalartikels.",
-      },
-    };
-
+    // Mappa lingua output (generata dalla costante condivisa)
+    const languageMap = buildLanguageMap('keypoints');
     const outputLang =
-      languageMap[settings.outputLanguage] ||
-      languageMap[detectedLanguage] ||
-      languageMap.it;
+      languageMap[settings.outputLanguage] || languageMap[detectedLanguage] || languageMap.it;
 
     // Ottieni system prompt appropriato e aggiungi istruzione lingua
     let systemPrompt = this.getKeyPointsSystemPrompt(provider, contentType);
@@ -462,12 +370,7 @@ Inizia ora con il riassunto completo.`;
     };
   }
 
-  static buildKeyPointsUserPrompt(
-    contentType,
-    formattedArticle,
-    article,
-    outputLang,
-  ) {
+  static buildKeyPointsUserPrompt(contentType, formattedArticle, article, outputLang) {
     const baseInstructions = `# ARTICOLO DA ANALIZZARE
 
 ${formattedArticle}
@@ -628,19 +531,18 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
   }
 
   static parseResponse(responseText) {
-    const parts = responseText.split("## PUNTI CHIAVE");
+    const parts = responseText.split('## PUNTI CHIAVE');
 
-    const summary = parts[0].replace("## RIASSUNTO", "").trim();
+    const summary = parts[0].replace('## RIASSUNTO', '').trim();
 
     if (!summary || summary.trim().length < 50) {
       throw new Error(
-        "Il provider AI ha restituito una risposta in formato non valido. Riprova o cambia provider.",
+        'Il provider AI ha restituito una risposta in formato non valido. Riprova o cambia provider.',
       );
     }
 
-    const keyPointsText = parts[1] || "";
-    const keyPointsRegex =
-      /\d+\.\s+\*\*(.+?)\*\*\s+\(§(\d+(?:-\d+)?)\)\s+(.+?)(?=\n\d+\.|$)/gs;
+    const keyPointsText = parts[1] || '';
+    const keyPointsRegex = /\d+\.\s+\*\*(.+?)\*\*\s+\(§(\d+(?:-\d+)?)\)\s+(.+?)(?=\n\d+\.|$)/gs;
 
     const keyPoints = [];
     let match;
@@ -658,9 +560,8 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
 
   static parseKeyPointsResponse(responseText) {
     // Parse solo i punti chiave (senza riassunto)
-    const keyPointsText = responseText.replace("## PUNTI CHIAVE", "").trim();
-    const keyPointsRegex =
-      /\d+\.\s+\*\*(.+?)\*\*\s+\(§(\d+(?:-\d+)?)\)\s+(.+?)(?=\n\d+\.|$)/gs;
+    const keyPointsText = responseText.replace('## PUNTI CHIAVE', '').trim();
+    const keyPointsRegex = /\d+\.\s+\*\*(.+?)\*\*\s+\(§(\d+(?:-\d+)?)\)\s+(.+?)(?=\n\d+\.|$)/gs;
 
     const keyPoints = [];
     let match;
@@ -698,15 +599,14 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
 
     // 1. Controlla cache
     if (enableCache) {
-      if (onProgress)
-        onProgress({ stage: "cache", message: "Controllo cache..." });
+      if (onProgress) onProgress({ stage: 'cache', message: 'Controllo cache...' });
 
       const cached = await cacheManager.get(article.url, provider, settings);
       if (cached) {
         if (onProgress)
           onProgress({
-            stage: "cache",
-            message: "Risultato trovato in cache!",
+            stage: 'cache',
+            message: 'Risultato trovato in cache!',
           });
         return {
           result: cached,
@@ -717,8 +617,7 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
     }
 
     // 2. Chiama API con resilienza
-    if (onProgress)
-      onProgress({ stage: "api", message: "Chiamata API in corso..." });
+    if (onProgress) onProgress({ stage: 'api', message: 'Chiamata API in corso...' });
 
     const result = await resilience.callWithFallback({
       primaryProvider: provider,
@@ -729,7 +628,7 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
       onRetry: (attempt, maxAttempts, delay) => {
         if (onProgress) {
           onProgress({
-            stage: "retry",
+            stage: 'retry',
             message: `Tentativo ${attempt}/${maxAttempts}... (attesa ${Math.round(delay / 1000)}s)`,
           });
         }
@@ -737,7 +636,7 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
       onFallback: (fallbackProvider, index) => {
         if (onProgress) {
           onProgress({
-            stage: "fallback",
+            stage: 'fallback',
             message: `Passaggio a provider alternativo: ${fallbackProvider}`,
           });
         }
@@ -746,15 +645,10 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
 
     // 3. Salva in cache
     if (enableCache && result.result) {
-      await cacheManager.set(
-        article.url,
-        result.usedProvider,
-        settings,
-        result.result,
-      );
+      await cacheManager.set(article.url, result.usedProvider, settings, result.result);
     }
 
-    if (onProgress) onProgress({ stage: "complete", message: "Completato!" });
+    if (onProgress) onProgress({ stage: 'complete', message: 'Completato!' });
 
     return {
       result: result.result,
@@ -779,10 +673,8 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
       return response;
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error.name === "AbortError") {
-        throw new Error(
-          "Timeout: il provider non ha risposto entro 60 secondi. Riprova.",
-        );
+      if (error.name === 'AbortError') {
+        throw new Error('Timeout: il provider non ha risposto entro 60 secondi. Riprova.');
       }
       throw error;
     }
@@ -792,8 +684,8 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
     if (!data.choices || data.choices.length === 0) {
       const reason = data.choices?.[0]?.finish_reason || data.error?.message;
       throw new Error(
-        `${provider} ha restituito una risposta vuota${reason ? ` (${reason})` : ""}. ` +
-          "Riprova o cambia provider.",
+        `${provider} ha restituito una risposta vuota${reason ? ` (${reason})` : ''}. ` +
+          'Riprova o cambia provider.',
       );
     }
     const content = data.choices[0].message?.content;
@@ -804,13 +696,7 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
   }
 
   // Metodo generico per generare completion con parametri personalizzabili
-  static async generateCompletion(
-    provider,
-    apiKey,
-    systemPrompt,
-    userPrompt,
-    options = {},
-  ) {
+  static async generateCompletion(provider, apiKey, systemPrompt, userPrompt, options = {}) {
     const {
       temperature = 0.3,
       maxTokens = 4096,
@@ -819,51 +705,36 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
     } = options;
 
     switch (provider) {
-      case "groq":
+      case 'groq':
         return await this.callGroqCompletion(apiKey, systemPrompt, userPrompt, {
           temperature,
           maxTokens,
-          model: model || "llama-3.3-70b-versatile",
+          model: model || 'llama-3.3-70b-versatile',
           responseFormat,
         });
-      case "openai":
-        return await this.callOpenAICompletion(
-          apiKey,
-          systemPrompt,
-          userPrompt,
-          {
-            temperature,
-            maxTokens,
-            model: model || "gpt-4o",
-            responseFormat,
-          },
-        );
-      case "anthropic":
-        return await this.callAnthropicCompletion(
-          apiKey,
-          systemPrompt,
-          userPrompt,
-          {
-            temperature,
-            maxTokens,
-            model: model || "claude-3-5-sonnet-20241022",
-            responseFormat,
-          },
-        );
-      case "gemini":
-        return await this.callGeminiCompletion(
-          apiKey,
-          systemPrompt,
-          userPrompt,
-          {
-            temperature,
-            maxTokens,
-            model: model || "gemini-2.5-pro",
-            responseFormat,
-          },
-        );
+      case 'openai':
+        return await this.callOpenAICompletion(apiKey, systemPrompt, userPrompt, {
+          temperature,
+          maxTokens,
+          model: model || 'gpt-4o',
+          responseFormat,
+        });
+      case 'anthropic':
+        return await this.callAnthropicCompletion(apiKey, systemPrompt, userPrompt, {
+          temperature,
+          maxTokens,
+          model: model || 'claude-3-5-sonnet-20241022',
+          responseFormat,
+        });
+      case 'gemini':
+        return await this.callGeminiCompletion(apiKey, systemPrompt, userPrompt, {
+          temperature,
+          maxTokens,
+          model: model || 'gemini-2.5-pro',
+          responseFormat,
+        });
       default:
-        throw new Error("Provider non supportato");
+        throw new Error('Provider non supportato');
     }
   }
 
@@ -871,25 +742,25 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
     const requestBody = {
       model: options.model,
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ],
       temperature: options.temperature,
       max_tokens: options.maxTokens,
     };
 
     // Aggiungi response_format se richiesto JSON
-    if (options.responseFormat === "json") {
-      requestBody.response_format = { type: "json_object" };
+    if (options.responseFormat === 'json') {
+      requestBody.response_format = { type: 'json_object' };
     }
 
     const response = await this._fetchWithTimeout(
-      "https://api.groq.com/openai/v1/chat/completions",
+      'https://api.groq.com/openai/v1/chat/completions',
       {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
       },
@@ -897,137 +768,115 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || "Errore API Groq");
+      throw new Error(error.error?.message || 'Errore API Groq');
     }
 
     const data = await response.json();
-    return this._validateChoicesResponse(data, "Groq");
+    return this._validateChoicesResponse(data, 'Groq');
   }
 
   static async callOpenAICompletion(apiKey, systemPrompt, userPrompt, options) {
     const requestBody = {
       model: options.model,
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ],
       temperature: options.temperature,
       max_tokens: options.maxTokens,
     };
 
     // Aggiungi response_format se richiesto JSON
-    if (options.responseFormat === "json") {
-      requestBody.response_format = { type: "json_object" };
+    if (options.responseFormat === 'json') {
+      requestBody.response_format = { type: 'json_object' };
     }
 
-    const response = await this._fetchWithTimeout(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
+    const response = await this._fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify(requestBody),
+    });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || "Errore API OpenAI");
+      throw new Error(error.error?.message || 'Errore API OpenAI');
     }
 
     const data = await response.json();
-    return this._validateChoicesResponse(data, "OpenAI");
+    return this._validateChoicesResponse(data, 'OpenAI');
   }
 
-  static async callAnthropicCompletion(
-    apiKey,
-    systemPrompt,
-    userPrompt,
-    options,
-  ) {
-    const response = await this._fetchWithTimeout(
-      "https://api.anthropic.com/v1/messages",
-      {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: options.model,
-          max_tokens: options.maxTokens,
-          temperature: options.temperature,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userPrompt }],
-        }),
+  static async callAnthropicCompletion(apiKey, systemPrompt, userPrompt, options) {
+    const response = await this._fetchWithTimeout('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify({
+        model: options.model,
+        max_tokens: options.maxTokens,
+        temperature: options.temperature,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+    });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || "Errore API Claude");
+      throw new Error(error.error?.message || 'Errore API Claude');
     }
 
     const data = await response.json();
     if (!data.content || data.content.length === 0 || !data.content[0].text) {
-      throw new Error(
-        "Claude ha restituito una risposta vuota. Riprova o cambia provider.",
-      );
+      throw new Error('Claude ha restituito una risposta vuota. Riprova o cambia provider.');
     }
     return data.content[0].text;
   }
 
   // Helper per estrarre il testo dalla risposta Gemini
   static extractGeminiText(data) {
-    console.log("Gemini response structure:", JSON.stringify(data, null, 2));
+    console.log('Gemini response structure:', JSON.stringify(data, null, 2));
 
     if (!data.candidates || data.candidates.length === 0) {
-      console.error("Gemini error - no candidates:", data);
+      console.error('Gemini error - no candidates:', data);
       const errorMsg =
         data.error?.message ||
         data.promptFeedback?.blockReason ||
-        "Nessun candidato nella risposta";
+        'Nessun candidato nella risposta';
       throw new Error(`Risposta Gemini non valida: ${errorMsg}`);
     }
 
     const candidate = data.candidates[0];
 
     // Controlla se il contenuto è stato bloccato
-    if (
-      candidate.finishReason === "SAFETY" ||
-      candidate.finishReason === "RECITATION"
-    ) {
-      throw new Error(
-        `Contenuto bloccato da Gemini: ${candidate.finishReason}`,
-      );
+    if (candidate.finishReason === 'SAFETY' || candidate.finishReason === 'RECITATION') {
+      throw new Error(`Contenuto bloccato da Gemini: ${candidate.finishReason}`);
     }
 
     // Gemini 2.5-pro può terminare con MAX_TOKENS se usa troppi token per il reasoning
-    if (candidate.finishReason === "MAX_TOKENS") {
+    if (candidate.finishReason === 'MAX_TOKENS') {
       console.warn(
-        "Gemini ha raggiunto il limite di token. Thoughts tokens:",
+        'Gemini ha raggiunto il limite di token. Thoughts tokens:',
         data.usageMetadata?.thoughtsTokenCount,
       );
       throw new Error(
-        "Gemini ha raggiunto il limite di token. Aumenta maxOutputTokens o riduci la lunghezza del prompt.",
+        'Gemini ha raggiunto il limite di token. Aumenta maxOutputTokens o riduci la lunghezza del prompt.',
       );
     }
 
-    if (
-      !candidate.content ||
-      !candidate.content.parts ||
-      candidate.content.parts.length === 0
-    ) {
-      console.error("Gemini error - invalid content structure:", candidate);
-      throw new Error("Risposta Gemini non valida: nessun contenuto generato");
+    if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+      console.error('Gemini error - invalid content structure:', candidate);
+      throw new Error('Risposta Gemini non valida: nessun contenuto generato');
     }
 
     const text = candidate.content.parts[0].text;
     if (!text || text.trim().length === 0) {
-      throw new Error("Risposta Gemini vuota");
+      throw new Error('Risposta Gemini vuota');
     }
 
     return text;
@@ -1052,36 +901,36 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
       },
       safetySettings: [
         {
-          category: "HARM_CATEGORY_HARASSMENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+          category: 'HARM_CATEGORY_HARASSMENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
         },
         {
-          category: "HARM_CATEGORY_HATE_SPEECH",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+          category: 'HARM_CATEGORY_HATE_SPEECH',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
         },
         {
-          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
         },
         {
-          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
         },
       ],
     };
 
     // Aggiungi response_mime_type se richiesto JSON
-    if (options.responseFormat === "json") {
-      requestBody.generationConfig.responseMimeType = "application/json";
+    if (options.responseFormat === 'json') {
+      requestBody.generationConfig.responseMimeType = 'application/json';
     }
 
     const response = await this._fetchWithTimeout(
       `https://generativelanguage.googleapis.com/v1beta/models/${options.model}:generateContent`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
         },
         body: JSON.stringify(requestBody),
       },
@@ -1089,7 +938,7 @@ Includi SEMPRE: media (M), deviazione standard (SD), valore p, dimensione effett
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || "Errore API Gemini");
+      throw new Error(error.error?.message || 'Errore API Gemini');
     }
 
     const data = await response.json();

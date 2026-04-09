@@ -9,10 +9,28 @@ import { SearchOptimizer } from '../../utils/core/search-optimizer.js';
 import { HistoryLazyLoader } from '../../utils/core/history-lazy-loader.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { Modal } from '../../utils/core/modal.js';
-import { openDetail, closeModal, switchModalTab, exportCurrentPdf, exportCurrentMarkdown, copyCurrentSummary, deleteCurrentEntry } from './detail.js';
+import {
+  openDetail,
+  closeModal,
+  switchModalTab,
+  exportCurrentPdf,
+  exportCurrentMarkdown,
+  copyCurrentSummary,
+  deleteCurrentEntry,
+} from './detail.js';
 import { loadPDFHistory, loadMultiAnalysisHistory } from './collections.js';
-import { sendCurrentEmail, openReadingModeFromHistory, downloadHistory, importHistory } from './io.js';
-import { setupVoiceEventListeners, handleModalTTSPlay, handleModalTTSPause, handleModalTTSStop } from './voice.js';
+import {
+  sendCurrentEmail,
+  openReadingModeFromHistory,
+  downloadHistory,
+  importHistory,
+} from './io.js';
+import {
+  setupVoiceEventListeners,
+  handleModalTTSPlay,
+  handleModalTTSPause,
+  handleModalTTSStop,
+} from './voice.js';
 
 // Inizializza SearchOptimizer nello state
 state.searchOptimizer = new SearchOptimizer();
@@ -24,8 +42,7 @@ state.loadMultiAnalysisHistory = () => loadMultiAnalysisHistory();
 // Modal System — caricato da utils/modal.js
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Inizializza i18n
-  await I18n.init();
+  await I18n.initPage();
 
   // Initialize voice controller
   state.voiceController = new VoiceController();
@@ -34,20 +51,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Setup voice event listeners
   setupVoiceEventListeners();
 
-  // Carica lingua UI salvata
-  const savedUILanguage = await StorageManager.getUILanguage();
-  const uiLanguageSelect = document.getElementById('uiLanguageSelect');
-  if (savedUILanguage && uiLanguageSelect) {
-    uiLanguageSelect.value = savedUILanguage;
-  }
-
-  // Event listener per cambio lingua UI
-  if (uiLanguageSelect) {
-    uiLanguageSelect.addEventListener('change', async (e) => {
-      await I18n.setLanguage(e.target.value);
-    });
-  }
-
   // Assicurati che il tab single sia visibile all'avvio
   document.getElementById('historyList').classList.remove('hidden');
   document.getElementById('multiAnalysisList').classList.add('hidden');
@@ -55,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadHistory();
 
   // History tabs event listeners
-  document.querySelectorAll('.history-tab').forEach(tab => {
+  document.querySelectorAll('.history-tab').forEach((tab) => {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
   });
 
@@ -68,7 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   state.debouncedSearch = DebounceUtility.debounceWithFeedback(
     handleSearch,
     300, // 300ms di attesa
-    document.getElementById('searchInput')
+    document.getElementById('searchInput'),
   );
 
   document.getElementById('searchInput').addEventListener('input', state.debouncedSearch);
@@ -108,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('deleteModalBtn').addEventListener('click', deleteCurrentEntry);
 
   // Modal tabs
-  document.querySelectorAll('.modal-tab').forEach(tab => {
+  document.querySelectorAll('.modal-tab').forEach((tab) => {
     tab.addEventListener('click', () => switchModalTab(tab.dataset.tab));
   });
 
@@ -138,7 +141,7 @@ export async function loadHistory() {
     state.lazyLoader.onFavoriteToggle = async (id) => {
       const isFavorite = await HistoryManager.toggleFavorite(id);
       // Aggiorna anche in currentHistory
-      const entry = state.currentHistory.find(e => e.id === id);
+      const entry = state.currentHistory.find((e) => e.id === id);
       if (entry) {
         entry.favorite = isFavorite;
       }
@@ -167,7 +170,7 @@ function displayHistory(history) {
     state.lazyLoader.onItemClick = openDetail;
     state.lazyLoader.onFavoriteToggle = async (id) => {
       const isFavorite = await HistoryManager.toggleFavorite(id);
-      const entry = state.currentHistory.find(e => e.id === id);
+      const entry = state.currentHistory.find((e) => e.id === id);
       if (entry) {
         entry.favorite = isFavorite;
       }
@@ -196,7 +199,7 @@ async function handleSearch(e) {
   const filtered = state.searchOptimizer.search(state.currentHistory, query, {
     searchInTitle,
     searchInUrl,
-    searchInContent
+    searchInContent,
   });
 
   displayHistory(filtered);
@@ -222,9 +225,9 @@ async function handleFilter() {
 
   // Applica filtro preferiti/note
   if (favoriteFilter === 'favorites') {
-    filtered = filtered.filter(entry => entry.favorite === true);
+    filtered = filtered.filter((entry) => entry.favorite === true);
   } else if (favoriteFilter === 'withNotes') {
-    filtered = filtered.filter(entry => entry.notes && entry.notes.trim().length > 0);
+    filtered = filtered.filter((entry) => entry.notes && entry.notes.trim().length > 0);
   }
 
   displayHistory(filtered);
@@ -232,7 +235,7 @@ async function handleFilter() {
 
 async function clearSingleHistory() {
   const history = await HistoryManager.getHistory();
-  const favoritesCount = history.filter(e => e.favorite).length;
+  const favoritesCount = history.filter((e) => e.favorite).length;
 
   let message = 'Sei sicuro di voler cancellare tutta la cronologia degli articoli singoli?';
   if (favoritesCount > 0) {
@@ -240,11 +243,7 @@ async function clearSingleHistory() {
   }
   message += '\n\nQuesta azione non può essere annullata.';
 
-  const confirmed = await Modal.confirm(
-    message,
-    'Cancella Articoli Singoli',
-    '🗑️'
-  );
+  const confirmed = await Modal.confirm(message, 'Cancella Articoli Singoli', '🗑️');
 
   if (!confirmed) return;
 
@@ -254,7 +253,7 @@ async function clearSingleHistory() {
 
 async function clearPDFHistory() {
   const history = await HistoryManager.getPDFHistory();
-  const favoritesCount = history.filter(e => e.favorite).length;
+  const favoritesCount = history.filter((e) => e.favorite).length;
 
   let message = 'Sei sicuro di voler cancellare tutta la cronologia dei PDF analizzati?';
   if (favoritesCount > 0) {
@@ -262,11 +261,7 @@ async function clearPDFHistory() {
   }
   message += '\n\nQuesta azione non può essere annullata.';
 
-  const confirmed = await Modal.confirm(
-    message,
-    'Elimina Cronologia PDF',
-    '🗑️'
-  );
+  const confirmed = await Modal.confirm(message, 'Elimina Cronologia PDF', '🗑️');
 
   if (!confirmed) return;
 
@@ -276,7 +271,7 @@ async function clearPDFHistory() {
 
 async function clearMultiHistory() {
   const history = await HistoryManager.getMultiAnalysisHistory();
-  const favoritesCount = history.filter(e => e.favorite).length;
+  const favoritesCount = history.filter((e) => e.favorite).length;
 
   let message = 'Sei sicuro di voler cancellare tutta la cronologia delle analisi Multi Articolo?';
   if (favoritesCount > 0) {
@@ -284,18 +279,13 @@ async function clearMultiHistory() {
   }
   message += '\n\nQuesta azione non può essere annullata.';
 
-  const confirmed = await Modal.confirm(
-    message,
-    'Cancella Analisi Multiple',
-    '🗑️'
-  );
+  const confirmed = await Modal.confirm(message, 'Cancella Analisi Multiple', '🗑️');
 
   if (!confirmed) return;
 
   await HistoryManager.clearMultiAnalysisHistory();
   await loadMultiAnalysisHistory();
 }
-
 
 // ===== MULTI-ANALYSIS HISTORY =====
 
@@ -305,7 +295,7 @@ function switchTab(tab) {
   currentTab = tab;
 
   // Aggiorna UI dei tab
-  document.querySelectorAll('.history-tab').forEach(t => {
+  document.querySelectorAll('.history-tab').forEach((t) => {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
 
@@ -326,7 +316,6 @@ function switchTab(tab) {
     loadPDFHistory();
   }
 }
-
 
 // Theme Toggle
 async function toggleTheme() {

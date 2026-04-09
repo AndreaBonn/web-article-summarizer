@@ -20,90 +20,78 @@ let pdfAnalyzer = null;
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('PDF Analysis: Inizializzazione...');
 
-  // Inizializza i18n
-  await I18n.init();
+  await I18n.initPage();
 
   // Configura PDF.js worker
-  pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('public/workers/pdf.worker.min.js');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL(
+    'public/workers/pdf.worker.min.js',
+  );
   console.log('✓ PDF.js configurato con worker:', pdfjsLib.GlobalWorkerOptions.workerSrc);
-  
+
   // Inizializza PDF Analyzer
   pdfAnalyzer = new PDFAnalyzer();
-  
+
   // Carica impostazioni
   const settings = await StorageManager.getSettings();
   const providerSelect = document.getElementById('providerSelect');
   providerSelect.value = settings.selectedProvider || 'claude';
-  
+
   // Aggiorna il testo del provider nell'info box
-  document.getElementById('currentProvider').textContent = 
+  document.getElementById('currentProvider').textContent =
     providerSelect.options[providerSelect.selectedIndex].text;
-  
+
   const savedLanguage = await StorageManager.getSelectedLanguage();
   if (savedLanguage) {
     document.getElementById('languageSelect').value = savedLanguage;
   }
-  
-  // Carica lingua UI
-  const savedUILanguage = await StorageManager.getUILanguage();
-  const uiLanguageSelect = document.getElementById('uiLanguageSelect');
-  if (savedUILanguage && uiLanguageSelect) {
-    uiLanguageSelect.value = savedUILanguage;
-  }
-  
+
   // Event listeners
   document.getElementById('backBtn').addEventListener('click', () => {
     window.close();
   });
-  
+
   document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
-  
-  if (uiLanguageSelect) {
-    uiLanguageSelect.addEventListener('change', async (e) => {
-      await I18n.setLanguage(e.target.value);
-    });
-  }
-  
+
   // Provider change
   document.getElementById('providerSelect').addEventListener('change', async (e) => {
     const settings = await StorageManager.getSettings();
     settings.selectedProvider = e.target.value;
     await StorageManager.saveSettings(settings);
-    document.getElementById('currentProvider').textContent = 
+    document.getElementById('currentProvider').textContent =
       e.target.options[e.target.selectedIndex].text;
   });
-  
+
   // Language change
   document.getElementById('languageSelect').addEventListener('change', async (e) => {
     await StorageManager.saveSelectedLanguage(e.target.value);
   });
-  
+
   // File input
   const fileInput = document.getElementById('pdfFileInput');
   const dropZone = document.getElementById('pdfDropZone');
   const browseBtn = document.getElementById('pdfBrowseBtn');
-  
+
   browseBtn.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', handleFileSelect);
-  
+
   // Drag & Drop
   dropZone.addEventListener('dragover', handleDragOver);
   dropZone.addEventListener('dragleave', handleDragLeave);
   dropZone.addEventListener('drop', handleDrop);
-  
+
   // Remove file
   document.getElementById('removeFileBtn').addEventListener('click', removeFile);
-  
+
   // Analyze button
   document.getElementById('analyzePdfBtn').addEventListener('click', startAnalysis);
-  
+
   // Font size controls
   document.getElementById('fontIncreaseBtn').addEventListener('click', increaseFontSize);
   document.getElementById('fontDecreaseBtn').addEventListener('click', decreaseFontSize);
-  
+
   // Load font size
   loadFontSize();
-  
+
   console.log('✓ Event listeners configurati');
 });
 
@@ -123,7 +111,7 @@ function handleDrop(e) {
   e.preventDefault();
   e.stopPropagation();
   e.currentTarget.classList.remove('drag-over');
-  
+
   const files = e.dataTransfer.files;
   if (files.length > 0) {
     handleFile(files[0]);
@@ -143,15 +131,15 @@ function handleFile(file) {
     Modal.error('File non valido. Carica un file PDF.');
     return;
   }
-  
+
   const maxSize = 20 * 1024 * 1024; // 20MB
   if (file.size > maxSize) {
     Modal.error('File troppo grande. Massimo 20MB.');
     return;
   }
-  
+
   selectedFile = file;
-  
+
   // Mostra info file
   document.getElementById('pdfDropZone').style.display = 'none';
   document.getElementById('selectedFileInfo').style.display = 'flex';
@@ -159,7 +147,7 @@ function handleFile(file) {
   document.getElementById('fileName').textContent = file.name;
   document.getElementById('fileSize').textContent = formatFileSize(file.size);
   document.getElementById('analyzePdfBtn').disabled = false;
-  
+
   console.log('✓ File selezionato:', file.name);
 }
 
@@ -183,28 +171,23 @@ async function startAnalysis() {
     Modal.error('Nessun file selezionato');
     return;
   }
-  
+
   // Mostra progress
   document.getElementById('analyzePdfBtn').disabled = true;
   document.getElementById('analysisProgress').style.display = 'block';
-  
+
   try {
     const provider = document.getElementById('providerSelect').value;
     const settings = {
       outputLanguage: document.getElementById('languageSelect').value,
-      summaryLength: document.getElementById('summaryLengthSelect').value
+      summaryLength: document.getElementById('summaryLengthSelect').value,
     };
-    
+
     // Analizza PDF
-    const result = await pdfAnalyzer.analyzePDF(
-      selectedFile,
-      provider,
-      settings,
-      updateProgress
-    );
-    
+    const result = await pdfAnalyzer.analyzePDF(selectedFile, provider, settings, updateProgress);
+
     console.log('✓ Analisi completata:', result);
-    
+
     // Salva nella cronologia PDF
     // La struttura cambia se viene dalla cache o meno
     const pdfInfo = {
@@ -212,29 +195,28 @@ async function startAnalysis() {
       size: selectedFile.size,
       pages: result.pageCount || result.pdfInfo?.pages || 0,
       text: result.extractedText || result.pdfInfo?.text || '',
-      metadata: result.pdfInfo?.metadata || {}
+      metadata: result.pdfInfo?.metadata || {},
     };
-    
+
     const metadata = {
       provider: provider,
       language: settings.outputLanguage,
       summaryLength: settings.summaryLength,
-      fromCache: result.isFromCache || result.fromCache || false
+      fromCache: result.isFromCache || result.fromCache || false,
     };
-    
+
     const historyId = await HistoryManager.savePDFAnalysis(
       pdfInfo,
       result.summary,
       result.keyPoints,
-      metadata
+      metadata,
     );
-    
+
     // Aggiungi l'ID alla cronologia per riferimento futuro
     result.historyId = historyId;
-    
+
     // Mostra risultati in modalità lettura
     await openReadingMode(result);
-    
   } catch (error) {
     console.error('✗ Errore analisi:', error);
     await Modal.error(error.message);
@@ -253,17 +235,17 @@ async function openReadingMode(analysisData) {
   // Rimuovi pdfFile (non serializzabile) prima di salvare
   const dataToSave = {
     ...analysisData,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
-  
+
   // Rimuovi il file PDF object (non può essere salvato in storage)
   delete dataToSave.pdfFile;
-  
+
   // Salva dati per reading mode
   await chrome.storage.local.set({
-    pdfReadingMode: dataToSave
+    pdfReadingMode: dataToSave,
   });
-  
+
   // Apri reading mode
   chrome.tabs.create({ url: 'src/pages/reading-mode/reading-mode.html?source=pdf' });
 }
@@ -302,23 +284,23 @@ function loadFontSize() {
 function applyFontSize() {
   const size = FONT_SIZES[currentFontSizeIndex];
   document.body.setAttribute('data-font-size', size);
-  
+
   const fontSizeLabel = document.getElementById('fontSizeLabel');
   if (fontSizeLabel) {
     fontSizeLabel.textContent = size;
   }
-  
+
   // Update button states
   const fontDecreaseBtn = document.getElementById('fontDecreaseBtn');
   const fontIncreaseBtn = document.getElementById('fontIncreaseBtn');
-  
+
   if (fontDecreaseBtn) {
     fontDecreaseBtn.disabled = currentFontSizeIndex === 0;
   }
   if (fontIncreaseBtn) {
     fontIncreaseBtn.disabled = currentFontSizeIndex === FONT_SIZES.length - 1;
   }
-  
+
   // Save to localStorage
   localStorage.setItem('pdfAnalysisFontSize', size);
 }
