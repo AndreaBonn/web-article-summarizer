@@ -1,20 +1,30 @@
 // Background Service Worker - Gestisce chiamate API
-import { StorageManager } from "../utils/storage/storage-manager.js";
-import { PromptRegistry } from "../utils/ai/prompt-registry.js";
-import { APIClient } from "../utils/ai/api-client.js";
-import { APIResilience } from "../utils/ai/api-resilience.js";
-import { CacheManager } from "../utils/storage/cache-manager.js";
-import { CompressionManager } from "../utils/storage/compression-manager.js";
-import { AutoMaintenance } from "../utils/core/auto-maintenance.js";
-import { CitationExtractor } from "../utils/ai/citation-extractor.js";
-import { InputSanitizer } from "../utils/security/input-sanitizer.js";
-import { ErrorHandler } from "../utils/core/error-handler.js";
+import { StorageManager } from '../utils/storage/storage-manager.js';
+import { PromptRegistry } from '../utils/ai/prompt-registry.js';
+import { APIClient } from '../utils/ai/api-client.js';
+import { APIResilience } from '../utils/ai/api-resilience.js';
+import { CacheManager } from '../utils/storage/cache-manager.js';
+import { CompressionManager } from '../utils/storage/compression-manager.js';
+import { AutoMaintenance } from '../utils/core/auto-maintenance.js';
+import { CitationExtractor } from '../utils/ai/citation-extractor.js';
+import { InputSanitizer } from '../utils/security/input-sanitizer.js';
+import { ErrorHandler } from '../utils/core/error-handler.js';
 
 // Inizializza manutenzione automatica cache
 const autoMaintenance = new AutoMaintenance();
-autoMaintenance
-  .initialize()
-  .catch((err) => console.error("AutoMaintenance init fallita:", err));
+autoMaintenance.initialize().catch((err) => console.error('AutoMaintenance init fallita:', err));
+
+// MV3 Lifecycle Events
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    console.log('AI Article Summarizer installato');
+  } else if (details.reason === 'update') {
+    console.log(
+      'AI Article Summarizer aggiornato alla versione',
+      chrome.runtime.getManifest().version,
+    );
+  }
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Valida che il messaggio venga dalla propria estensione
@@ -22,37 +32,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return false;
   }
 
-  if (request.action === "generateSummary") {
+  if (request.action === 'generateSummary') {
     handleGenerateSummary(request.article, request.provider, request.settings)
       .then((result) => {
         sendResponse({ success: true, result });
       })
       .catch((error) => {
-        console.error("Errore generazione:", error);
+        console.error('Errore generazione:', error);
         sendResponse({ success: false, error: error.message });
       });
     return true; // Mantiene il canale aperto per risposta asincrona
   }
 
-  if (request.action === "extractCitations") {
+  if (request.action === 'extractCitations') {
     handleExtractCitations(request.article, request.provider, request.settings)
       .then((result) => {
         sendResponse({ success: true, result });
       })
       .catch((error) => {
-        console.error("Errore estrazione citazioni:", error);
+        console.error('Errore estrazione citazioni:', error);
         sendResponse({ success: false, error: error.message });
       });
     return true;
   }
 
-  if (request.action === "testApiKey") {
+  if (request.action === 'testApiKey') {
     testApiKey(request.provider, request.apiKey)
       .then(() => {
         sendResponse({ success: true });
       })
       .catch((error) => {
-        console.error("Errore test API:", error);
+        console.error('Errore test API:', error);
         sendResponse({ success: false, error: error.message });
       });
     return true;
@@ -68,7 +78,7 @@ async function handleGenerateSummary(article, provider, settings) {
   // Decripta solo la API key del provider richiesto
   const apiKey = await StorageManager.getApiKey(provider);
   if (!apiKey) {
-    throw new Error("API key non configurata. Vai nelle impostazioni.");
+    throw new Error('API key non configurata. Vai nelle impostazioni.');
   }
 
   // Ottieni impostazioni performance
@@ -84,12 +94,7 @@ async function handleGenerateSummary(article, provider, settings) {
   try {
     // 1. Controlla cache con validazione contenuto
     if (cacheManager) {
-      const cached = await cacheManager.get(
-        article.url,
-        provider,
-        settings,
-        contentHash,
-      );
+      const cached = await cacheManager.get(article.url, provider, settings, contentHash);
       if (cached) {
         return {
           summary: cached.summary,
@@ -101,12 +106,7 @@ async function handleGenerateSummary(article, provider, settings) {
     }
 
     // 2. Chiama API con retry
-    const responseText = await APIClient.callAPI(
-      provider,
-      apiKey,
-      article,
-      settings,
-    );
+    const responseText = await APIClient.callAPI(provider, apiKey, article, settings);
 
     // 3. Parsa risposta
     const { summary, keyPoints } = APIClient.parseResponse(responseText);
@@ -125,11 +125,7 @@ async function handleGenerateSummary(article, provider, settings) {
 
     // 5. Aggiorna statistiche
     const generationTime = Date.now() - startTime;
-    await StorageManager.updateStats(
-      provider,
-      article.wordCount,
-      generationTime,
-    );
+    await StorageManager.updateStats(provider, article.wordCount, generationTime);
 
     return {
       summary,
@@ -139,27 +135,25 @@ async function handleGenerateSummary(article, provider, settings) {
       generationTime,
     };
   } catch (error) {
-    console.error("Errore generazione riassunto:", error);
+    console.error('Errore generazione riassunto:', error);
     const errorMessage = ErrorHandler.getErrorMessage(error);
-    await ErrorHandler.logError(error, "handleGenerateSummary");
+    await ErrorHandler.logError(error, 'handleGenerateSummary');
     throw new Error(errorMessage);
   }
 }
 
 async function testApiKey(provider, apiKey) {
   const testArticle = {
-    title: "Test Article",
-    paragraphs: [
-      { id: 1, text: "This is a test paragraph to verify API connectivity." },
-    ],
+    title: 'Test Article',
+    paragraphs: [{ id: 1, text: 'This is a test paragraph to verify API connectivity.' }],
     wordCount: 10,
     readingTimeMinutes: 1,
-    content: "This is a test paragraph to verify API connectivity.",
+    content: 'This is a test paragraph to verify API connectivity.',
   };
 
   const testSettings = {
-    summaryLength: "short",
-    tone: "neutral",
+    summaryLength: 'short',
+    tone: 'neutral',
     autoDetectLanguage: true,
   };
 
@@ -176,25 +170,20 @@ async function handleExtractCitations(article, provider, settings) {
 
   const apiKey = await StorageManager.getApiKey(provider);
   if (!apiKey) {
-    throw new Error("API key non configurata. Vai nelle impostazioni.");
+    throw new Error('API key non configurata. Vai nelle impostazioni.');
   }
 
   const performanceSettings = await StorageManager.getSettings();
   const enableCache = performanceSettings.enableCache !== false;
   const contentHash = CacheManager.hashContent(article.content);
-  const cacheKey = article.url + "_citations";
+  const cacheKey = article.url + '_citations';
 
   // Istanzia CacheManager una sola volta
   const cacheManager = enableCache ? new CacheManager() : null;
 
   // 1. Controlla cache
   if (cacheManager) {
-    const cached = await cacheManager.get(
-      cacheKey,
-      provider,
-      { type: "citations" },
-      contentHash,
-    );
+    const cached = await cacheManager.get(cacheKey, provider, { type: 'citations' }, contentHash);
     if (cached) {
       return { citations: cached, fromCache: true, usedProvider: provider };
     }
@@ -202,19 +191,14 @@ async function handleExtractCitations(article, provider, settings) {
 
   // 2. Estrai citazioni da API
   try {
-    const citations = await CitationExtractor.extractCitations(
-      article,
-      provider,
-      apiKey,
-      settings,
-    );
+    const citations = await CitationExtractor.extractCitations(article, provider, apiKey, settings);
 
     // 3. Salva in cache
     if (cacheManager) {
       await cacheManager.set(
         cacheKey,
         provider,
-        { type: "citations" },
+        { type: 'citations' },
         citations,
         null,
         contentHash,
@@ -229,9 +213,9 @@ async function handleExtractCitations(article, provider, settings) {
       extractionTime,
     };
   } catch (error) {
-    console.error("Errore estrazione citazioni:", error);
+    console.error('Errore estrazione citazioni:', error);
     const errorMessage = ErrorHandler.getErrorMessage(error);
-    await ErrorHandler.logError(error, "handleExtractCitations");
+    await ErrorHandler.logError(error, 'handleExtractCitations');
     throw new Error(errorMessage);
   }
 }
