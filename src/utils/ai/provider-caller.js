@@ -69,6 +69,12 @@ export class ProviderCaller {
     );
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error(
+          'Rate limit raggiunto per Groq. Non è un problema del sistema: la tua chiave API ha esaurito le richieste disponibili. ' +
+            'Puoi cambiare chiave API o passare a un altro provider nelle impostazioni (⚙️).',
+        );
+      }
       let errorMsg;
       try {
         errorMsg = (await response.json()).error?.message;
@@ -108,6 +114,12 @@ export class ProviderCaller {
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error(
+          'Rate limit raggiunto per OpenAI. Non è un problema del sistema: la tua chiave API ha esaurito le richieste disponibili. ' +
+            'Puoi cambiare chiave API o passare a un altro provider nelle impostazioni (⚙️).',
+        );
+      }
       let errorMsg;
       try {
         errorMsg = (await response.json()).error?.message;
@@ -139,6 +151,12 @@ export class ProviderCaller {
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error(
+          'Rate limit raggiunto per Anthropic. Non è un problema del sistema: la tua chiave API ha esaurito le richieste disponibili. ' +
+            'Puoi cambiare chiave API o passare a un altro provider nelle impostazioni (⚙️).',
+        );
+      }
       let errorMsg;
       try {
         errorMsg = (await response.json()).error?.message;
@@ -252,6 +270,12 @@ export class ProviderCaller {
     );
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error(
+          'Rate limit raggiunto per Gemini. Non è un problema del sistema: la tua chiave API ha esaurito le richieste disponibili. ' +
+            'Puoi cambiare chiave API o passare a un altro provider nelle impostazioni (⚙️).',
+        );
+      }
       let errorMsg;
       try {
         errorMsg = (await response.json()).error?.message;
