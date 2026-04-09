@@ -3,6 +3,8 @@
 // Non viene usata cifratura custom perché in un'estensione Chrome il codice sorgente
 // è sempre leggibile — un segreto hardcoded non offre protezione reale.
 
+const MAX_TRANSLATION_CACHE = 50;
+
 export class StorageManager {
   // API Keys management
   static async saveApiKey(provider, apiKey) {
@@ -34,7 +36,10 @@ export class StorageManager {
     return stored;
   }
 
-  // Migrazione legacy: decripta key cifrate con il vecchio segreto hardcoded
+  // DEPRECATED: Legacy migration — remove after v3.0.0
+  // This secret was used in v1.x to encrypt API keys in storage.
+  // The encryption was security theater (key visible in source code).
+  // Kept only to auto-migrate existing users to plaintext storage.
   static async _decryptLegacyKey(encryptedData) {
     const LEGACY_SECRET = 'ai-summarizer-v1-secret-key-2024';
     const encoder = new TextEncoder();
@@ -162,11 +167,11 @@ export class StorageManager {
       originalLanguage,
     };
 
-    // LRU eviction - mantieni max 50 traduzioni
+    // LRU eviction - mantieni max MAX_TRANSLATION_CACHE traduzioni
     const entries = Object.entries(cache);
-    if (entries.length > 50) {
+    if (entries.length > MAX_TRANSLATION_CACHE) {
       entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-      cache = Object.fromEntries(entries.slice(-50));
+      cache = Object.fromEntries(entries.slice(-MAX_TRANSLATION_CACHE));
     }
 
     await chrome.storage.local.set({ translationCache: cache });

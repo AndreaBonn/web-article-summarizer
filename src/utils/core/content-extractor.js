@@ -1,11 +1,15 @@
 // Content Extractor - Estrazione e parsing articoli
-import { Readability } from "@mozilla/readability";
+import { Readability } from '@mozilla/readability';
+
+const MIN_ARTICLE_WORDS = 200;
+const MIN_PARAGRAPH_LENGTH = 20;
+const WORDS_PER_MINUTE = 225;
 
 export class ContentExtractor {
   static extract(document) {
     // Prova prima con Readability
     try {
-      if (typeof Readability !== "undefined") {
+      if (typeof Readability !== 'undefined') {
         const documentClone = document.cloneNode(true);
         const reader = new Readability(documentClone);
         const article = reader.parse();
@@ -15,7 +19,7 @@ export class ContentExtractor {
         }
       }
     } catch (error) {
-      console.warn("Readability fallito:", error);
+      console.warn('Readability fallito:', error);
     }
 
     // Fallback: estrazione manuale
@@ -24,18 +28,16 @@ export class ContentExtractor {
 
   static processReadabilityArticle(article, document) {
     // Estrai paragrafi numerati
-    const tempDiv = document.createElement("div");
+    const tempDiv = document.createElement('div');
     tempDiv.innerHTML = article.content;
 
     const paragraphs = [];
-    const paragraphElements = tempDiv.querySelectorAll(
-      "p, h1, h2, h3, h4, h5, h6, li",
-    );
+    const paragraphElements = tempDiv.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li');
 
     let validIndex = 0;
     paragraphElements.forEach((el) => {
       const text = el.textContent.trim();
-      if (text.length > 20) {
+      if (text.length > MIN_PARAGRAPH_LENGTH) {
         // Ignora paragrafi troppo corti
         validIndex++;
         paragraphs.push({
@@ -46,25 +48,25 @@ export class ContentExtractor {
     });
 
     // Calcola statistiche
-    const fullText = paragraphs.map((p) => p.text).join(" ");
+    const fullText = paragraphs.map((p) => p.text).join(' ');
     const wordCount = fullText.split(/\s+/).filter((w) => w.length > 0).length;
-    const readingTimeMinutes = Math.ceil(wordCount / 225);
+    const readingTimeMinutes = Math.ceil(wordCount / WORDS_PER_MINUTE);
 
     // Verifica lunghezza minima
-    if (wordCount < 200) {
-      throw new Error("Article too short");
+    if (wordCount < MIN_ARTICLE_WORDS) {
+      throw new Error('Article too short');
     }
 
     return {
       title: article.title || document.title,
-      author: article.byline || "Sconosciuto",
+      author: article.byline || 'Sconosciuto',
       publishedDate: article.publishedTime || null,
       url: window.location.href,
       content: fullText,
       paragraphs: paragraphs,
       wordCount: wordCount,
       readingTimeMinutes: readingTimeMinutes,
-      excerpt: article.excerpt || fullText.substring(0, 200) + "...",
+      excerpt: article.excerpt || fullText.substring(0, 200) + '...',
     };
   }
 
@@ -74,16 +76,16 @@ export class ContentExtractor {
 
     // Prova selettori comuni per articoli
     const selectors = [
-      "article",
+      'article',
       '[role="main"]',
-      "main",
-      ".article-content",
-      ".post-content",
-      ".entry-content",
-      ".content",
-      "#content",
-      ".story-body",
-      ".article-body",
+      'main',
+      '.article-content',
+      '.post-content',
+      '.entry-content',
+      '.content',
+      '#content',
+      '.story-body',
+      '.article-body',
     ];
 
     for (const selector of selectors) {
@@ -103,27 +105,22 @@ export class ContentExtractor {
 
     // Rimuovi elementi indesiderati
     const unwanted = clone.querySelectorAll(
-      "script, style, nav, header, footer, aside, iframe, " +
-        ".ad, .ads, .advertisement, .sidebar, .comments, " +
-        ".social-share, .related-posts, .navigation, " +
+      'script, style, nav, header, footer, aside, iframe, ' +
+        '.ad, .ads, .advertisement, .sidebar, .comments, ' +
+        '.social-share, .related-posts, .navigation, ' +
         '[class*="ad-"], [id*="ad-"], [class*="banner"]',
     );
     unwanted.forEach((el) => el.remove());
 
     // Estrai paragrafi
     const paragraphs = [];
-    const textElements = clone.querySelectorAll(
-      "p, h1, h2, h3, h4, h5, h6, li",
-    );
+    const textElements = clone.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li');
 
     let validIndex = 0;
     textElements.forEach((el) => {
       const text = el.textContent.trim();
       // Ignora paragrafi troppo corti o che sembrano menu/link
-      if (
-        text.length > 30 &&
-        !text.match(/^(Home|Menu|Login|Sign|Share|Tweet|Like)/i)
-      ) {
+      if (text.length > 30 && !text.match(/^(Home|Menu|Login|Sign|Share|Tweet|Like)/i)) {
         validIndex++;
         paragraphs.push({
           id: validIndex,
@@ -134,10 +131,8 @@ export class ContentExtractor {
 
     // Se non trova abbastanza paragrafi, prova a estrarre tutto il testo
     if (paragraphs.length < 3) {
-      const allText = clone.textContent || clone.innerText || "";
-      const sentences = allText
-        .split(/[.!?]+/)
-        .filter((s) => s.trim().length > 50);
+      const allText = clone.textContent || clone.innerText || '';
+      const sentences = allText.split(/[.!?]+/).filter((s) => s.trim().length > 50);
 
       sentences.forEach((sentence, index) => {
         paragraphs.push({
@@ -147,23 +142,23 @@ export class ContentExtractor {
       });
     }
 
-    const fullText = paragraphs.map((p) => p.text).join(" ");
+    const fullText = paragraphs.map((p) => p.text).join(' ');
     const wordCount = fullText.split(/\s+/).filter((w) => w.length > 0).length;
 
-    if (wordCount < 200) {
-      throw new Error("Article too short");
+    if (wordCount < MIN_ARTICLE_WORDS) {
+      throw new Error('Article too short');
     }
 
     return {
       title: document.title,
-      author: "Sconosciuto",
+      author: 'Sconosciuto',
       publishedDate: null,
       url: window.location.href,
       content: fullText,
       paragraphs: paragraphs,
       wordCount: wordCount,
-      readingTimeMinutes: Math.ceil(wordCount / 225),
-      excerpt: fullText.substring(0, 200) + "...",
+      readingTimeMinutes: Math.ceil(wordCount / WORDS_PER_MINUTE),
+      excerpt: fullText.substring(0, 200) + '...',
     };
   }
 }

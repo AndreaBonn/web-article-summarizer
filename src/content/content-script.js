@@ -1,5 +1,9 @@
 // Content Script - Esegue nell'ambito della pagina web
-import { ContentExtractor } from "../utils/core/content-extractor.js";
+import { ContentExtractor } from '../utils/core/content-extractor.js';
+
+const HIGHLIGHT_DURATION_MS = 3000;
+const CITATION_HIGHLIGHT_DURATION_MS = 8000;
+const MIN_PARAGRAPH_LENGTH = 20;
 
 let paragraphMap = new Map();
 let extractedArticle = null;
@@ -11,7 +15,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return false;
   }
 
-  if (request.action === "extractArticle") {
+  if (request.action === 'extractArticle') {
     try {
       extractedArticle = ContentExtractor.extract(document);
 
@@ -26,7 +30,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return false;
   }
 
-  if (request.action === "highlightParagraph") {
+  if (request.action === 'highlightParagraph') {
     try {
       highlightParagraph(request.paragraphNumber);
       sendResponse({ success: true });
@@ -36,18 +40,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return false;
   }
 
-  if (request.action === "highlightText") {
+  if (request.action === 'highlightText') {
     try {
       const found = highlightTextInPage(request.text);
       sendResponse({ success: found });
     } catch (error) {
-      console.error("Errore highlight text:", error);
+      console.error('Errore highlight text:', error);
       sendResponse({ success: false, error: error.message });
     }
     return false;
   }
 
-  if (request.action === "getUrl") {
+  if (request.action === 'getUrl') {
     sendResponse({ url: window.location.href });
     return false;
   }
@@ -57,12 +61,12 @@ function buildParagraphMap() {
   if (!extractedArticle) return;
 
   paragraphMap.clear();
-  const allParagraphs = document.querySelectorAll("p, h1, h2, h3, h4, h5, h6");
+  const allParagraphs = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6');
 
   let validIndex = 0;
   allParagraphs.forEach((el) => {
     const text = el.textContent.trim();
-    if (text.length > 20) {
+    if (text.length > MIN_PARAGRAPH_LENGTH) {
       validIndex++;
       paragraphMap.set(validIndex, el);
     }
@@ -71,14 +75,14 @@ function buildParagraphMap() {
 
 function highlightParagraph(paragraphNumber) {
   // Rimuovi highlight precedenti
-  document.querySelectorAll(".ai-summarizer-highlight").forEach((el) => {
-    el.classList.remove("ai-summarizer-highlight");
+  document.querySelectorAll('.ai-summarizer-highlight').forEach((el) => {
+    el.classList.remove('ai-summarizer-highlight');
   });
 
   // Gestisci range (es: "3-5")
   let paragraphs = [];
-  if (typeof paragraphNumber === "string" && paragraphNumber.includes("-")) {
-    const [start, end] = paragraphNumber.split("-").map((n) => parseInt(n));
+  if (typeof paragraphNumber === 'string' && paragraphNumber.includes('-')) {
+    const [start, end] = paragraphNumber.split('-').map((n) => parseInt(n));
     for (let i = start; i <= end; i++) {
       if (paragraphMap.has(i)) {
         paragraphs.push(paragraphMap.get(i));
@@ -94,23 +98,23 @@ function highlightParagraph(paragraphNumber) {
   if (paragraphs.length === 0) return;
 
   // Scrolla al primo paragrafo
-  paragraphs[0].scrollIntoView({ behavior: "smooth", block: "center" });
+  paragraphs[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
 
   // Aggiungi highlight
   paragraphs.forEach((el) => {
-    el.classList.add("ai-summarizer-highlight");
+    el.classList.add('ai-summarizer-highlight');
   });
 
-  // Rimuovi dopo 3 secondi
+  // Rimuovi dopo HIGHLIGHT_DURATION_MS
   setTimeout(() => {
     paragraphs.forEach((el) => {
-      el.classList.remove("ai-summarizer-highlight");
+      el.classList.remove('ai-summarizer-highlight');
     });
-  }, 3000);
+  }, HIGHLIGHT_DURATION_MS);
 }
 
 // Inietta CSS per highlight
-const style = document.createElement("style");
+const style = document.createElement('style');
 style.textContent = `
   .ai-summarizer-highlight {
     background-color: rgba(255, 255, 0, 0.3) !important;
@@ -124,7 +128,7 @@ document.head.appendChild(style);
 // Evidenzia testo specifico nella pagina (per citazioni)
 function highlightTextInPage(searchText) {
   // Rimuovi highlight precedenti
-  document.querySelectorAll(".citation-highlight").forEach((el) => {
+  document.querySelectorAll('.citation-highlight').forEach((el) => {
     const parent = el.parentNode;
     parent.replaceChild(document.createTextNode(el.textContent), el);
     parent.normalize();
@@ -139,30 +143,26 @@ function highlightTextInPage(searchText) {
     return text
       .toLowerCase()
       .replace(/[""''«»]/g, '"') // Normalizza virgolette
-      .replace(/\s+/g, " ") // Normalizza spazi
+      .replace(/\s+/g, ' ') // Normalizza spazi
       .trim();
   };
 
   const searchNormalized = normalizeText(searchText);
 
   // Cerca il testo nella pagina
-  const walker = document.createTreeWalker(
-    document.body,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode: function (node) {
-        // Ignora script, style, e nodi già evidenziati
-        if (
-          node.parentElement.tagName === "SCRIPT" ||
-          node.parentElement.tagName === "STYLE" ||
-          node.parentElement.classList.contains("citation-highlight")
-        ) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        return NodeFilter.FILTER_ACCEPT;
-      },
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode: function (node) {
+      // Ignora script, style, e nodi già evidenziati
+      if (
+        node.parentElement.tagName === 'SCRIPT' ||
+        node.parentElement.tagName === 'STYLE' ||
+        node.parentElement.classList.contains('citation-highlight')
+      ) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
     },
-  );
+  });
 
   const nodesToHighlight = [];
   let node;
@@ -197,7 +197,7 @@ function highlightTextInPage(searchText) {
     else if (searchText.length > 50) {
       // Estrai le prime 5 parole significative
       const keywords = searchNormalized
-        .split(" ")
+        .split(' ')
         .filter((w) => w.length > 4)
         .slice(0, 5);
 
@@ -232,18 +232,18 @@ function highlightTextInPage(searchText) {
 
       // Per keyword match, evidenzia tutto il nodo
       if (keywordMatch) {
-        const highlight = document.createElement("span");
-        highlight.className = "citation-highlight";
-        highlight.style.backgroundColor = "#ffeb3b";
-        highlight.style.padding = "2px 4px";
-        highlight.style.borderRadius = "3px";
-        highlight.style.fontWeight = "bold";
+        const highlight = document.createElement('span');
+        highlight.className = 'citation-highlight';
+        highlight.style.backgroundColor = '#ffeb3b';
+        highlight.style.padding = '2px 4px';
+        highlight.style.borderRadius = '3px';
+        highlight.style.fontWeight = 'bold';
         highlight.textContent = text;
 
         parent.replaceChild(highlight, node);
 
         if (idx === 0) {
-          highlight.scrollIntoView({ behavior: "smooth", block: "center" });
+          highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
         return;
       }
@@ -262,26 +262,20 @@ function highlightTextInPage(searchText) {
 
         if (originalIndex !== -1) {
           const before = text.substring(0, originalIndex);
-          const matchLength = Math.min(
-            textToHighlight.length,
-            text.length - originalIndex,
-          );
-          const match = text.substring(
-            originalIndex,
-            originalIndex + matchLength,
-          );
+          const matchLength = Math.min(textToHighlight.length, text.length - originalIndex);
+          const match = text.substring(originalIndex, originalIndex + matchLength);
           const after = text.substring(originalIndex + matchLength);
 
           const fragment = document.createDocumentFragment();
 
           if (before) fragment.appendChild(document.createTextNode(before));
 
-          const highlight = document.createElement("span");
-          highlight.className = "citation-highlight";
-          highlight.style.backgroundColor = "#ffeb3b";
-          highlight.style.padding = "2px 4px";
-          highlight.style.borderRadius = "3px";
-          highlight.style.fontWeight = "bold";
+          const highlight = document.createElement('span');
+          highlight.className = 'citation-highlight';
+          highlight.style.backgroundColor = '#ffeb3b';
+          highlight.style.padding = '2px 4px';
+          highlight.style.borderRadius = '3px';
+          highlight.style.fontWeight = 'bold';
           highlight.textContent = match;
           fragment.appendChild(highlight);
 
@@ -290,7 +284,7 @@ function highlightTextInPage(searchText) {
           parent.replaceChild(fragment, node);
 
           if (idx === 0) {
-            highlight.scrollIntoView({ behavior: "smooth", block: "center" });
+            highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }
       }
@@ -299,18 +293,18 @@ function highlightTextInPage(searchText) {
 
   // Se trovato almeno un match, scroll al primo
   if (nodesToHighlight.length > 0) {
-    const firstHighlight = document.querySelector(".citation-highlight");
+    const firstHighlight = document.querySelector('.citation-highlight');
     if (firstHighlight) {
-      firstHighlight.scrollIntoView({ behavior: "smooth", block: "center" });
+      firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-      // Rimuovi highlight dopo 8 secondi
+      // Rimuovi highlight dopo CITATION_HIGHLIGHT_DURATION_MS
       setTimeout(() => {
-        document.querySelectorAll(".citation-highlight").forEach((el) => {
+        document.querySelectorAll('.citation-highlight').forEach((el) => {
           const parent = el.parentNode;
           parent.replaceChild(document.createTextNode(el.textContent), el);
           parent.normalize();
         });
-      }, 8000);
+      }, CITATION_HIGHLIGHT_DURATION_MS);
     }
 
     return true;

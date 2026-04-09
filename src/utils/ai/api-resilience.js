@@ -1,6 +1,9 @@
 // API Resilience Manager - Retry Logic, Fallback Providers, Rate Limiting
 import { APIClient } from './api-client.js';
 
+const MAX_API_LOGS = 100;
+const MAX_FALLBACK_LOGS = 50;
+
 export class APIResilience {
   constructor() {
     this.requestQueue = [];
@@ -339,9 +342,9 @@ export class APIResilience {
       const result = await chrome.storage.local.get(['apiLogs']);
       const logs = result.apiLogs || [];
 
-      // Mantieni solo gli ultimi 100 log
+      // Mantieni solo gli ultimi MAX_API_LOGS log
       logs.push(logEntry);
-      if (logs.length > 100) {
+      if (logs.length > MAX_API_LOGS) {
         logs.shift();
       }
 
@@ -360,7 +363,7 @@ export class APIResilience {
       const logs = result.fallbackLogs || [];
 
       logs.push(logEntry);
-      if (logs.length > 50) {
+      if (logs.length > MAX_FALLBACK_LOGS) {
         logs.shift();
       }
 

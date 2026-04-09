@@ -1,5 +1,5 @@
-// Popup Analysis Module - Estratto da popup.js
-// Gestisce: analyzeArticle, generateSummary, displayResults, switchTab, copyToClipboard
+// Popup Analysis Module - Extracted from popup.js
+// Handles: analyzeArticle, generateSummary, displayResults, switchTab, copyToClipboard
 
 import { state, elements, showState, showError } from './state.js';
 import { translationState, citationsState } from './features.js';
@@ -17,18 +17,18 @@ export async function analyzeArticle() {
   elements.loadingText.textContent = I18n.t('loading.extract');
 
   try {
-    // Ottieni tab corrente
+    // Get current tab
     const [tab] = await chrome.tabs.query({
       active: true,
       currentWindow: true,
     });
 
-    // Verifica che non sia una pagina chrome://
+    // Verify it is not a chrome:// page
     if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
       throw new Error('Impossibile analizzare pagine interne di Chrome');
     }
 
-    // Estrai articolo
+    // Extract article
     let response;
     try {
       response = await chrome.tabs.sendMessage(tab.id, {
@@ -51,28 +51,28 @@ export async function analyzeArticle() {
     state.currentArticle = response.article;
     state.currentArticle.url = tab.url;
 
-    // Mostra info articolo
+    // Display article info
     elements.articleTitle.textContent = state.currentArticle.title;
     elements.articleStats.textContent = `${state.currentArticle.wordCount} ${I18n.t('article.words')} • ${state.currentArticle.readingTimeMinutes} ${I18n.t('article.readingTime')}`;
 
-    // 🔍 Controlla se l'articolo è già stato analizzato in precedenza
+    // Check if the article has already been analyzed before
     const history = await HistoryManager.getHistory();
     const previousAnalysis = history.find(
       (entry) => entry.article.url === state.currentArticle.url,
     );
 
     if (previousAnalysis && previousAnalysis.metadata && previousAnalysis.metadata.contentType) {
-      // Se l'articolo è già stato analizzato e ha un contentType salvato
+      // Article already analyzed with a saved contentType
       const savedContentType = previousAnalysis.metadata.contentType;
 
-      // Imposta il tipo di articolo salvato nei select
+      // Set the saved article type in selects
       state.selectedContentType = savedContentType;
       elements.contentTypeSelect.value = savedContentType;
       elements.contentTypeSelectReady.value = savedContentType;
 
       console.log('📋 Tipo di articolo recuperato dalla cronologia:', savedContentType);
 
-      // Mostra un feedback visivo temporaneo
+      // Show temporary visual feedback
       elements.loadingText.textContent = `${I18n.t('loading.articleType')} ${ContentClassifier.getCategoryLabel(savedContentType)} (${I18n.t('loading.fromHistory')})`;
       await new Promise((resolve) => setTimeout(resolve, 800));
     }
@@ -98,16 +98,16 @@ export async function generateSummary() {
     const settings = await StorageManager.getSettings();
     const provider = elements.providerSelect.value;
 
-    // Aggiungi la lingua selezionata alle impostazioni
+    // Add selected language to settings
     settings.outputLanguage = state.selectedLanguage;
 
-    // Aggiungi la lunghezza del riassunto selezionata
+    // Add selected summary length
     const summaryLengthSelect = document.getElementById('summaryLengthSelect');
     if (summaryLengthSelect) {
       settings.summaryLength = summaryLengthSelect.value;
     }
 
-    // STEP 1: Classificazione del tipo di contenuto
+    // STEP 1: Content type classification
     state.progressTracker.setStep('classify');
     let finalContentType = state.selectedContentType;
 
@@ -148,7 +148,7 @@ export async function generateSummary() {
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
-    // STEP 2: Generazione riassunto
+    // STEP 2: Summary generation
     state.progressTracker.setStep('generate');
     settings.contentType = finalContentType;
 
@@ -165,11 +165,11 @@ export async function generateSummary() {
 
     state.currentResults = response.result;
 
-    // STEP 3: Punti chiave (già inclusi, ma mostriamo lo step)
+    // STEP 3: Key points (already included, but show the step)
     state.progressTracker.setStep('keypoints');
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    // STEP 4: Salvataggio
+    // STEP 4: Save
     state.progressTracker.setStep('save');
 
     if (state.selectedContentType === 'auto') {
@@ -195,14 +195,14 @@ export async function generateSummary() {
 }
 
 export async function displayResults() {
-  // Mostra riassunto (contenuto AI sanitizzato)
+  // Display summary (sanitized AI content)
   let summaryHtml = `<p>${HtmlSanitizer.escape(state.currentResults.summary)}</p>`;
   if (state.currentResults.fromCache) {
     summaryHtml = `<span class="cache-badge">Da cache</span>` + summaryHtml;
   }
   elements.summaryContent.innerHTML = summaryHtml;
 
-  // Mostra punti chiave
+  // Display key points
   let keypointsHtml = '';
   state.currentResults.keyPoints.forEach((point, index) => {
     keypointsHtml += `
@@ -217,7 +217,7 @@ export async function displayResults() {
   });
   elements.keypointsContent.innerHTML = keypointsHtml;
 
-  // Aggiungi click handler per highlight
+  // Add click handler for highlight
   document.querySelectorAll('.keypoint').forEach((el) => {
     el.addEventListener('click', async () => {
       try {
@@ -236,7 +236,7 @@ export async function displayResults() {
     });
   });
 
-  // Salva nella cronologia
+  // Save to history
   try {
     const metadata = {
       provider: elements.providerSelect.value,
@@ -258,14 +258,14 @@ export async function displayResults() {
 
   showState('results');
 
-  // Aggiungi pulsanti TTS dopo aver mostrato i risultati
+  // Add TTS buttons after displaying results
   setTimeout(() => {
     addTTSButtons();
   }, 100);
 }
 
 export function switchTab(tabName) {
-  // Aggiorna tab attivi
+  // Update active tabs
   document.querySelectorAll('.tab').forEach((tab) => {
     tab.classList.remove('active');
     if (tab.dataset.tab === tabName) {

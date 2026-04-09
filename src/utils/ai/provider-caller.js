@@ -1,6 +1,8 @@
 // Provider Caller - Comunicazione con i provider LLM (Groq, OpenAI, Anthropic, Gemini)
+const FETCH_TIMEOUT_MS = 60000;
+
 export class ProviderCaller {
-  static async _fetchWithTimeout(url, options, timeoutMs = 60000) {
+  static async _fetchWithTimeout(url, options, timeoutMs = FETCH_TIMEOUT_MS) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -13,7 +15,9 @@ export class ProviderCaller {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
-        throw new Error('Timeout: il provider non ha risposto entro 60 secondi. Riprova.');
+        throw new Error(
+          `Timeout: il provider non ha risposto entro ${FETCH_TIMEOUT_MS / 1000} secondi. Riprova.`,
+        );
       }
       throw error;
     }

@@ -1,4 +1,8 @@
 // History Manager - Gestione cronologia riassunti
+const MAX_HISTORY_ENTRIES = 50;
+const MAX_MULTI_ANALYSIS_ENTRIES = 30;
+const MAX_PDF_ENTRIES = 30;
+
 export class HistoryManager {
   static async _safeStorageSet(data) {
     try {
@@ -44,9 +48,9 @@ export class HistoryManager {
     // Aggiungi all'inizio
     history.unshift(entry);
 
-    // Mantieni solo gli ultimi 50
-    if (history.length > 50) {
-      history = history.slice(0, 50);
+    // Mantieni solo gli ultimi MAX_HISTORY_ENTRIES
+    if (history.length > MAX_HISTORY_ENTRIES) {
+      history = history.slice(0, MAX_HISTORY_ENTRIES);
     }
 
     await this._safeStorageSet({ summaryHistory: history });
@@ -283,9 +287,9 @@ export class HistoryManager {
     // Aggiungi all'inizio
     history.unshift(entry);
 
-    // Mantieni solo le ultime 30 analisi multi-articolo
-    if (history.length > 30) {
-      history = history.slice(0, 30);
+    // Mantieni solo le ultime MAX_MULTI_ANALYSIS_ENTRIES analisi multi-articolo
+    if (history.length > MAX_MULTI_ANALYSIS_ENTRIES) {
+      history = history.slice(0, MAX_MULTI_ANALYSIS_ENTRIES);
     }
 
     await this._safeStorageSet({ multiAnalysisHistory: history });
@@ -398,9 +402,9 @@ export class HistoryManager {
     // Aggiungi all'inizio
     history.unshift(entry);
 
-    // Mantieni solo gli ultimi 30 PDF
-    if (history.length > 30) {
-      history = history.slice(0, 30);
+    // Mantieni solo gli ultimi MAX_PDF_ENTRIES PDF
+    if (history.length > MAX_PDF_ENTRIES) {
+      history = history.slice(0, MAX_PDF_ENTRIES);
     }
 
     await this._safeStorageSet({ pdfHistory: history });

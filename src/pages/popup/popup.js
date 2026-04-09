@@ -14,18 +14,18 @@ import { ProgressTracker } from '../../utils/core/progress-tracker.js';
 import { eventCleanup } from '../../utils/core/event-cleanup.js';
 import { ErrorHandler } from '../../utils/core/error-handler.js';
 
-// Inizializzazione
+// Initialization
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     console.log('Popup inizializzato');
 
-    // Inizializza elementi DOM
+    // Initialize DOM elements
     initElements();
 
-    // Inizializza i18n
+    // Initialize i18n
     await I18n.init();
 
-    // Inizializza Progress Tracker
+    // Initialize Progress Tracker
     state.progressTracker = new ProgressTracker(
       elements.loadingState,
       elements.loadingText,
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('progressPercent'),
     );
 
-    // Definisci gli step del processo
+    // Define process steps
     state.progressTracker.defineSteps([
       { name: 'extract', label: '📄 Estrazione articolo', weight: 10 },
       { name: 'classify', label: '🔍 Classificazione tipo', weight: 15 },
@@ -42,24 +42,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       { name: 'save', label: '💾 Salvataggio', weight: 5 },
     ]);
 
-    // Carica impostazioni
+    // Load settings
     const settings = await StorageManager.getSettings();
     elements.providerSelect.value = settings.selectedProvider;
 
-    // Inizializza icona tema in base alle impostazioni salvate
+    // Initialize theme icon based on saved settings
     if (settings.darkMode) {
       elements.themeToggleBtn.textContent = '☀️';
       elements.themeToggleBtn.title = 'Tema Chiaro';
     }
 
-    // Carica lingua UI salvata
+    // Load saved UI language
     const savedUILanguage = await StorageManager.getUILanguage();
     const uiLanguageSelect = document.getElementById('uiLanguageSelect');
     if (savedUILanguage && uiLanguageSelect) {
       uiLanguageSelect.value = savedUILanguage;
     }
 
-    // Carica lingua output salvata
+    // Load saved output language
     const savedLanguage = await StorageManager.getSelectedLanguage();
     if (savedLanguage) {
       state.selectedLanguage = savedLanguage;
@@ -67,12 +67,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       elements.languageSelectReady.value = savedLanguage;
     }
 
-    // Imposta sempre "auto" come default all'apertura
+    // Always set "auto" as default on open
     state.selectedContentType = 'auto';
     elements.contentTypeSelect.value = 'auto';
     elements.contentTypeSelectReady.value = 'auto';
 
-    //Event listener per cambio lingua UI (con cleanup)
+    // Event listener for UI language change (with cleanup)
     if (uiLanguageSelect) {
       const handleUILanguageChange = async (e) => {
         await I18n.setLanguage(e.target.value);
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       eventCleanup.addEventListener(uiLanguageSelect, 'change', handleUILanguageChange);
     }
 
-    //Event listeners con cleanup automatico
+    // Event listeners with automatic cleanup
     eventCleanup.addEventListener(elements.analyzeBtn, 'click', analyzeArticle);
     eventCleanup.addEventListener(elements.generateBtn, 'click', generateSummary);
     eventCleanup.addEventListener(elements.retryBtn, 'click', analyzeArticle);
@@ -109,10 +109,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     eventCleanup.addEventListener(elements.translateBtn, 'click', translateArticle);
     eventCleanup.addEventListener(elements.extractCitationsBtn, 'click', extractCitations);
 
-    // Inizializza Voice Controller
+    // Initialize Voice Controller
     await initVoiceController();
 
-    // Event listener per domanda vocale
+    // Event listener for voice question
     const voiceQuestionBtn = document.getElementById('voiceQuestionBtn');
     if (voiceQuestionBtn) {
       eventCleanup.addEventListener(voiceQuestionBtn, 'click', handleVoiceQuestion);
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       eventCleanup.addEventListener(tab, 'click', handleTabClick);
     });
 
-    // Salva provider selezionato
+    // Save selected provider
     const handleProviderChange = async () => {
       const settings = await StorageManager.getSettings();
       settings.selectedProvider = elements.providerSelect.value;
@@ -132,19 +132,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     eventCleanup.addEventListener(elements.providerSelect, 'change', handleProviderChange);
 
-    // Salva lingua selezionata (pagina iniziale)
+    // Save selected language (initial page)
     const handleLanguageChange = async () => {
       state.selectedLanguage = elements.languageSelect.value;
-      elements.languageSelectReady.value = state.selectedLanguage; // Sincronizza
+      elements.languageSelectReady.value = state.selectedLanguage; // Sync
       await StorageManager.saveSelectedLanguage(state.selectedLanguage);
       console.log('Lingua selezionata:', state.selectedLanguage);
     };
     eventCleanup.addEventListener(elements.languageSelect, 'change', handleLanguageChange);
 
-    // Salva lingua selezionata (pagina ready)
+    // Save selected language (ready page)
     const handleLanguageReadyChange = async () => {
       state.selectedLanguage = elements.languageSelectReady.value;
-      elements.languageSelect.value = state.selectedLanguage; // Sincronizza
+      elements.languageSelect.value = state.selectedLanguage; // Sync
       await StorageManager.saveSelectedLanguage(state.selectedLanguage);
       console.log('Lingua selezionata:', state.selectedLanguage);
     };
@@ -154,18 +154,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       handleLanguageReadyChange,
     );
 
-    // Gestisci cambio tipo di contenuto (pagina iniziale)
+    // Handle content type change (initial page)
     const handleContentTypeChange = () => {
       state.selectedContentType = elements.contentTypeSelect.value;
-      elements.contentTypeSelectReady.value = state.selectedContentType; // Sincronizza
+      elements.contentTypeSelectReady.value = state.selectedContentType; // Sync
       console.log('Tipo di contenuto selezionato:', state.selectedContentType);
     };
     eventCleanup.addEventListener(elements.contentTypeSelect, 'change', handleContentTypeChange);
 
-    // Gestisci cambio tipo di contenuto (pagina ready)
+    // Handle content type change (ready page)
     const handleContentTypeReadyChange = () => {
       state.selectedContentType = elements.contentTypeSelectReady.value;
-      elements.contentTypeSelect.value = state.selectedContentType; // Sincronizza
+      elements.contentTypeSelect.value = state.selectedContentType; // Sync
       console.log('Tipo di contenuto selezionato:', state.selectedContentType);
     };
     eventCleanup.addEventListener(
@@ -176,14 +176,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     console.log('Event listeners configurati con cleanup automatico');
 
-    //Log statistiche listener
+    // Log listener statistics
     const stats = eventCleanup.getStats();
     console.log(
       `📊 Listener registrati: ${stats.totalListeners} su ${stats.totalElements} elementi`,
     );
   } catch (error) {
     console.error('Errore inizializzazione popup:', error);
-    //Usa ErrorHandler per mostrare errore all'utente
+    // Use ErrorHandler to display error to the user
     await ErrorHandler.showError(error, 'Inizializzazione popup');
   }
 });
@@ -191,9 +191,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function reset() {
   state.currentArticle = null;
   state.currentResults = null;
-  state.currentQA = []; // Pulisci anche le Q&A
+  state.currentQA = []; // Clear Q&A as well
 
-  // Reset tipo di articolo a 'auto'
+  // Reset content type to 'auto'
   state.selectedContentType = 'auto';
   elements.contentTypeSelect.value = 'auto';
   elements.contentTypeSelectReady.value = 'auto';
@@ -206,11 +206,11 @@ async function toggleTheme() {
   const settings = await StorageManager.getSettings();
   const newDarkMode = !settings.darkMode;
 
-  // Aggiorna impostazioni
+  // Update settings
   settings.darkMode = newDarkMode;
   await StorageManager.saveSettings(settings);
 
-  // Applica tema
+  // Apply theme
   if (newDarkMode) {
     document.body.classList.add('dark-mode');
     elements.themeToggleBtn.textContent = '☀️';
