@@ -14,17 +14,23 @@ export function parseLLMJson(text) {
   let jsonText = text.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '');
 
   // Extract outermost JSON object or array
+  const firstBrace = jsonText.indexOf('{');
+  const firstBracket = jsonText.indexOf('[');
   const firstOpen = Math.min(
-    jsonText.indexOf('{') === -1 ? Infinity : jsonText.indexOf('{'),
-    jsonText.indexOf('[') === -1 ? Infinity : jsonText.indexOf('['),
+    firstBrace === -1 ? Infinity : firstBrace,
+    firstBracket === -1 ? Infinity : firstBracket,
   );
-  const lastClose = Math.max(jsonText.lastIndexOf('}'), jsonText.lastIndexOf(']'));
 
-  if (!isFinite(firstOpen) || lastClose === -1) {
+  if (!isFinite(firstOpen)) {
     throw new Error('No valid JSON found in LLM response');
   }
 
-  jsonText = jsonText.substring(firstOpen, lastClose + 1);
+  const lastClose = Math.max(jsonText.lastIndexOf('}'), jsonText.lastIndexOf(']'));
+  // If no closer found, take everything from first opener (repair will add closers)
+  jsonText =
+    lastClose > firstOpen
+      ? jsonText.substring(firstOpen, lastClose + 1)
+      : jsonText.substring(firstOpen);
 
   try {
     return JSON.parse(jsonText);
@@ -32,15 +38,30 @@ export function parseLLMJson(text) {
     Logger.warn('Malformed JSON from LLM, attempting repair...');
   }
 
-  // Repair: balance braces and brackets
+  // Repair: balance braces and brackets in correct nesting order
   let repaired = jsonText;
-  const openBraces = (repaired.match(/\{/g) || []).length;
-  const closeBraces = (repaired.match(/\}/g) || []).length;
-  if (openBraces > closeBraces) repaired += '}'.repeat(openBraces - closeBraces);
-
-  const openBrackets = (repaired.match(/\[/g) || []).length;
-  const closeBrackets = (repaired.match(/\]/g) || []).length;
-  if (openBrackets > closeBrackets) repaired += ']'.repeat(openBrackets - closeBrackets);
+  const stack = [];
+  let inString = false;
+  let escape = false;
+  for (const ch of repaired) {
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (ch === '\\') {
+      escape = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === '{') stack.push('}');
+    else if (ch === '[') stack.push(']');
+    else if (ch === '}' || ch === ']') stack.pop();
+  }
+  repaired += stack.reverse().join('');
 
   // Remove trailing commas before } or ]
   repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
