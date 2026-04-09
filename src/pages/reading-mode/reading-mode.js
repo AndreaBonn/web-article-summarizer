@@ -91,7 +91,7 @@ async function loadData() {
       // Load from history using chrome.storage (use summaryHistory)
       const result = await chrome.storage.local.get(['summaryHistory']);
       const history = result.summaryHistory || [];
-      state.currentData = history.find((item) => item.id === parseInt(historyId));
+      state.currentData = history.find((item) => String(item.id) === String(historyId));
 
       if (!state.currentData) {
         throw new Error('Riassunto non trovato nella cronologia');

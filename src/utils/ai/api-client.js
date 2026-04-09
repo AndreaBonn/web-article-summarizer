@@ -6,6 +6,14 @@ import { PromptBuilder } from './prompt-builder.js';
 import { ProviderCaller } from './provider-caller.js';
 import { ResponseParser } from './response-parser.js';
 
+// Default models per provider — single source of truth
+export const DEFAULT_MODELS = {
+  groq: 'llama-3.3-70b-versatile',
+  openai: 'gpt-4o',
+  anthropic: 'claude-3-5-sonnet-20241022',
+  gemini: 'gemini-2.5-pro',
+};
+
 export class APIClient {
   // --- Deleghe a ContentDetector ---
 
@@ -110,28 +118,28 @@ export class APIClient {
         return await this.callGroqCompletion(apiKey, systemPrompt, userPrompt, {
           temperature,
           maxTokens,
-          model: model || 'llama-3.3-70b-versatile',
+          model: model || DEFAULT_MODELS.groq,
           responseFormat,
         });
       case 'openai':
         return await this.callOpenAICompletion(apiKey, systemPrompt, userPrompt, {
           temperature,
           maxTokens,
-          model: model || 'gpt-4o',
+          model: model || DEFAULT_MODELS.openai,
           responseFormat,
         });
       case 'anthropic':
         return await this.callAnthropicCompletion(apiKey, systemPrompt, userPrompt, {
           temperature,
           maxTokens,
-          model: model || 'claude-3-5-sonnet-20241022',
+          model: model || DEFAULT_MODELS.anthropic,
           responseFormat,
         });
       case 'gemini':
         return await this.callGeminiCompletion(apiKey, systemPrompt, userPrompt, {
           temperature,
           maxTokens,
-          model: model || 'gemini-2.5-pro',
+          model: model || DEFAULT_MODELS.gemini,
           responseFormat,
         });
       default:

@@ -105,7 +105,7 @@ function displayArticles(articles) {
 }
 
 function handleSelection(e) {
-  const id = parseInt(e.target.dataset.id);
+  const id = e.target.dataset.id;
   const item = document.querySelector(`.article-item[data-id="${id}"]`);
 
   if (e.target.checked) {
@@ -136,7 +136,7 @@ function selectAll() {
   );
   visibleCheckboxes.forEach((checkbox) => {
     checkbox.checked = true;
-    const id = parseInt(checkbox.dataset.id);
+    const id = checkbox.dataset.id;
     if (!state.selectedArticles.includes(id)) {
       state.selectedArticles.push(id);
       document.querySelector(`.article-item[data-id="${id}"]`).classList.add('selected');

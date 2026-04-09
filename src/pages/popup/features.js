@@ -8,6 +8,7 @@ import { I18n } from '../../utils/i18n/i18n.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { InputSanitizer } from '../../utils/security/input-sanitizer.js';
 import { AdvancedAnalysis } from '../../utils/ai/advanced-analysis.js';
+import { ContentDetector } from '../../utils/ai/content-detector.js';
 import { Translator } from '../../utils/core/translator.js';
 import { Modal } from '../../utils/core/modal.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
@@ -128,31 +129,6 @@ export async function askQuestion() {
   }
 }
 
-function detectArticleLanguage(text) {
-  const sample = text.toLowerCase().slice(0, 1000);
-
-  const patterns = {
-    it: ['che', 'della', 'degli', 'delle', 'questo', 'questa', 'sono', 'essere', 'nell', 'alla'],
-    en: ['the', 'and', 'that', 'this', 'with', 'from', 'have', 'been', 'which', 'their'],
-    es: ['que', 'del', 'los', 'las', 'esta', 'este', 'para', 'con', 'una', 'por'],
-    fr: ['que', 'les', 'des', 'cette', 'dans', 'pour', 'avec', 'sont', 'qui', 'pas'],
-    de: ['der', 'die', 'das', 'und', 'ist', 'des', 'dem', 'den', 'nicht', 'sich'],
-  };
-
-  let maxScore = 0;
-  let detectedLang = 'en';
-
-  for (const [lang, words] of Object.entries(patterns)) {
-    const score = words.filter((word) => sample.includes(` ${word} `)).length;
-    if (score > maxScore) {
-      maxScore = score;
-      detectedLang = lang;
-    }
-  }
-
-  return detectedLang;
-}
-
 export async function translateArticle() {
   if (!state.currentArticle) {
     showError('Nessun articolo da tradurre');
@@ -177,7 +153,7 @@ export async function translateArticle() {
     const targetLanguage = state.selectedLanguage;
 
     // Rileva lingua originale (semplice detection)
-    const originalLanguage = detectArticleLanguage(state.currentArticle.content);
+    const originalLanguage = ContentDetector.detectLanguage(state.currentArticle.content);
 
     // Controlla cache prima
     const cached = await StorageManager.getCachedTranslation(

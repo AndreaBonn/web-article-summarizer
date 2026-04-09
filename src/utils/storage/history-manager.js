@@ -24,7 +24,7 @@ export class HistoryManager {
     let history = result.summaryHistory || [];
 
     const entry = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       timestamp: Date.now(),
       article: {
         title: article.title,
@@ -263,7 +263,7 @@ export class HistoryManager {
     Logger.debug('Cronologia esistente:', history.length, 'items');
 
     const entry = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       timestamp: Date.now(),
       articles: articles.map((a) => ({
         id: a.id,
@@ -374,7 +374,7 @@ export class HistoryManager {
     let history = result.pdfHistory || [];
 
     const entry = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       timestamp: Date.now(),
       pdf: {
         name: pdfInfo.name,

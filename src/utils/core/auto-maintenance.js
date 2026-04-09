@@ -221,15 +221,3 @@ export class AutoMaintenance {
     return await this.runMaintenance();
   }
 }
-
-// Inizializza al caricamento (se in background script)
-if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
-  const autoMaintenance = new AutoMaintenance();
-
-  // Inizializza dopo 1 minuto dal caricamento
-  setTimeout(() => {
-    autoMaintenance.initialize().catch((error) => {
-      Logger.error('Errore inizializzazione auto-maintenance:', error);
-    });
-  }, 60000); // 1 minuto
-}

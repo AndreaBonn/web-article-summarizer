@@ -69,7 +69,7 @@ export class CompressionManager {
   /**
    * Salva dati compressi in storage
    */
-  async saveCompressed(key, data, useIndexedDB = this.useIndexedDB) {
+  async saveCompressed(key, data, useIndexedDB = false) {
     const compressed = this.compress(data);
 
     const entry = {

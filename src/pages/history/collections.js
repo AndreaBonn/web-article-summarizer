@@ -27,7 +27,7 @@ export async function loadPDFHistory() {
 
   // Aggiungi event listeners
   document.querySelectorAll('.pdf-card').forEach((card) => {
-    const id = parseInt(card.dataset.id);
+    const id = card.dataset.id;
 
     card.addEventListener('click', (e) => {
       if (e.target.closest('.history-btn') || e.target.closest('.btn-favorite')) return;
@@ -188,7 +188,7 @@ export async function loadMultiAnalysisHistory() {
 
   // Aggiungi event listeners
   document.querySelectorAll('.multi-analysis-card').forEach((card) => {
-    const id = parseInt(card.dataset.id);
+    const id = card.dataset.id;
 
     card.addEventListener('click', (e) => {
       // Non aprire se si clicca sulla stella o sul pulsante elimina
