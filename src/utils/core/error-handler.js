@@ -46,8 +46,14 @@ export class ErrorHandler {
     if (message.includes('401') || message.includes('Unauthorized')) {
       return 'API key non valida. Verifica la configurazione nelle impostazioni.';
     }
-    if (message.includes('Rate limit raggiunto')) {
-      return message;
+    const rateLimitMatch = message.match(/\[RATE_LIMIT:(\w+)]/);
+    if (rateLimitMatch) {
+      const provider = rateLimitMatch[1];
+      return (
+        `Rate limit raggiunto per ${provider}. ` +
+        'Non è un problema del sistema: la tua chiave API ha esaurito le richieste disponibili. ' +
+        'Puoi cambiare chiave API o passare a un altro provider nelle impostazioni (⚙️).'
+      );
     }
     if (message.includes('429') || message.includes('Too Many Requests')) {
       return (

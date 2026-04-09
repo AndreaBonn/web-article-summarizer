@@ -103,7 +103,7 @@ export const I18n = {
       'error.noApiKey': "API key non configurata. Clicca sull'icona ⚙️ per configurare.",
       'error.invalidKey': 'API key non valida. Verifica la configurazione nelle impostazioni.',
       'error.tooManyRequests':
-        'Rate limit raggiunto. La tua chiave API ha esaurito le richieste. Cambia chiave o provider nelle impostazioni (⚙️).',
+        'Rate limit raggiunto per {provider}. Non è un problema del sistema: la tua chiave API ha esaurito le richieste. Cambia chiave o provider nelle impostazioni (⚙️).',
       'error.network': 'Errore di connessione. Verifica la tua connessione internet.',
 
       // ========== NUOVE CHIAVI - MODAL SYSTEM ==========
@@ -459,7 +459,7 @@ export const I18n = {
       'error.noApiKey': 'API key not configured. Click the ⚙️ icon to configure.',
       'error.invalidKey': 'Invalid API key. Check your settings.',
       'error.tooManyRequests':
-        'Rate limit reached. Your API key has exhausted available requests. Change API key or switch provider in settings (⚙️).',
+        'Rate limit reached for {provider}. This is not a system issue: your API key has exhausted available requests. Change API key or switch provider in settings (⚙️).',
       'error.network': 'Connection error. Check your internet connection.',
 
       // NEW KEYS - Modal System
