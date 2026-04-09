@@ -82,7 +82,7 @@ async function loadData() {
         state.currentData.isPDF = true;
         // Clean up after loading
         await chrome.storage.local.remove(['pdfReadingMode']);
-        Logger.info('📄 Dati PDF caricati:', state.currentData);
+        Logger.info('Dati PDF caricati:', state.currentData);
         return;
       }
     }
@@ -97,7 +97,7 @@ async function loadData() {
         throw new Error('Riassunto non trovato nella cronologia');
       }
 
-      Logger.info('📖 Dati caricati dalla cronologia:', state.currentData);
+      Logger.info('Dati caricati dalla cronologia:', state.currentData);
     } else if (typeof chrome !== 'undefined' && chrome.storage) {
       // Try to load from chrome.storage (passed from popup)
       const result = await chrome.storage.local.get(['readingModeData']);
@@ -257,28 +257,28 @@ function startResize(e) {
 // Theme management
 function loadTheme() {
   const savedTheme = localStorage.getItem('theme') || 'light';
-  document.documentElement.setAttribute('data-theme', savedTheme);
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+  }
   updateThemeIcon(savedTheme);
 }
 
 function toggleTheme() {
-  const currentTheme = document.documentElement.getAttribute('data-theme');
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-  document.documentElement.setAttribute('data-theme', newTheme);
+  const isDark = document.body.classList.toggle('dark-mode');
+  const newTheme = isDark ? 'dark' : 'light';
   localStorage.setItem('theme', newTheme);
   updateThemeIcon(newTheme);
 }
 
 function updateThemeIcon(theme) {
-  elements.themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  elements.themeToggleBtn.textContent = theme === 'dark' ? '◐' : '◑';
 }
 
 function showNoDataMessage() {
   elements.articleContent.innerHTML = `
     <div class="loading-state">
       <div class="no-data-inner">
-        <div class="no-data-emoji">📖</div>
+        <div class="no-data-emoji">—</div>
         <h2 class="no-data-title">Modalità Lettura</h2>
         <p class="no-data-subtitle">
           Per usare questa funzionalità:

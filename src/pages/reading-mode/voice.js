@@ -32,7 +32,7 @@ export function setupVoiceEventListeners() {
   window.addEventListener('stt:started', () => {
     if (elements.qaVoiceBtn) {
       elements.qaVoiceBtn.classList.add('listening');
-      elements.qaVoiceBtn.textContent = '🎙️';
+      elements.qaVoiceBtn.textContent = 'Voce';
       elements.qaVoiceBtn.title = 'Ascolto in corso...';
     }
   });
@@ -53,7 +53,7 @@ export function setupVoiceEventListeners() {
     }
     if (elements.qaVoiceBtn) {
       elements.qaVoiceBtn.classList.remove('listening');
-      elements.qaVoiceBtn.textContent = '🎤';
+      elements.qaVoiceBtn.textContent = 'Voce';
       elements.qaVoiceBtn.title = 'Domanda vocale';
     }
   });
@@ -61,7 +61,7 @@ export function setupVoiceEventListeners() {
   window.addEventListener('stt:ended', () => {
     if (elements.qaVoiceBtn) {
       elements.qaVoiceBtn.classList.remove('listening');
-      elements.qaVoiceBtn.textContent = '🎤';
+      elements.qaVoiceBtn.textContent = 'Voce';
       elements.qaVoiceBtn.title = 'Domanda vocale';
     }
   });
@@ -70,7 +70,7 @@ export function setupVoiceEventListeners() {
     Logger.error('STT Error:', event.detail);
     if (elements.qaVoiceBtn) {
       elements.qaVoiceBtn.classList.remove('listening');
-      elements.qaVoiceBtn.textContent = '🎤';
+      elements.qaVoiceBtn.textContent = 'Voce';
       elements.qaVoiceBtn.title = 'Domanda vocale';
     }
     alert(event.detail.message || 'Errore nel riconoscimento vocale');

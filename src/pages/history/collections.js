@@ -15,7 +15,7 @@ export async function loadPDFHistory() {
   if (history.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
-        <div class="icon">📭</div>
+        <div class="icon">—</div>
         <p>Nessun PDF analizzato</p>
         <small>I tuoi PDF analizzati appariranno qui</small>
       </div>
@@ -66,29 +66,29 @@ function createPDFCard(entry) {
   const hasNotes = !!entry.notes;
 
   const badges = [];
-  if (hasTranslation) badges.push('<span class="badge">🌍 Tradotto</span>');
-  if (hasQA) badges.push(`<span class="badge">💬 ${entry.qa.length} Q&A</span>`);
+  if (hasTranslation) badges.push('<span class="badge">Tradotto</span>');
+  if (hasQA) badges.push(`<span class="badge">${entry.qa.length} Q&A</span>`);
   if (hasCitations)
-    badges.push(`<span class="badge">📚 ${entry.citations.citations.length} Citazioni</span>`);
-  if (hasNotes) badges.push('<span class="badge">📝 Note</span>');
-  if (entry.metadata.fromCache) badges.push('<span class="badge cache-badge">⚡ Cache</span>');
+    badges.push(`<span class="badge">${entry.citations.citations.length} Citazioni</span>`);
+  if (hasNotes) badges.push('<span class="badge">Note</span>');
+  if (entry.metadata.fromCache) badges.push('<span class="badge cache-badge">Cache</span>');
 
   return `
     <div class="history-card pdf-card" data-id="${entry.id}">
       <div class="card-header">
         <div class="card-title-row">
-          <h3 class="card-title">📄 ${HtmlSanitizer.escape(entry.pdf.name)}</h3>
+          <h3 class="card-title">${HtmlSanitizer.escape(entry.pdf.name)}</h3>
           <button class="btn-favorite ${isFavorite ? 'active' : ''}"
                   title="${isFavorite ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}">
             ${isFavorite ? '⭐' : '☆'}
           </button>
         </div>
         <div class="card-meta">
-          <span class="meta-item">📅 ${HtmlSanitizer.escape(date)}</span>
-          <span class="meta-item">📊 ${HtmlSanitizer.escape(fileSize)}</span>
-          <span class="meta-item">📄 ${HtmlSanitizer.escape(String(entry.pdf.pages))} pagine</span>
-          <span class="meta-item">🤖 ${HtmlSanitizer.escape(entry.metadata.provider)}</span>
-          <span class="meta-item">🌍 ${HtmlSanitizer.escape(entry.metadata.language)}</span>
+          <span class="meta-item">${HtmlSanitizer.escape(date)}</span>
+          <span class="meta-item">${HtmlSanitizer.escape(fileSize)}</span>
+          <span class="meta-item">${HtmlSanitizer.escape(String(entry.pdf.pages))} pagine</span>
+          <span class="meta-item">${HtmlSanitizer.escape(entry.metadata.provider)}</span>
+          <span class="meta-item">${HtmlSanitizer.escape(entry.metadata.language)}</span>
         </div>
       </div>
 
@@ -100,7 +100,7 @@ function createPDFCard(entry) {
         ${badges.length > 0 ? `<div class="badges">${badges.join('')}</div>` : ''}
 
         <div class="keypoints-preview">
-          <strong>🔑 Punti Chiave:</strong>
+          <strong>Punti Chiave:</strong>
           <ul>
             ${entry.keyPoints
               .slice(0, 3)
@@ -113,7 +113,7 @@ function createPDFCard(entry) {
 
       <div class="card-actions">
         <button class="history-btn btn-delete btn-delete-full" title="Elimina">
-          🗑️ Elimina
+          Elimina
         </button>
       </div>
     </div>
@@ -158,7 +158,7 @@ async function deletePDF(id) {
   const confirmed = await Modal.confirm(
     'Sei sicuro di voler eliminare questo PDF dalla cronologia?\n\nQuesta azione non può essere annullata.',
     'Elimina PDF',
-    '🗑️',
+    '×',
   );
 
   if (!confirmed) return;
@@ -176,7 +176,7 @@ export async function loadMultiAnalysisHistory() {
   if (history.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
-        <div class="icon">📭</div>
+        <div class="icon">—</div>
         <p>Nessuna analisi Multi Articolo</p>
         <small>Le tue analisi Multi Articolo appariranno qui</small>
       </div>
@@ -232,7 +232,7 @@ function createMultiAnalysisCard(entry) {
       <div class="multi-analysis-header">
         <div>
           <div class="multi-analysis-title">
-            🔬 ${HtmlSanitizer.escape(I18n.t('multi.analysisOf'))} ${articlesCount} ${HtmlSanitizer.escape(I18n.t('multi.articles'))}
+            ${HtmlSanitizer.escape(I18n.t('multi.analysisOf'))} ${articlesCount} ${HtmlSanitizer.escape(I18n.t('multi.articles'))}
           </div>
           <div class="multi-analysis-meta">
             <span class="multi-analysis-badge articles">${articlesCount} ${HtmlSanitizer.escape(I18n.t('multi.articles'))}</span>
@@ -264,7 +264,7 @@ function createMultiAnalysisCard(entry) {
       </div>
 
       <div class="multi-analysis-actions">
-        <button class="multi-analysis-btn danger btn-delete-multi">🗑️ Elimina</button>
+        <button class="multi-analysis-btn danger btn-delete-multi">Elimina</button>
       </div>
     </div>
   `;

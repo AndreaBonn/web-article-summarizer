@@ -26,11 +26,7 @@
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "exclude_matches": [
-        "https://accounts.google.com/*",
-        "https://*.banking.com/*",
-        "https://online.*.bank/*"
-      ],
+      "exclude_matches": ["https://accounts.google.com/*", "https://*.banking.com/*"],
       "js": ["src/content/content-script.js"],
       "run_at": "document_idle"
     }

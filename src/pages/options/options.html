@@ -4,12 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title data-i18n="settings.title">Impostazioni - AI Article Summarizer</title>
+    <link rel="stylesheet" href="../../shared/styles/base.css" />
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
     <div class="container">
       <header>
-        <h1 data-i18n="settings.title">🤖 AI Article Summarizer - Impostazioni</h1>
+        <h1 data-i18n="settings.title">AI Article Summarizer - Impostazioni</h1>
         <select
           id="uiLanguageSelect"
           class="ui-language-select ui-language-position"
@@ -23,36 +24,34 @@
       <main>
         <!-- API Keys Section -->
         <section class="card">
-          <h2 data-i18n="settings.apiKeys">🔑 API Keys</h2>
+          <h2 data-i18n="settings.apiKeys">API Keys</h2>
           <p class="info" data-i18n="settings.apiKeys.desc">
             Le tue chiavi sono salvate localmente e criptate per sicurezza.
           </p>
 
           <div class="api-key-group">
             <label>
-              <span class="provider-name">🟢 Groq API Key</span>
+              <span class="provider-name">Groq API Key</span>
               <span class="provider-desc" data-i18n="settings.provider.groq"
                 >Veloce ed economico</span
               >
             </label>
             <div class="input-group">
               <input type="password" id="groqKey" placeholder="gsk_..." />
-              <button class="btn-test" data-provider="groq" data-i18n="settings.test">
-                🧪 Test
-              </button>
+              <button class="btn-test" data-provider="groq" data-i18n="settings.test">Test</button>
             </div>
             <div id="groqStatus" class="status"></div>
           </div>
 
           <div class="api-key-group">
             <label>
-              <span class="provider-name">🔵 OpenAI API Key</span>
+              <span class="provider-name">OpenAI API Key</span>
               <span class="provider-desc" data-i18n="settings.provider.openai">Alta qualità</span>
             </label>
             <div class="input-group">
               <input type="password" id="openaiKey" placeholder="sk-..." />
               <button class="btn-test" data-provider="openai" data-i18n="settings.test">
-                🧪 Test
+                Test
               </button>
             </div>
             <div id="openaiStatus" class="status"></div>
@@ -60,7 +59,7 @@
 
           <div class="api-key-group">
             <label>
-              <span class="provider-name">🟣 Anthropic API Key</span>
+              <span class="provider-name">Anthropic API Key</span>
               <span class="provider-desc" data-i18n="settings.provider.anthropic"
                 >Analisi dettagliata</span
               >
@@ -68,7 +67,7 @@
             <div class="input-group">
               <input type="password" id="anthropicKey" placeholder="sk-ant-..." />
               <button class="btn-test" data-provider="anthropic" data-i18n="settings.test">
-                🧪 Test
+                Test
               </button>
             </div>
             <div id="anthropicStatus" class="status"></div>
@@ -76,7 +75,7 @@
 
           <div class="api-key-group">
             <label>
-              <span class="provider-name">🔷 Google Gemini API Key</span>
+              <span class="provider-name">Google Gemini API Key</span>
               <span class="provider-desc" data-i18n="settings.provider.gemini"
                 >Multimodale e versatile</span
               >
@@ -84,20 +83,20 @@
             <div class="input-group">
               <input type="password" id="geminiKey" placeholder="AIza..." />
               <button class="btn-test" data-provider="gemini" data-i18n="settings.test">
-                🧪 Test
+                Test
               </button>
             </div>
             <div id="geminiStatus" class="status"></div>
           </div>
 
           <button id="saveKeysBtn" class="btn btn-primary" data-i18n="settings.save">
-            💾 Salva API Keys
+            Salva API Keys
           </button>
         </section>
 
         <!-- Preferences Section -->
         <section class="card">
-          <h2 data-i18n="settings.preferences">⚙️ Preferenze</h2>
+          <h2 data-i18n="settings.preferences">Preferenze</h2>
 
           <div class="setting-group">
             <label data-i18n="settings.defaultProvider">Provider Predefinito</label>
@@ -119,24 +118,24 @@
           <div class="setting-group">
             <label class="checkbox-label">
               <input type="checkbox" id="darkMode" />
-              <span data-i18n="settings.darkMode">🌙 Dark Mode</span>
+              <span data-i18n="settings.darkMode">Dark Mode</span>
             </label>
           </div>
 
           <button id="saveSettingsBtn" class="btn btn-primary" data-i18n="settings.savePreferences">
-            💾 Salva Preferenze
+            Salva Preferenze
           </button>
         </section>
 
         <!-- Performance & Reliability Section -->
         <section class="card">
-          <h2 data-i18n="settings.performance">🚀 Performance e Affidabilità</h2>
+          <h2 data-i18n="settings.performance">Performance e Affidabilità</h2>
 
           <div class="setting-group">
             <label class="checkbox-label">
               <input type="checkbox" id="enableCache" checked />
               <span data-i18n="settings.perf.enableCache"
-                >✅ Abilita Cache (riduce costi e velocizza)</span
+                >Abilita Cache (riduce costi e velocizza)</span
               >
             </label>
             <p class="setting-desc" data-i18n="settings.perf.cacheDesc">
@@ -159,7 +158,7 @@
             <label class="checkbox-label">
               <input type="checkbox" id="enableFallback" />
               <span data-i18n="settings.perf.enableFallback"
-                >🔄 Abilita Fallback Automatico tra Provider</span
+                >Abilita Fallback Automatico tra Provider</span
               >
             </label>
             <p class="setting-desc" data-i18n="settings.perf.fallbackDesc">
@@ -171,7 +170,7 @@
           <div class="setting-group">
             <label class="checkbox-label">
               <input type="checkbox" id="enableCompression" checked />
-              <span data-i18n="settings.perf.enableCompression">📦 Abilita Compressione Dati</span>
+              <span data-i18n="settings.perf.enableCompression">Abilita Compressione Dati</span>
             </label>
             <p class="setting-desc" data-i18n="settings.perf.compressionDesc">
               Comprimi automaticamente cronologia e cache vecchie per risparmiare spazio
@@ -181,7 +180,7 @@
           <div class="setting-group">
             <label class="checkbox-label">
               <input type="checkbox" id="autoCleanup" checked />
-              <span data-i18n="settings.perf.autoCleanup">🧹 Cleanup Automatico</span>
+              <span data-i18n="settings.perf.autoCleanup">Cleanup Automatico</span>
             </label>
             <p class="setting-desc" data-i18n="settings.perf.cleanupDesc">
               Pulisci automaticamente cache scadute e cronologia molto vecchia
@@ -189,13 +188,13 @@
           </div>
 
           <button id="savePerformanceBtn" class="btn btn-primary" data-i18n="settings.perf.save">
-            💾 Salva Impostazioni Performance
+            Salva Impostazioni Performance
           </button>
         </section>
 
         <!-- Performance Stats Section -->
         <section class="card">
-          <h2 data-i18n="settings.perf.statsTitle">📊 Statistiche Performance</h2>
+          <h2 data-i18n="settings.perf.statsTitle">Statistiche Performance</h2>
 
           <div class="stats-section">
             <h3 data-i18n="settings.perf.cache">Cache</h3>
@@ -277,24 +276,24 @@
               class="btn btn-secondary"
               data-i18n="settings.perf.runCleanup"
             >
-              🧹 Esegui Cleanup Ora
+              Esegui Cleanup Ora
             </button>
             <button
               id="clearCacheBtn"
               class="btn btn-secondary"
               data-i18n="settings.perf.clearCache"
             >
-              🗑️ Cancella Cache
+              Cancella Cache
             </button>
             <button id="clearLogsBtn" class="btn btn-secondary" data-i18n="settings.perf.clearLogs">
-              📝 Cancella Log
+              Cancella Log
             </button>
           </div>
         </section>
 
         <!-- Statistics Section -->
         <section class="card">
-          <h2 data-i18n="settings.statistics">📊 Statistiche</h2>
+          <h2 data-i18n="settings.statistics">Statistiche</h2>
           <div class="stats-grid">
             <div class="stat-item">
               <div class="stat-value" id="totalSummaries">0</div>
@@ -318,16 +317,16 @@
             class="btn btn-secondary"
             data-i18n="settings.stats.clearCache"
           >
-            🗑️ Cancella Cache
+            Cancella Cache
           </button>
         </section>
 
         <!-- Help Section -->
         <section class="card">
-          <h2 data-i18n="settings.help">❓ Come Ottenere le API Keys</h2>
+          <h2 data-i18n="settings.help">Come Ottenere le API Keys</h2>
 
           <div class="help-item">
-            <h3>🟢 Groq</h3>
+            <h3>Groq</h3>
             <ol>
               <li>
                 <span data-i18n="settings.help.visit">Visita</span>
@@ -339,7 +338,7 @@
           </div>
 
           <div class="help-item">
-            <h3>🔵 OpenAI</h3>
+            <h3>OpenAI</h3>
             <ol>
               <li>
                 <span data-i18n="settings.help.visit">Visita</span>
@@ -351,7 +350,7 @@
           </div>
 
           <div class="help-item">
-            <h3>🟣 Anthropic</h3>
+            <h3>Anthropic</h3>
             <ol>
               <li>
                 <span data-i18n="settings.help.visit">Visita</span>
@@ -363,7 +362,7 @@
           </div>
 
           <div class="help-item">
-            <h3>🔷 Google Gemini</h3>
+            <h3>Google Gemini</h3>
             <ol>
               <li>
                 <span data-i18n="settings.help.visit">Visita</span>

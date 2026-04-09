@@ -1,62 +1,15 @@
 /* PDF Analysis Page Styles */
 
-.hidden {
-  display: none !important;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-:root {
-  --primary-color: #6c5ce7;
-  --secondary-color: #a29bfe;
-  --success-color: #00b894;
-  --error-color: #d63031;
-  --warning-color: #fdcb6e;
-  --bg-color: #f5f6fa;
-  --card-bg: #ffffff;
-  --text-color: #2d3436;
-  --text-secondary: #636e72;
-  --border-color: #dfe6e9;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-body.dark-theme {
-  --bg-color: #1e1e1e;
-  --card-bg: #2d2d2d;
-  --text-color: #e0e0e0;
-  --text-secondary: #a0a0a0;
-  --border-color: #404040;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(240, 242, 255, 0.8) 100%),
-    url('../../../public/icons/BackgroundArticleSummarize_light.png');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  color: var(--text-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   line-height: 1.6;
   min-height: 100vh;
   transition:
     background 0.3s,
     color 0.3s;
-}
-
-body.dark-theme {
-  background:
-    linear-gradient(135deg, rgba(20, 20, 30, 0.85) 0%, rgba(30, 25, 45, 0.9) 100%),
-    url('../../../public/icons/BackgroundArticleSummarize_dark.png');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
 }
 
 .container {
@@ -78,7 +31,7 @@ header {
 header h1 {
   font-size: 28px;
   font-weight: 700;
-  color: var(--primary-color);
+  color: var(--accent-color);
 }
 
 .btn-back {
@@ -88,14 +41,14 @@ header h1 {
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
-  color: var(--text-color);
+  color: var(--text-primary);
   transition: all 0.2s;
 }
 
 .btn-back:hover {
-  background: var(--primary-color);
+  background: var(--accent-color);
   color: white;
-  border-color: var(--primary-color);
+  border-color: var(--accent-color);
 }
 
 /* Font Size Controls */
@@ -117,12 +70,12 @@ header h1 {
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text-primary);
   transition: all 0.2s;
 }
 
 .icon-btn:hover:not(:disabled) {
-  background: var(--primary-color);
+  background: var(--accent-color);
   color: white;
 }
 
@@ -134,7 +87,7 @@ header h1 {
 .font-size-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--accent-color);
   min-width: 24px;
   text-align: center;
 }
@@ -202,7 +155,7 @@ body[data-font-size='XL'] h3 {
   border: 1px solid var(--border-color);
   border-radius: 8px;
   background: var(--card-bg);
-  color: var(--text-color);
+  color: var(--text-primary);
   font-size: 14px;
   cursor: pointer;
 }
@@ -212,7 +165,7 @@ body[data-font-size='XL'] h3 {
   background: var(--card-bg);
   border-radius: 12px;
   padding: 32px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
 }
 
 .pdf-upload-area {
@@ -233,7 +186,7 @@ body[data-font-size='XL'] h3 {
 
 .drop-zone:hover,
 .drop-zone.drag-over {
-  border-color: var(--primary-color);
+  border-color: var(--accent-color);
   background: rgba(108, 92, 231, 0.05);
 }
 
@@ -251,7 +204,7 @@ body[data-font-size='XL'] h3 {
 
 .browse-button {
   padding: 12px 32px;
-  background: var(--primary-color);
+  background: var(--accent-color);
   color: white;
   border: none;
   border-radius: 8px;
@@ -262,9 +215,9 @@ body[data-font-size='XL'] h3 {
 }
 
 .browse-button:hover {
-  background: var(--secondary-color);
+  background: var(--accent-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 /* Selected File */
@@ -273,7 +226,7 @@ body[data-font-size='XL'] h3 {
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: var(--bg-color);
+  background: var(--bg-primary);
   border-radius: 8px;
   border: 1px solid var(--border-color);
 }
@@ -288,7 +241,7 @@ body[data-font-size='XL'] h3 {
 
 .file-name {
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
@@ -299,7 +252,7 @@ body[data-font-size='XL'] h3 {
 
 .remove-file {
   padding: 8px 12px;
-  background: var(--error-color);
+  background: var(--color-error);
   color: white;
   border: none;
   border-radius: 6px;
@@ -319,7 +272,7 @@ body[data-font-size='XL'] h3 {
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-  background: var(--bg-color);
+  background: var(--bg-primary);
   border-radius: 8px;
   border: 1px solid var(--border-color);
 }
@@ -333,7 +286,7 @@ body[data-font-size='XL'] h3 {
 .option-row label {
   min-width: 120px;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
 .option-row select {
@@ -342,7 +295,7 @@ body[data-font-size='XL'] h3 {
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background: var(--card-bg);
-  color: var(--text-color);
+  color: var(--text-primary);
   font-size: 14px;
   cursor: pointer;
 }
@@ -350,7 +303,7 @@ body[data-font-size='XL'] h3 {
 /* Analyze Button */
 .analyze-button {
   padding: 16px 32px;
-  background: var(--success-color);
+  background: var(--color-success);
   color: white;
   border: none;
   border-radius: 8px;
@@ -375,7 +328,7 @@ body[data-font-size='XL'] h3 {
 /* Progress */
 .progress-container {
   padding: 20px;
-  background: var(--bg-color);
+  background: var(--bg-primary);
   border-radius: 8px;
   border: 1px solid var(--border-color);
 }
@@ -391,7 +344,7 @@ body[data-font-size='XL'] h3 {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  background: var(--accent-color);
   border-radius: 4px;
   transition: width 0.3s ease;
   width: 0%;
@@ -409,16 +362,16 @@ body[data-font-size='XL'] h3 {
   margin-top: 24px;
   padding: 16px;
   background: rgba(253, 203, 110, 0.1);
-  border-left: 4px solid var(--warning-color);
+  border-left: 4px solid var(--color-warning);
   border-radius: 8px;
   font-size: 14px;
-  color: var(--text-color);
+  color: var(--text-primary);
   line-height: 1.6;
 }
 
 .info-box span {
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--accent-color);
 }
 
 /* Results Section */
@@ -463,7 +416,7 @@ body[data-font-size='XL'] h3 {
   padding: 32px;
   max-width: 500px;
   width: 90%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-xl);
   text-align: center;
 }
 
@@ -475,7 +428,7 @@ body[data-font-size='XL'] h3 {
 .custom-modal-title {
   font-size: 24px;
   font-weight: 700;
-  color: var(--text-color);
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 
@@ -503,17 +456,17 @@ body[data-font-size='XL'] h3 {
 }
 
 .modal-btn-confirm {
-  background: var(--primary-color);
+  background: var(--accent-color);
   color: white;
 }
 
 .modal-btn-confirm:hover {
-  background: var(--secondary-color);
+  background: var(--accent-hover);
 }
 
 .modal-btn-cancel {
   background: var(--border-color);
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
 .modal-btn-cancel:hover {

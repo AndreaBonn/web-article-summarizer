@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Initialize theme icon based on saved settings
     if (settings.darkMode) {
-      elements.themeToggleBtn.textContent = '☀️';
+      elements.themeToggleBtn.textContent = '◐';
       elements.themeToggleBtn.title = 'Tema Chiaro';
     }
 
@@ -214,11 +214,11 @@ async function toggleTheme() {
   // Apply theme
   if (newDarkMode) {
     document.body.classList.add('dark-mode');
-    elements.themeToggleBtn.textContent = '☀️';
+    elements.themeToggleBtn.textContent = '◐';
     elements.themeToggleBtn.title = 'Tema Chiaro';
   } else {
     document.body.classList.remove('dark-mode');
-    elements.themeToggleBtn.textContent = '🌙';
+    elements.themeToggleBtn.textContent = '◑';
     elements.themeToggleBtn.title = 'Tema Scuro';
   }
 }

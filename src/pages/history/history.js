@@ -323,11 +323,11 @@ async function toggleTheme() {
 
   if (newDarkMode) {
     document.body.classList.add('dark-mode');
-    document.getElementById('themeToggleBtn').textContent = '☀️';
+    document.getElementById('themeToggleBtn').textContent = '◐';
     document.getElementById('themeToggleBtn').title = 'Tema Chiaro';
   } else {
     document.body.classList.remove('dark-mode');
-    document.getElementById('themeToggleBtn').textContent = '🌙';
+    document.getElementById('themeToggleBtn').textContent = '◑';
     document.getElementById('themeToggleBtn').title = 'Tema Scuro';
   }
 }
@@ -339,7 +339,7 @@ async function toggleTheme() {
   if (themeBtn) {
     themeBtn.addEventListener('click', toggleTheme);
     if (settings.darkMode) {
-      themeBtn.textContent = '☀️';
+      themeBtn.textContent = '◐';
       themeBtn.title = 'Tema Chiaro';
     }
   }

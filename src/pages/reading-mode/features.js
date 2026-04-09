@@ -82,7 +82,7 @@ export async function translateArticle() {
         } else {
           // User cancelled
           elements.translateBtn.disabled = false;
-          elements.translateBtn.textContent = '🌍 Traduci Articolo';
+          elements.translateBtn.textContent = 'Traduci Articolo';
           return;
         }
       }
@@ -120,13 +120,13 @@ export async function translateArticle() {
     elements.translationTabContent.innerHTML = `
       <div class="empty-state">
         <p class="error-text">❌ ${HtmlSanitizer.escape(error.message)}</p>
-        <button id="translateBtn" class="btn btn-primary">🔄 Riprova</button>
+        <button id="translateBtn" class="btn btn-primary">Riprova</button>
       </div>
     `;
     document.getElementById('translateBtn').addEventListener('click', translateArticle);
   } finally {
     elements.translateBtn.disabled = false;
-    elements.translateBtn.textContent = '🌍 Traduci Articolo';
+    elements.translateBtn.textContent = 'Traduci Articolo';
   }
 }
 
@@ -185,7 +185,7 @@ export async function extractCitations() {
     if (citations && citations.citations && citations.citations.length > 0) {
       const totalCitations =
         citations.total_citations || citations.totalCount || citations.citations.length;
-      html += `<h3>📚 ${totalCitations} Citazioni Trovate</h3>`;
+      html += `<h3>${totalCitations} Citazioni Trovate</h3>`;
 
       citations.citations.forEach((citation, index) => {
         // Estrai i campi per questa citazione
@@ -202,7 +202,7 @@ export async function extractCitations() {
         `;
       });
     } else {
-      html += '<p>📚 Nessuna citazione trovata in questo articolo</p>';
+      html += '<p>Nessuna citazione trovata in questo articolo</p>';
     }
 
     html += '</div>';
@@ -218,7 +218,7 @@ export async function extractCitations() {
     elements.citationsTabContent.innerHTML = `
       <div class="empty-state">
         <p class="error-text">❌ ${HtmlSanitizer.escape(error.message)}</p>
-        <button id="extractCitationsBtn" class="btn btn-primary">🔄 Riprova</button>
+        <button id="extractCitationsBtn" class="btn btn-primary">Riprova</button>
       </div>
     `;
     document.getElementById('extractCitationsBtn').addEventListener('click', extractCitations);
@@ -421,7 +421,7 @@ export async function updateDataInStorage() {
         };
 
         await chrome.storage.local.set({ pdf_analysis_history: pdfHistory });
-        Logger.info('💾 Dati PDF aggiornati nella cronologia');
+        Logger.info('Dati PDF aggiornati nella cronologia');
       }
     } else {
       // For articles, update in article history
@@ -444,7 +444,7 @@ export async function updateDataInStorage() {
         };
 
         await chrome.storage.local.set({ summaryHistory: history });
-        Logger.info('💾 Dati aggiornati nella cronologia');
+        Logger.info('Dati aggiornati nella cronologia');
       } else {
         Logger.warn('⚠️ Articolo non trovato nella cronologia');
       }

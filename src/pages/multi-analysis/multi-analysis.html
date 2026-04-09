@@ -4,12 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title data-i18n="multi.title">Analisi Multi Articolo - AI Article Summarizer</title>
+    <link rel="stylesheet" href="../../shared/styles/base.css" />
     <link rel="stylesheet" href="multi-analysis.css" />
   </head>
   <body>
     <div class="container">
       <header>
-        <h1 data-i18n="multi.title">🔬 Analisi Multi Articolo</h1>
+        <h1 data-i18n="multi.title">Analisi Multi Articolo</h1>
         <div class="header-toolbar">
           <select id="uiLanguageSelect" class="ui-language-select" title="Lingua Interfaccia">
             <option value="it">🇮🇹 Italiano</option>
@@ -21,7 +22,7 @@
             data-i18n-title="theme.toggle"
             title="Cambia Tema"
           >
-            🌙
+            ◑
           </button>
           <button id="backBtn" class="btn-back" data-i18n="history.back">← Indietro</button>
         </div>
@@ -29,7 +30,7 @@
 
       <div class="selection-panel">
         <div class="panel-header">
-          <h2 data-i18n="multi.selectArticles">📚 Seleziona Articoli</h2>
+          <h2 data-i18n="multi.selectArticles">Seleziona Articoli</h2>
           <div class="selection-actions">
             <button id="selectAllBtn" class="btn-secondary" data-i18n="multi.selectAll">
               Seleziona Tutti
@@ -49,7 +50,7 @@
             type="text"
             id="searchArticles"
             data-i18n="multi.searchArticles"
-            placeholder="🔍 Cerca articoli..."
+            placeholder="Cerca articoli..."
           />
           <select id="filterProvider">
             <option value="" data-i18n="multi.filterProvider">Tutti i provider</option>
@@ -67,14 +68,14 @@
 
       <div class="analysis-panel">
         <div class="panel-header">
-          <h2 data-i18n="multi.options">⚙️ Opzioni Analisi</h2>
+          <h2 data-i18n="multi.options">Opzioni Analisi</h2>
         </div>
 
         <div class="analysis-options">
           <label class="option-card">
             <input type="checkbox" id="optGlobalSummary" checked />
             <div class="option-content">
-              <span class="option-icon">📝</span>
+              <span class="option-icon"></span>
               <div class="option-text">
                 <strong data-i18n="multi.globalSummary">Riassunto Globale</strong>
                 <small>Sintesi unificata di tutti gli articoli selezionati</small>
@@ -85,7 +86,7 @@
           <label class="option-card">
             <input type="checkbox" id="optComparison" checked />
             <div class="option-content">
-              <span class="option-icon">⚖️</span>
+              <span class="option-icon"></span>
               <div class="option-text">
                 <strong data-i18n="multi.comparison">Confronto Idee</strong>
                 <small>Analisi di idee comuni, conflitti e prospettive diverse</small>
@@ -96,7 +97,7 @@
           <label class="option-card">
             <input type="checkbox" id="optQA" checked />
             <div class="option-content">
-              <span class="option-icon">💬</span>
+              <span class="option-icon"></span>
               <div class="option-text">
                 <strong data-i18n="multi.qa">Q&A Multi-Articolo</strong>
                 <small>Sistema di domande e risposte basato su tutti gli articoli</small>
@@ -111,7 +112,7 @@
           data-i18n="multi.startAnalysis"
           disabled
         >
-          🚀 Avvia Analisi
+          Avvia Analisi
         </button>
       </div>
     </div>
@@ -125,9 +126,9 @@
         </div>
         <div class="modal-body">
           <div class="modal-tabs">
-            <button class="modal-tab active" data-tab="summary">📝 Riassunto</button>
-            <button class="modal-tab" data-tab="comparison">⚖️ Confronto</button>
-            <button class="modal-tab" data-tab="qa">💬 Q&A</button>
+            <button class="modal-tab active" data-tab="summary">Riassunto</button>
+            <button class="modal-tab" data-tab="comparison">Confronto</button>
+            <button class="modal-tab" data-tab="qa">Q&A</button>
           </div>
           <div class="modal-tab-content">
             <div id="tabSummary" class="modal-pane active"></div>
@@ -136,10 +137,10 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button id="exportPdfBtn" class="btn btn-primary">📄 Esporta PDF</button>
-          <button id="exportMdBtn" class="btn btn-primary">📝 Esporta MD</button>
-          <button id="sendEmailBtn" class="btn btn-primary">📧 Invia Email</button>
-          <button id="copyBtn" class="btn btn-secondary">📋 Copia</button>
+          <button id="exportPdfBtn" class="btn btn-primary">Esporta PDF</button>
+          <button id="exportMdBtn" class="btn btn-primary">Esporta MD</button>
+          <button id="sendEmailBtn" class="btn btn-primary">Invia Email</button>
+          <button id="copyBtn" class="btn btn-secondary">Copia</button>
         </div>
       </div>
     </div>
@@ -148,7 +149,7 @@
     <div id="progressModal" class="custom-modal hidden">
       <div class="custom-modal-overlay"></div>
       <div class="custom-modal-content">
-        <div class="custom-modal-icon">⏳</div>
+        <div class="custom-modal-icon"></div>
         <h3 class="custom-modal-title">Analisi in Corso</h3>
         <p id="progressMessage" class="custom-modal-message">Preparazione analisi...</p>
         <div class="progress-bar">
@@ -162,7 +163,7 @@
     <div id="customModal" class="custom-modal hidden">
       <div class="custom-modal-overlay"></div>
       <div class="custom-modal-content">
-        <div class="custom-modal-icon" id="modalIcon">ℹ️</div>
+        <div class="custom-modal-icon" id="modalIcon"></div>
         <h3 id="modalTitle" class="custom-modal-title">Titolo</h3>
         <p id="modalMessage" class="custom-modal-message">Messaggio</p>
         <div class="custom-modal-buttons">
@@ -176,7 +177,7 @@
     <div id="unrelatedModal" class="custom-modal hidden">
       <div class="custom-modal-overlay"></div>
       <div class="custom-modal-content">
-        <div class="custom-modal-icon">⚠️</div>
+        <div class="custom-modal-icon"></div>
         <h3 class="custom-modal-title">Articoli Non Correlati</h3>
         <p class="custom-modal-message">
           Gli articoli selezionati sembrano trattare argomenti completamente scollegati.
@@ -197,7 +198,7 @@
     <div id="exportOptionsModal" class="custom-modal hidden">
       <div class="custom-modal-overlay"></div>
       <div class="custom-modal-content export-modal-content">
-        <div class="custom-modal-icon">📄</div>
+        <div class="custom-modal-icon"></div>
         <h3 id="exportModalTitle" class="custom-modal-title">Esporta</h3>
 
         <div class="export-options-section">
@@ -205,15 +206,15 @@
           <div class="export-options-list">
             <label class="export-option" id="exportSummaryOption">
               <input type="checkbox" id="exportIncludeSummary" checked />
-              <span>📝 Riassunto Globale</span>
+              <span>Riassunto Globale</span>
             </label>
             <label class="export-option" id="exportComparisonOption">
               <input type="checkbox" id="exportIncludeComparison" checked />
-              <span>⚖️ Confronto Idee</span>
+              <span>Confronto Idee</span>
             </label>
             <label class="export-option" id="exportQAOption">
               <input type="checkbox" id="exportIncludeQA" checked />
-              <span>💬 Domande e Risposte</span>
+              <span>Domande e Risposte</span>
             </label>
           </div>
         </div>

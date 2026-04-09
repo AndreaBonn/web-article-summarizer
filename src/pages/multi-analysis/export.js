@@ -54,7 +54,7 @@ export async function sendEmail() {
     content += `**Articoli analizzati:** ${state.selectedArticles.length}\n\n`;
     content += '---\n\n';
 
-    content += '## 📚 Articoli\n\n';
+    content += '## Articoli\n\n';
     state.selectedArticles.forEach((id, index) => {
       const article = state.allArticles.find((a) => a.id === id);
       if (article) {
@@ -64,12 +64,12 @@ export async function sendEmail() {
     content += '\n---\n\n';
 
     if (options.includeSummary && state.currentAnalysis.summary) {
-      content += '## 📝 Riassunto Globale\n\n';
+      content += '## Riassunto Globale\n\n';
       content += state.currentAnalysis.summary + '\n\n---\n\n';
     }
 
     if (options.includeComparison && state.currentAnalysis.comparison) {
-      content += '## ⚖️ Confronto Idee\n\n';
+      content += '## Confronto Idee\n\n';
       content += state.currentAnalysis.comparison + '\n\n---\n\n';
     }
 
@@ -79,7 +79,7 @@ export async function sendEmail() {
       state.currentAnalysis.qa.questions &&
       state.currentAnalysis.qa.questions.length > 0
     ) {
-      content += '## 💬 Domande e Risposte\n\n';
+      content += '## Domande e Risposte\n\n';
       state.currentAnalysis.qa.questions.forEach((qa, index) => {
         content += `**Q${index + 1}:** ${qa.question}\n\n`;
         content += `**R${index + 1}:** ${qa.answer}\n\n`;

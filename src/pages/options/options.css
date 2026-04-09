@@ -1,63 +1,9 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-:root {
-  --bg-primary: #f8f9fa;
-  --bg-secondary: #fff;
-  --bg-tertiary: #f8f9fa;
-  --text-primary: #2d3436;
-  --text-secondary: #636e72;
-  --border-color: #dfe6e9;
-  --border-color-light: #e0e0e0;
-  --shadow: rgba(0, 0, 0, 0.1);
-  --input-bg: #fff;
-  --card-bg: #fff;
-}
-
-body.dark-mode {
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #2d2d2d;
-  --bg-tertiary: #3a3a3a;
-  --text-primary: #e0e0e0;
-  --text-secondary: #a0a0a0;
-  --border-color: #404040;
-  --border-color-light: #505050;
-  --shadow: rgba(0, 0, 0, 0.3);
-  --input-bg: #2d2d2d;
-  --card-bg: #2d2d2d;
-}
-
 body {
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
-  font-size: 14px;
-  color: var(--text-primary);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(240, 242, 255, 0.8) 100%),
-    url('../../../public/icons/BackgroundArticleSummarize_light.png');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  line-height: 1.6;
+  background: var(--bg-secondary);
   min-height: 100vh;
   transition:
     background 0.3s,
     color 0.3s;
-}
-
-body.dark-mode {
-  background:
-    linear-gradient(135deg, rgba(20, 20, 30, 0.85) 0%, rgba(30, 25, 45, 0.9) 100%),
-    url('../../../public/icons/BackgroundArticleSummarize_dark.png');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
 }
 
 .container {
@@ -109,7 +55,7 @@ main {
   background: var(--card-bg);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px var(--shadow);
+  box-shadow: var(--shadow-xs);
   transition: background-color 0.3s;
 }
 
@@ -124,7 +70,7 @@ main {
   color: var(--text-secondary);
   margin-bottom: 20px;
   padding: 12px;
-  background: var(--bg-tertiary);
+  background: var(--color-bg-tertiary);
   border-radius: 6px;
   transition:
     background-color 0.3s,
@@ -181,7 +127,7 @@ main {
 
 .btn-test {
   padding: 10px 16px;
-  background: var(--bg-tertiary);
+  background: var(--color-bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 13px;
@@ -272,7 +218,7 @@ main {
 }
 
 .radio-label:hover {
-  background: var(--bg-tertiary);
+  background: var(--color-bg-tertiary);
 }
 
 .radio-label input[type='radio'] {
@@ -292,7 +238,7 @@ main {
 }
 
 .checkbox-label:hover {
-  background: var(--bg-tertiary);
+  background: var(--color-bg-tertiary);
 }
 
 .checkbox-label input[type='checkbox'] {
@@ -322,7 +268,7 @@ main {
 }
 
 .btn-secondary {
-  background: var(--bg-tertiary);
+  background: var(--color-bg-tertiary);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   transition:
@@ -345,7 +291,7 @@ main {
 .stat-item {
   text-align: center;
   padding: 16px;
-  background: var(--bg-tertiary);
+  background: var(--color-bg-tertiary);
   border-radius: 8px;
   transition: background-color 0.3s;
 }
@@ -366,7 +312,7 @@ main {
 .help-item {
   margin-bottom: 20px;
   padding: 16px;
-  background: var(--bg-tertiary);
+  background: var(--color-bg-tertiary);
   border-radius: 8px;
   transition: background-color 0.3s;
 }
@@ -401,7 +347,7 @@ footer {
   text-align: center;
   margin-top: 32px;
   padding-top: 24px;
-  border-top: 1px solid var(--border-color-light);
+  border-top: 1px solid var(--color-border-light);
   color: var(--text-secondary);
   font-size: 13px;
 }
@@ -416,7 +362,7 @@ footer {
   color: #fff;
   border-radius: 6px;
   font-size: 14px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
   animation: slideIn 0.3s ease;
   z-index: 1000;
 }
