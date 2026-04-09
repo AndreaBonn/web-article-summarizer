@@ -3,12 +3,7 @@
   "name": "AI Article Summarizer",
   "version": "2.2.0",
   "description": "Riassumi articoli web con AI (Groq, OpenAI, Claude, Gemini) - Ottieni punti chiave e risparmia tempo",
-  "permissions": [
-    "activeTab",
-    "storage",
-    "scripting",
-    "tts"
-  ],
+  "permissions": ["activeTab", "storage", "scripting", "tts"],
   "host_permissions": [
     "https://api.groq.com/*",
     "https://api.openai.com/*",
@@ -46,7 +41,8 @@
   "web_accessible_resources": [
     {
       "resources": ["public/workers/pdf.worker.min.js"],
-      "matches": ["<all_urls>"]
+      "matches": ["<all_urls>"],
+      "use_dynamic_url": true
     }
   ]
 }

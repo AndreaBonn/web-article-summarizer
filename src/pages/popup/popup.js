@@ -1,23 +1,34 @@
 // Popup Script - Controller principale
 // Entry point ES Module: importa tutti i moduli e gestisce init + event listeners
 
-import { state, elements, initElements, showState, showError } from './state.js';
-import { translationState, citationsState } from './features.js';
-import { analyzeArticle, generateSummary, switchTab, copyToClipboard } from './analysis.js';
-import { exportToPDF, exportToMarkdown, openEmailModal } from './export.js';
-import { askQuestion, translateArticle } from './features.js';
-import { extractCitations } from './citations.js';
-import { initVoiceController, handleVoiceQuestion } from './voice.js';
-import { StorageManager } from '../../utils/storage/storage-manager.js';
-import { I18n } from '../../utils/i18n/i18n.js';
-import { ProgressTracker } from '../../utils/core/progress-tracker.js';
-import { eventCleanup } from '../../utils/core/event-cleanup.js';
-import { ErrorHandler } from '../../utils/core/error-handler.js';
+import {
+  state,
+  elements,
+  initElements,
+  showState,
+  showError,
+} from "./state.js";
+import { translationState, citationsState } from "./features.js";
+import {
+  analyzeArticle,
+  generateSummary,
+  switchTab,
+  copyToClipboard,
+} from "./analysis.js";
+import { exportToPDF, exportToMarkdown, openEmailModal } from "./export.js";
+import { askQuestion, translateArticle } from "./features.js";
+import { extractCitations } from "./citations.js";
+import { initVoiceController, handleVoiceQuestion } from "./voice.js";
+import { StorageManager } from "../../utils/storage/storage-manager.js";
+import { I18n } from "../../utils/i18n/i18n.js";
+import { ProgressTracker } from "../../utils/core/progress-tracker.js";
+import { eventCleanup } from "../../utils/core/event-cleanup.js";
+import { ErrorHandler } from "../../utils/core/error-handler.js";
 
 // Inizializzazione
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener("DOMContentLoaded", async () => {
   try {
-    console.log('Popup inizializzato');
+    console.log("Popup inizializzato");
 
     // Inizializza elementi DOM
     initElements();
@@ -29,17 +40,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     state.progressTracker = new ProgressTracker(
       elements.loadingState,
       elements.loadingText,
-      document.getElementById('progressBar'),
-      document.getElementById('progressPercent')
+      document.getElementById("progressBar"),
+      document.getElementById("progressPercent"),
     );
 
     // Definisci gli step del processo
     state.progressTracker.defineSteps([
-      { name: 'extract', label: '📄 Estrazione articolo', weight: 10 },
-      { name: 'classify', label: '🔍 Classificazione tipo', weight: 15 },
-      { name: 'generate', label: '🤖 Generazione riassunto', weight: 60 },
-      { name: 'keypoints', label: '🔑 Estrazione punti chiave', weight: 10 },
-      { name: 'save', label: '💾 Salvataggio', weight: 5 }
+      { name: "extract", label: "📄 Estrazione articolo", weight: 10 },
+      { name: "classify", label: "🔍 Classificazione tipo", weight: 15 },
+      { name: "generate", label: "🤖 Generazione riassunto", weight: 60 },
+      { name: "keypoints", label: "🔑 Estrazione punti chiave", weight: 10 },
+      { name: "save", label: "💾 Salvataggio", weight: 5 },
     ]);
 
     // Carica impostazioni
@@ -48,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Carica lingua UI salvata
     const savedUILanguage = await StorageManager.getUILanguage();
-    const uiLanguageSelect = document.getElementById('uiLanguageSelect');
+    const uiLanguageSelect = document.getElementById("uiLanguageSelect");
     if (savedUILanguage && uiLanguageSelect) {
       uiLanguageSelect.value = savedUILanguage;
     }
@@ -62,58 +73,96 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Imposta sempre "auto" come default all'apertura
-    state.selectedContentType = 'auto';
-    elements.contentTypeSelect.value = 'auto';
-    elements.contentTypeSelectReady.value = 'auto';
+    state.selectedContentType = "auto";
+    elements.contentTypeSelect.value = "auto";
+    elements.contentTypeSelectReady.value = "auto";
 
     // 🆕 Event listener per cambio lingua UI (con cleanup)
     if (uiLanguageSelect) {
       const handleUILanguageChange = async (e) => {
         await I18n.setLanguage(e.target.value);
       };
-      eventCleanup.addEventListener(uiLanguageSelect, 'change', handleUILanguageChange);
+      eventCleanup.addEventListener(
+        uiLanguageSelect,
+        "change",
+        handleUILanguageChange,
+      );
     }
 
     // 🆕 Event listeners con cleanup automatico
-    eventCleanup.addEventListener(elements.analyzeBtn, 'click', analyzeArticle);
-    eventCleanup.addEventListener(elements.generateBtn, 'click', generateSummary);
-    eventCleanup.addEventListener(elements.retryBtn, 'click', analyzeArticle);
-    eventCleanup.addEventListener(elements.themeToggleBtn, 'click', toggleTheme);
-    eventCleanup.addEventListener(elements.settingsBtn, 'click', () => {
+    eventCleanup.addEventListener(elements.analyzeBtn, "click", analyzeArticle);
+    eventCleanup.addEventListener(
+      elements.generateBtn,
+      "click",
+      generateSummary,
+    );
+    eventCleanup.addEventListener(elements.retryBtn, "click", analyzeArticle);
+    eventCleanup.addEventListener(
+      elements.themeToggleBtn,
+      "click",
+      toggleTheme,
+    );
+    eventCleanup.addEventListener(elements.settingsBtn, "click", () => {
       chrome.runtime.openOptionsPage();
     });
-    eventCleanup.addEventListener(elements.historyBtn, 'click', () => {
-      chrome.tabs.create({ url: 'src/pages/history/history.html' });
+    eventCleanup.addEventListener(elements.historyBtn, "click", () => {
+      chrome.tabs.create({ url: "src/pages/history/history.html" });
     });
-    eventCleanup.addEventListener(elements.multiAnalysisBtn, 'click', () => {
-      chrome.tabs.create({ url: 'src/pages/multi-analysis/multi-analysis.html' });
+    eventCleanup.addEventListener(elements.multiAnalysisBtn, "click", () => {
+      chrome.tabs.create({
+        url: "src/pages/multi-analysis/multi-analysis.html",
+      });
     });
-    eventCleanup.addEventListener(elements.pdfAnalysisBtn, 'click', () => {
-      chrome.tabs.create({ url: 'src/pages/pdf-analysis/pdf-analysis.html' });
+    eventCleanup.addEventListener(elements.pdfAnalysisBtn, "click", () => {
+      chrome.tabs.create({ url: "src/pages/pdf-analysis/pdf-analysis.html" });
     });
-    eventCleanup.addEventListener(elements.readingModeBtn, 'click', openReadingMode);
-    eventCleanup.addEventListener(elements.copyBtn, 'click', copyToClipboard);
-    eventCleanup.addEventListener(elements.newBtn, 'click', reset);
-    eventCleanup.addEventListener(elements.exportPdfBtn, 'click', exportToPDF);
-    eventCleanup.addEventListener(elements.exportMdBtn, 'click', exportToMarkdown);
-    eventCleanup.addEventListener(elements.sendEmailBtn, 'click', openEmailModal);
-    eventCleanup.addEventListener(elements.askBtn, 'click', askQuestion);
-    eventCleanup.addEventListener(elements.translateBtn, 'click', translateArticle);
-    eventCleanup.addEventListener(elements.extractCitationsBtn, 'click', extractCitations);
+    eventCleanup.addEventListener(
+      elements.readingModeBtn,
+      "click",
+      openReadingMode,
+    );
+    eventCleanup.addEventListener(elements.copyBtn, "click", copyToClipboard);
+    eventCleanup.addEventListener(elements.newBtn, "click", reset);
+    eventCleanup.addEventListener(elements.exportPdfBtn, "click", exportToPDF);
+    eventCleanup.addEventListener(
+      elements.exportMdBtn,
+      "click",
+      exportToMarkdown,
+    );
+    eventCleanup.addEventListener(
+      elements.sendEmailBtn,
+      "click",
+      openEmailModal,
+    );
+    eventCleanup.addEventListener(elements.askBtn, "click", askQuestion);
+    eventCleanup.addEventListener(
+      elements.translateBtn,
+      "click",
+      translateArticle,
+    );
+    eventCleanup.addEventListener(
+      elements.extractCitationsBtn,
+      "click",
+      extractCitations,
+    );
 
     // Inizializza Voice Controller
     await initVoiceController();
 
     // Event listener per domanda vocale
-    const voiceQuestionBtn = document.getElementById('voiceQuestionBtn');
+    const voiceQuestionBtn = document.getElementById("voiceQuestionBtn");
     if (voiceQuestionBtn) {
-      eventCleanup.addEventListener(voiceQuestionBtn, 'click', handleVoiceQuestion);
+      eventCleanup.addEventListener(
+        voiceQuestionBtn,
+        "click",
+        handleVoiceQuestion,
+      );
     }
 
     // Tabs
-    document.querySelectorAll('.tab').forEach(tab => {
+    document.querySelectorAll(".tab").forEach((tab) => {
       const handleTabClick = () => switchTab(tab.dataset.tab);
-      eventCleanup.addEventListener(tab, 'click', handleTabClick);
+      eventCleanup.addEventListener(tab, "click", handleTabClick);
     });
 
     // Salva provider selezionato
@@ -122,51 +171,73 @@ document.addEventListener('DOMContentLoaded', async () => {
       settings.selectedProvider = elements.providerSelect.value;
       await StorageManager.saveSettings(settings);
     };
-    eventCleanup.addEventListener(elements.providerSelect, 'change', handleProviderChange);
+    eventCleanup.addEventListener(
+      elements.providerSelect,
+      "change",
+      handleProviderChange,
+    );
 
     // Salva lingua selezionata (pagina iniziale)
     const handleLanguageChange = async () => {
       state.selectedLanguage = elements.languageSelect.value;
       elements.languageSelectReady.value = state.selectedLanguage; // Sincronizza
       await StorageManager.saveSelectedLanguage(state.selectedLanguage);
-      console.log('Lingua selezionata:', state.selectedLanguage);
+      console.log("Lingua selezionata:", state.selectedLanguage);
     };
-    eventCleanup.addEventListener(elements.languageSelect, 'change', handleLanguageChange);
+    eventCleanup.addEventListener(
+      elements.languageSelect,
+      "change",
+      handleLanguageChange,
+    );
 
     // Salva lingua selezionata (pagina ready)
     const handleLanguageReadyChange = async () => {
       state.selectedLanguage = elements.languageSelectReady.value;
       elements.languageSelect.value = state.selectedLanguage; // Sincronizza
       await StorageManager.saveSelectedLanguage(state.selectedLanguage);
-      console.log('Lingua selezionata:', state.selectedLanguage);
+      console.log("Lingua selezionata:", state.selectedLanguage);
     };
-    eventCleanup.addEventListener(elements.languageSelectReady, 'change', handleLanguageReadyChange);
+    eventCleanup.addEventListener(
+      elements.languageSelectReady,
+      "change",
+      handleLanguageReadyChange,
+    );
 
     // Gestisci cambio tipo di contenuto (pagina iniziale)
     const handleContentTypeChange = () => {
       state.selectedContentType = elements.contentTypeSelect.value;
       elements.contentTypeSelectReady.value = state.selectedContentType; // Sincronizza
-      console.log('Tipo di contenuto selezionato:', state.selectedContentType);
+      console.log("Tipo di contenuto selezionato:", state.selectedContentType);
     };
-    eventCleanup.addEventListener(elements.contentTypeSelect, 'change', handleContentTypeChange);
+    eventCleanup.addEventListener(
+      elements.contentTypeSelect,
+      "change",
+      handleContentTypeChange,
+    );
 
     // Gestisci cambio tipo di contenuto (pagina ready)
     const handleContentTypeReadyChange = () => {
       state.selectedContentType = elements.contentTypeSelectReady.value;
       elements.contentTypeSelect.value = state.selectedContentType; // Sincronizza
-      console.log('Tipo di contenuto selezionato:', state.selectedContentType);
+      console.log("Tipo di contenuto selezionato:", state.selectedContentType);
     };
-    eventCleanup.addEventListener(elements.contentTypeSelectReady, 'change', handleContentTypeReadyChange);
+    eventCleanup.addEventListener(
+      elements.contentTypeSelectReady,
+      "change",
+      handleContentTypeReadyChange,
+    );
 
-    console.log('Event listeners configurati con cleanup automatico');
+    console.log("Event listeners configurati con cleanup automatico");
 
     // 🆕 Log statistiche listener
     const stats = eventCleanup.getStats();
-    console.log(`📊 Listener registrati: ${stats.totalListeners} su ${stats.totalElements} elementi`);
+    console.log(
+      `📊 Listener registrati: ${stats.totalListeners} su ${stats.totalElements} elementi`,
+    );
   } catch (error) {
-    console.error('Errore inizializzazione popup:', error);
+    console.error("Errore inizializzazione popup:", error);
     // 🆕 Usa ErrorHandler per mostrare errore all'utente
-    await ErrorHandler.showError(error, 'Inizializzazione popup');
+    await ErrorHandler.showError(error, "Inizializzazione popup");
   }
 });
 
@@ -176,11 +247,11 @@ function reset() {
   state.currentQA = []; // Pulisci anche le Q&A
 
   // Reset tipo di articolo a 'auto'
-  state.selectedContentType = 'auto';
-  elements.contentTypeSelect.value = 'auto';
-  elements.contentTypeSelectReady.value = 'auto';
+  state.selectedContentType = "auto";
+  elements.contentTypeSelect.value = "auto";
+  elements.contentTypeSelectReady.value = "auto";
 
-  showState('initial');
+  showState("initial");
 }
 
 // Theme Toggle
@@ -194,32 +265,32 @@ async function toggleTheme() {
 
   // Applica tema
   if (newDarkMode) {
-    document.body.classList.add('dark-mode');
-    elements.themeToggleBtn.textContent = '☀️';
-    elements.themeToggleBtn.title = 'Tema Chiaro';
+    document.body.classList.add("dark-mode");
+    elements.themeToggleBtn.textContent = "☀️";
+    elements.themeToggleBtn.title = "Tema Chiaro";
   } else {
-    document.body.classList.remove('dark-mode');
-    elements.themeToggleBtn.textContent = '🌙';
-    elements.themeToggleBtn.title = 'Tema Scuro';
+    document.body.classList.remove("dark-mode");
+    elements.themeToggleBtn.textContent = "🌙";
+    elements.themeToggleBtn.title = "Tema Scuro";
   }
 }
 
 // Inizializza icona tema all'avvio
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const settings = await StorageManager.getSettings();
   if (settings.darkMode) {
     // elements può non essere ancora inizializzato qui se questo listener
     // gira prima del principale. Il primo DOMContentLoaded chiama initElements(),
     // quindi l'ordine di registrazione garantisce che questo giri dopo.
-    elements.themeToggleBtn.textContent = '☀️';
-    elements.themeToggleBtn.title = 'Tema Chiaro';
+    elements.themeToggleBtn.textContent = "☀️";
+    elements.themeToggleBtn.title = "Tema Chiaro";
   }
 });
 
 // Open Reading Mode
 async function openReadingMode() {
   if (!state.currentArticle || !state.currentResults) {
-    showError('Nessun riassunto disponibile per la modalità lettura');
+    showError("Nessun riassunto disponibile per la modalità lettura");
     return;
   }
 
@@ -234,13 +305,21 @@ async function openReadingMode() {
     metadata: {
       provider: elements.providerSelect.value,
       language: state.selectedLanguage,
-      contentType: state.currentResults.detectedContentType || state.selectedContentType
-    }
+      contentType:
+        state.currentResults.detectedContentType || state.selectedContentType,
+    },
   };
 
   // Save to chrome.storage.local (persists across tabs)
-  await chrome.storage.local.set({ readingModeData: readingData });
+  try {
+    await chrome.storage.local.set({ readingModeData: readingData });
+  } catch (error) {
+    showError(
+      "Impossibile aprire la modalità lettura: spazio di archiviazione insufficiente.",
+    );
+    return;
+  }
 
   // Open reading mode in new tab
-  chrome.tabs.create({ url: 'src/pages/reading-mode/reading-mode.html' });
+  chrome.tabs.create({ url: "src/pages/reading-mode/reading-mode.html" });
 }

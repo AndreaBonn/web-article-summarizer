@@ -1,35 +1,56 @@
 // Popup Analysis Module - Estratto da popup.js
 // Gestisce: analyzeArticle, generateSummary, displayResults, switchTab, copyToClipboard
 
-import { state, elements, showState, showError } from './state.js';
-import { translationState, citationsState } from './features.js';
-import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
-import { StorageManager } from '../../utils/storage/storage-manager.js';
-import { I18n } from '../../utils/i18n/i18n.js';
-import { HistoryManager } from '../../utils/storage/history-manager.js';
-import { ContentClassifier } from '../../utils/ai/content-classifier.js';
-import { CitationExtractor } from '../../utils/ai/citation-extractor.js';
-import { ErrorHandler } from '../../utils/core/error-handler.js';
-import { addTTSButtons } from './voice.js';
+import { state, elements, showState, showError } from "./state.js";
+import { translationState, citationsState } from "./features.js";
+import { HtmlSanitizer } from "../../utils/security/html-sanitizer.js";
+import { StorageManager } from "../../utils/storage/storage-manager.js";
+import { I18n } from "../../utils/i18n/i18n.js";
+import { HistoryManager } from "../../utils/storage/history-manager.js";
+import { ContentClassifier } from "../../utils/ai/content-classifier.js";
+import { CitationExtractor } from "../../utils/ai/citation-extractor.js";
+import { ErrorHandler } from "../../utils/core/error-handler.js";
+import { addTTSButtons } from "./voice.js";
 
 export async function analyzeArticle() {
-  showState('loading');
-  elements.loadingText.textContent = I18n.t('loading.extract');
+  showState("loading");
+  elements.loadingText.textContent = I18n.t("loading.extract");
 
   try {
     // Ottieni tab corrente
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
 
     // Verifica che non sia una pagina chrome://
-    if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
-      throw new Error('Impossibile analizzare pagine interne di Chrome');
+    if (
+      tab.url.startsWith("chrome://") ||
+      tab.url.startsWith("chrome-extension://")
+    ) {
+      throw new Error("Impossibile analizzare pagine interne di Chrome");
     }
 
     // Estrai articolo
-    const response = await chrome.tabs.sendMessage(tab.id, { action: 'extractArticle' });
+    let response;
+    try {
+      response = await chrome.tabs.sendMessage(tab.id, {
+        action: "extractArticle",
+      });
+    } catch (msgError) {
+      if (
+        msgError.message?.includes("Could not establish connection") ||
+        msgError.message?.includes("Receiving end does not exist")
+      ) {
+        throw new Error(
+          "Impossibile comunicare con la pagina. Ricarica la pagina (F5) e riprova.",
+        );
+      }
+      throw msgError;
+    }
 
     if (!response || !response.success) {
-      throw new Error(response?.error || 'Errore durante l\'estrazione');
+      throw new Error(response?.error || "Errore durante l'estrazione");
     }
 
     state.currentArticle = response.article;
@@ -37,13 +58,19 @@ export async function analyzeArticle() {
 
     // Mostra info articolo
     elements.articleTitle.textContent = state.currentArticle.title;
-    elements.articleStats.textContent = `${state.currentArticle.wordCount} ${I18n.t('article.words')} • ${state.currentArticle.readingTimeMinutes} ${I18n.t('article.readingTime')}`;
+    elements.articleStats.textContent = `${state.currentArticle.wordCount} ${I18n.t("article.words")} • ${state.currentArticle.readingTimeMinutes} ${I18n.t("article.readingTime")}`;
 
     // 🔍 Controlla se l'articolo è già stato analizzato in precedenza
     const history = await HistoryManager.getHistory();
-    const previousAnalysis = history.find(entry => entry.article.url === state.currentArticle.url);
+    const previousAnalysis = history.find(
+      (entry) => entry.article.url === state.currentArticle.url,
+    );
 
-    if (previousAnalysis && previousAnalysis.metadata && previousAnalysis.metadata.contentType) {
+    if (
+      previousAnalysis &&
+      previousAnalysis.metadata &&
+      previousAnalysis.metadata.contentType
+    ) {
       // Se l'articolo è già stato analizzato e ha un contentType salvato
       const savedContentType = previousAnalysis.metadata.contentType;
 
@@ -52,29 +79,34 @@ export async function analyzeArticle() {
       elements.contentTypeSelect.value = savedContentType;
       elements.contentTypeSelectReady.value = savedContentType;
 
-      console.log('📋 Tipo di articolo recuperato dalla cronologia:', savedContentType);
+      console.log(
+        "📋 Tipo di articolo recuperato dalla cronologia:",
+        savedContentType,
+      );
 
       // Mostra un feedback visivo temporaneo
-      elements.loadingText.textContent = `${I18n.t('loading.articleType')} ${ContentClassifier.getCategoryLabel(savedContentType)} (${I18n.t('loading.fromHistory')})`;
-      await new Promise(resolve => setTimeout(resolve, 800));
+      elements.loadingText.textContent = `${I18n.t("loading.articleType")} ${ContentClassifier.getCategoryLabel(savedContentType)} (${I18n.t("loading.fromHistory")})`;
+      await new Promise((resolve) => setTimeout(resolve, 800));
     }
 
-    showState('ready');
-
+    showState("ready");
   } catch (error) {
-    console.error('Errore analisi:', error);
+    console.error("Errore analisi:", error);
     // 🆕 Usa ErrorHandler per gestione errori migliorata
-    await ErrorHandler.showError(error, 'Analisi articolo');
+    await ErrorHandler.showError(error, "Analisi articolo");
   }
 }
 
 export async function generateSummary() {
   if (!state.currentArticle) {
-    await ErrorHandler.showError(new Error('Nessun articolo estratto'), 'Generazione riassunto');
+    await ErrorHandler.showError(
+      new Error("Nessun articolo estratto"),
+      "Generazione riassunto",
+    );
     return;
   }
 
-  showState('loading');
+  showState("loading");
   state.progressTracker.start();
 
   try {
@@ -85,53 +117,66 @@ export async function generateSummary() {
     settings.outputLanguage = state.selectedLanguage;
 
     // Aggiungi la lunghezza del riassunto selezionata
-    const summaryLengthSelect = document.getElementById('summaryLengthSelect');
+    const summaryLengthSelect = document.getElementById("summaryLengthSelect");
     if (summaryLengthSelect) {
       settings.summaryLength = summaryLengthSelect.value;
     }
 
     // STEP 1: Classificazione del tipo di contenuto
-    state.progressTracker.setStep('classify');
+    state.progressTracker.setStep("classify");
     let finalContentType = state.selectedContentType;
 
-    console.log('🎯 selectedContentType:', state.selectedContentType);
+    console.log("🎯 selectedContentType:", state.selectedContentType);
 
-    if (state.selectedContentType === 'auto') {
-      console.log('🔄 Avvio classificazione automatica...');
-      state.progressTracker.setStep('classify', '🔍 Analisi contenuto con AI...');
+    if (state.selectedContentType === "auto") {
+      console.log("🔄 Avvio classificazione automatica...");
+      state.progressTracker.setStep(
+        "classify",
+        "🔍 Analisi contenuto con AI...",
+      );
 
-      console.log('📋 currentArticle:', state.currentArticle);
+      console.log("📋 currentArticle:", state.currentArticle);
 
       try {
-        const classification = await ContentClassifier.classifyArticle(state.currentArticle, 'auto');
+        const classification = await ContentClassifier.classifyArticle(
+          state.currentArticle,
+          "auto",
+        );
         finalContentType = classification.category;
 
-        console.log('✅ Classificazione completata:', classification);
+        console.log("✅ Classificazione completata:", classification);
 
         // Mostra la categoria rilevata
-        const categoryLabel = ContentClassifier.getCategoryLabel(finalContentType);
-        state.progressTracker.setStep('classify', `✓ Rilevato: ${categoryLabel}`);
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const categoryLabel =
+          ContentClassifier.getCategoryLabel(finalContentType);
+        state.progressTracker.setStep(
+          "classify",
+          `✓ Rilevato: ${categoryLabel}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 800));
       } catch (error) {
-        console.error('❌ Errore classificazione:', error);
-        await ErrorHandler.logError(error, 'Classificazione contenuto');
-        finalContentType = 'general'; // Fallback
+        console.error("❌ Errore classificazione:", error);
+        await ErrorHandler.logError(error, "Classificazione contenuto");
+        finalContentType = "general"; // Fallback
       }
     } else {
-      console.log('👤 Tipo già impostato (manuale o da cronologia):', state.selectedContentType);
-      state.progressTracker.setStep('classify', '✓ Tipo già impostato');
-      await new Promise(resolve => setTimeout(resolve, 300));
+      console.log(
+        "👤 Tipo già impostato (manuale o da cronologia):",
+        state.selectedContentType,
+      );
+      state.progressTracker.setStep("classify", "✓ Tipo già impostato");
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
     // STEP 2: Generazione riassunto
-    state.progressTracker.setStep('generate');
+    state.progressTracker.setStep("generate");
     settings.contentType = finalContentType;
 
     const response = await chrome.runtime.sendMessage({
-      action: 'generateSummary',
+      action: "generateSummary",
       article: state.currentArticle,
       provider: provider,
-      settings: settings
+      settings: settings,
     });
 
     if (!response.success) {
@@ -141,31 +186,30 @@ export async function generateSummary() {
     state.currentResults = response.result;
 
     // STEP 3: Punti chiave (già inclusi, ma mostriamo lo step)
-    state.progressTracker.setStep('keypoints');
-    await new Promise(resolve => setTimeout(resolve, 300));
+    state.progressTracker.setStep("keypoints");
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     // STEP 4: Salvataggio
-    state.progressTracker.setStep('save');
+    state.progressTracker.setStep("save");
 
-    if (state.selectedContentType === 'auto') {
+    if (state.selectedContentType === "auto") {
       state.currentResults.detectedContentType = finalContentType;
-      state.currentResults.contentTypeMethod = 'auto';
+      state.currentResults.contentTypeMethod = "auto";
     } else {
       state.currentResults.detectedContentType = state.selectedContentType;
-      state.currentResults.contentTypeMethod = 'manual';
+      state.currentResults.contentTypeMethod = "manual";
     }
 
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     state.progressTracker.complete();
     displayResults();
-
   } catch (error) {
     state.progressTracker.error(error.message);
     // 🆕 Usa ErrorHandler per gestione errori migliorata
-    await ErrorHandler.showError(error, 'Generazione riassunto');
+    await ErrorHandler.showError(error, "Generazione riassunto");
     setTimeout(() => {
-      showState('error');
+      showState("error");
     }, 2000);
   }
 }
@@ -179,7 +223,7 @@ export async function displayResults() {
   elements.summaryContent.innerHTML = summaryHtml;
 
   // Mostra punti chiave
-  let keypointsHtml = '';
+  let keypointsHtml = "";
   state.currentResults.keyPoints.forEach((point, index) => {
     keypointsHtml += `
       <div class="keypoint" data-paragraph="${HtmlSanitizer.escape(String(point.paragraphs))}">
@@ -194,14 +238,24 @@ export async function displayResults() {
   elements.keypointsContent.innerHTML = keypointsHtml;
 
   // Aggiungi click handler per highlight
-  document.querySelectorAll('.keypoint').forEach(el => {
-    el.addEventListener('click', async () => {
-      const paragraph = el.dataset.paragraph;
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      await chrome.tabs.sendMessage(tab.id, {
-        action: 'highlightParagraph',
-        paragraphNumber: paragraph
-      });
+  document.querySelectorAll(".keypoint").forEach((el) => {
+    el.addEventListener("click", async () => {
+      try {
+        const paragraph = el.dataset.paragraph;
+        const [tab] = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        await chrome.tabs.sendMessage(tab.id, {
+          action: "highlightParagraph",
+          paragraphNumber: paragraph,
+        });
+      } catch (error) {
+        console.warn(
+          "Impossibile evidenziare il paragrafo nella pagina:",
+          error.message,
+        );
+      }
     });
   });
 
@@ -210,22 +264,23 @@ export async function displayResults() {
     const metadata = {
       provider: elements.providerSelect.value,
       language: state.selectedLanguage,
-      contentType: state.currentResults.detectedContentType || state.selectedContentType,
-      contentTypeMethod: state.currentResults.contentTypeMethod || 'manual',
-      fromCache: state.currentResults.fromCache || false
+      contentType:
+        state.currentResults.detectedContentType || state.selectedContentType,
+      contentTypeMethod: state.currentResults.contentTypeMethod || "manual",
+      fromCache: state.currentResults.fromCache || false,
     };
 
     await HistoryManager.saveSummary(
       state.currentArticle,
       state.currentResults.summary,
       state.currentResults.keyPoints,
-      metadata
+      metadata,
     );
   } catch (error) {
-    console.error('Errore salvataggio cronologia:', error);
+    console.error("Errore salvataggio cronologia:", error);
   }
 
-  showState('results');
+  showState("results");
 
   // Aggiungi pulsanti TTS dopo aver mostrato i risultati
   setTimeout(() => {
@@ -235,26 +290,26 @@ export async function displayResults() {
 
 export function switchTab(tabName) {
   // Aggiorna tab attivi
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.classList.remove('active');
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.classList.remove("active");
     if (tab.dataset.tab === tabName) {
-      tab.classList.add('active');
+      tab.classList.add("active");
     }
   });
 
   // Aggiorna contenuto
-  document.querySelectorAll('.tab-pane').forEach(pane => {
-    pane.classList.remove('active');
+  document.querySelectorAll(".tab-pane").forEach((pane) => {
+    pane.classList.remove("active");
   });
 
-  if (tabName === 'summary') {
-    document.getElementById('summaryTab').classList.add('active');
-  } else if (tabName === 'keypoints') {
-    document.getElementById('keypointsTab').classList.add('active');
-  } else if (tabName === 'translation') {
-    document.getElementById('translationTab').classList.add('active');
-  } else if (tabName === 'citations') {
-    document.getElementById('citationsTab').classList.add('active');
+  if (tabName === "summary") {
+    document.getElementById("summaryTab").classList.add("active");
+  } else if (tabName === "keypoints") {
+    document.getElementById("keypointsTab").classList.add("active");
+  } else if (tabName === "translation") {
+    document.getElementById("translationTab").classList.add("active");
+  } else if (tabName === "citations") {
+    document.getElementById("citationsTab").classList.add("active");
   }
 }
 
@@ -269,13 +324,13 @@ export async function copyToClipboard() {
 
   // Aggiungi traduzione se presente
   if (translationState.value) {
-    text += `\n${'='.repeat(50)}\n\n`;
+    text += `\n${"=".repeat(50)}\n\n`;
     text += `TRADUZIONE:\n${translationState.value}\n`;
   }
 
   // Aggiungi Q&A se presenti
   if (state.currentQA && state.currentQA.length > 0) {
-    text += `\n${'='.repeat(50)}\n\n`;
+    text += `\n${"=".repeat(50)}\n\n`;
     text += `DOMANDE E RISPOSTE:\n\n`;
     state.currentQA.forEach((qa, index) => {
       text += `Q${index + 1}: ${qa.question}\n`;
@@ -284,20 +339,33 @@ export async function copyToClipboard() {
   }
 
   // Aggiungi citazioni se presenti
-  if (citationsState.value && citationsState.value.citations && citationsState.value.citations.length > 0) {
-    text += `\n${'='.repeat(50)}\n\n`;
+  if (
+    citationsState.value &&
+    citationsState.value.citations &&
+    citationsState.value.citations.length > 0
+  ) {
+    text += `\n${"=".repeat(50)}\n\n`;
     text += `CITAZIONI E BIBLIOGRAFIA:\n\n`;
-    const style = document.getElementById('citationStyleSelect')?.value || 'apa';
-    text += CitationExtractor.generateBibliography(state.currentArticle, citationsState.value.citations, style);
+    const style =
+      document.getElementById("citationStyleSelect")?.value || "apa";
+    text += CitationExtractor.generateBibliography(
+      state.currentArticle,
+      citationsState.value.citations,
+      style,
+    );
   }
 
   try {
     await navigator.clipboard.writeText(text);
-    elements.copyBtn.textContent = I18n.t('feedback.copied');
+    elements.copyBtn.textContent = I18n.t("feedback.copied");
     setTimeout(() => {
-      elements.copyBtn.textContent = I18n.t('action.copy');
+      elements.copyBtn.textContent = I18n.t("action.copy");
     }, 2000);
   } catch (error) {
-    console.error('Errore copia:', error);
+    console.error("Errore copia:", error);
+    elements.copyBtn.textContent = "❌ Errore copia";
+    setTimeout(() => {
+      elements.copyBtn.textContent = I18n.t("action.copy");
+    }, 2000);
   }
 }
