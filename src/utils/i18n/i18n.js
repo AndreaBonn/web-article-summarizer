@@ -4,7 +4,7 @@ import { StorageManager } from '../storage/storage-manager.js';
 
 export const I18n = {
   currentLanguage: 'it',
-  
+
   translations: {
     it: {
       // Header
@@ -14,14 +14,15 @@ export const I18n = {
       'multi.analysis': 'Analisi Multi Articolo',
       'pdf.analysis': 'Analisi PDF',
       'settings.title': 'Impostazioni',
-      
+
       // Initial State
       'initial.welcome': 'Benvenuto',
       'initial.language': '🌍 Lingua Output:',
       'initial.contentType': '📝 Tipologia Articolo:',
-      'initial.contentType.hint': 'Seleziona il tipo la tipologia di articolo per risparmiare token, altrimenti lascia "🔍 Rilevamento Automatico" e LLM classificherà il contenuto autonomamente e utilizzerà il prompt più indicato per le analisi.',
+      'initial.contentType.hint':
+        'Seleziona il tipo la tipologia di articolo per risparmiare token, altrimenti lascia "🔍 Rilevamento Automatico" e LLM classificherà il contenuto autonomamente e utilizzerà il prompt più indicato per le analisi.',
       'initial.analyze': '🔍 Analizza Pagina',
-      
+
       // Content Types
       'contentType.auto': '🔍 Rilevamento Automatico',
       'contentType.general': '📄 Articolo Generico',
@@ -30,32 +31,32 @@ export const I18n = {
       'contentType.tutorial': '💻 Tutorial/Guida',
       'contentType.business': '💼 Business/Case Study',
       'contentType.opinion': '💭 Opinione/Editoriale',
-      
+
       // Languages
       'language.it': 'Italiano',
       'language.en': 'Inglese',
       'language.es': 'Spagnolo',
       'language.fr': 'Francese',
       'language.de': 'Tedesco',
-      
+
       // Controls
       'controls.provider': 'Provider:',
       'controls.language': '🌍 Lingua:',
       'controls.contentType': '📝 Tipo:',
       'controls.summaryLength': '📏 Lunghezza Riassunto:',
       'controls.generate': '⚡ Genera Riassunto',
-      
+
       // Article Info
       'article.title': '📄 Titolo:',
       'article.length': '📊 Lunghezza:',
       'article.words': 'parole',
       'article.readingTime': 'min lettura',
-      
+
       // Summary Length
       'summaryLength.short': '📝 Breve (40%)',
       'summaryLength.medium': '📄 Medio (60%)',
       'summaryLength.detailed': '📋 Dettagliato (75%)',
-      
+
       // Tabs
       'tab.summary': 'Riassunto',
       'tab.keypoints': 'Punti Chiave',
@@ -63,7 +64,7 @@ export const I18n = {
       'tab.citations': 'Citazioni',
       'tab.qa': 'Q&A',
       'tab.notes': 'Note',
-      
+
       // Actions
       'action.readingMode': '📖 Modalità Lettura',
       'action.pdf': '📄 PDF',
@@ -75,30 +76,30 @@ export const I18n = {
       'action.save': '💾 Salva',
       'action.cancel': 'Annulla',
       'action.confirm': 'OK',
-      
+
       // Translation
-      'translation.empty': 'Clicca sul pulsante per tradurre l\'articolo completo',
+      'translation.empty': "Clicca sul pulsante per tradurre l'articolo completo",
       'translation.button': '🌍 Traduci Articolo',
       'translation.loading': 'Traduzione in corso... Questo potrebbe richiedere 10-30 secondi.',
       'translation.errorMessage': '❌ Errore durante la traduzione:',
-      'translation.clickToTranslate': 'Clicca sul pulsante per tradurre l\'articolo completo',
-      
+      'translation.clickToTranslate': "Clicca sul pulsante per tradurre l'articolo completo",
+
       // Same Language Detection
       'sameLanguage.title': 'Testo già in {language}',
       'sameLanguage.message': 'Il testo sembra essere già in {language}. Cosa vuoi fare?',
       'sameLanguage.translate': '🔄 Traduci comunque (riformatta e migliora)',
       'sameLanguage.useOriginal': '📄 Usa testo originale',
       'sameLanguage.cancel': '✕ Annulla',
-      
+
       // Citations
-      'citations.empty': '📚 Estrai citazioni e riferimenti bibliografici dall\'articolo',
+      'citations.empty': "📚 Estrai citazioni e riferimenti bibliografici dall'articolo",
       'citations.button': '📖 Estrai Citazioni',
-      
+
       // Q&A
-      'qa.title': '💬 Fai una domanda sull\'articolo',
+      'qa.title': "💬 Fai una domanda sull'articolo",
       'qa.placeholder': 'Es: Quali sono le implicazioni pratiche?',
       'qa.ask': 'Chiedi',
-      
+
       // Loading
       'loading.extract': 'Estrazione contenuto in corso...',
       'loading.classify': 'Rilevamento tipo di articolo...',
@@ -107,15 +108,16 @@ export const I18n = {
       'loading.fromHistory': 'da cronologia',
       'loading.detected': 'Rilevato:',
       'loading.detectedAI': '(AI)',
-      
+
       // Errors
-      'error.noArticle': 'Nessun articolo rilevato in questa pagina. Prova con un articolo di blog o news.',
+      'error.noArticle':
+        'Nessun articolo rilevato in questa pagina. Prova con un articolo di blog o news.',
       'error.tooShort': 'Articolo troppo breve per essere riassunto (minimo 200 parole).',
-      'error.noApiKey': 'API key non configurata. Clicca sull\'icona ⚙️ per configurare.',
+      'error.noApiKey': "API key non configurata. Clicca sull'icona ⚙️ per configurare.",
       'error.invalidKey': 'API key non valida. Verifica la configurazione nelle impostazioni.',
       'error.tooManyRequests': 'Troppe richieste. Riprova tra qualche secondo.',
       'error.network': 'Errore di connessione. Verifica la tua connessione internet.',
-      
+
       // Modal System
       'modal.defaultTitle': 'AI Article Summarizer',
       'modal.cancel': 'Annulla',
@@ -124,7 +126,7 @@ export const I18n = {
       'modal.successTitle': 'Successo',
       'modal.errorTitle': 'Errore',
       'modal.warningTitle': 'Attenzione',
-      
+
       // User Feedback
       'cache.badge': 'Da cache',
       'feedback.copied': '✓ Copiato!',
@@ -134,7 +136,7 @@ export const I18n = {
       'feedback.translating': '⏳ Traduzione in corso...',
       'feedback.checkmark': '✓',
       'feedback.loading': '⏳',
-      
+
       // Export
       'export.markdown': 'Esporta Markdown',
       'export.pdf': 'Esporta PDF',
@@ -147,8 +149,8 @@ export const I18n = {
       'export.button': 'Esporta',
       'export.noSelection': 'Seleziona almeno una sezione da esportare',
       'export.noSelectionTitle': 'Nessuna Selezione',
-      'export.error': 'Errore durante l\'esportazione',
-      
+      'export.error': "Errore durante l'esportazione",
+
       // Email
       'email.title': 'Invia Tramite Email',
       'email.recipient': 'Email destinatario:',
@@ -160,12 +162,12 @@ export const I18n = {
       'email.includeTranslation': '🌍 Traduzione',
       'email.includeQA': '💬 Domande e Risposte',
       'email.send': 'Invia',
-      'email.error': 'Errore durante l\'invio email:',
-      
+      'email.error': "Errore durante l'invio email:",
+
       // Settings
       'settings.title': 'Impostazioni - AI Article Summarizer',
       'settings.apiKeys': '🔑 API Keys',
-      'settings.apiKeys.desc': 'Le tue chiavi sono salvate localmente e criptate per sicurezza.',
+      'settings.apiKeys.desc': 'Le tue chiavi sono salvate localmente nel tuo browser.',
       'settings.test': '🧪 Test',
       'settings.test.enterKey': '❌ Inserisci una chiave',
       'settings.test.testing': '⏳ Test in corso...',
@@ -197,11 +199,14 @@ export const I18n = {
       'settings.perf.cacheDesc': 'Salva i riassunti in cache per evitare chiamate API duplicate',
       'settings.perf.cacheTTL': 'Durata Cache (giorni)',
       'settings.perf.enableFallback': 'Abilita Fallback Automatico tra Provider',
-      'settings.perf.fallbackDesc': 'Se il provider selezionato fallisce, prova automaticamente con un altro provider configurato.',
+      'settings.perf.fallbackDesc':
+        'Se il provider selezionato fallisce, prova automaticamente con un altro provider configurato.',
       'settings.perf.enableCompression': 'Abilita Compressione Dati',
-      'settings.perf.compressionDesc': 'Comprimi automaticamente cronologia e cache vecchie per risparmiare spazio',
+      'settings.perf.compressionDesc':
+        'Comprimi automaticamente cronologia e cache vecchie per risparmiare spazio',
       'settings.perf.autoCleanup': 'Cleanup Automatico',
-      'settings.perf.cleanupDesc': 'Pulisci automaticamente cache scadute e cronologia molto vecchia',
+      'settings.perf.cleanupDesc':
+        'Pulisci automaticamente cache scadute e cronologia molto vecchia',
       'settings.perf.save': '💾 Salva Impostazioni Performance',
       'settings.perf.statsTitle': '📊 Statistiche Performance',
       'settings.perf.cache': 'Cache',
@@ -233,13 +238,14 @@ export const I18n = {
       'settings.toast.prefSaved': 'Preferenze salvate con successo',
       'settings.toast.perfSaved': 'Impostazioni performance salvate',
       'settings.cleanup.running': 'Cleanup in corso...',
-      'settings.cleanup.completed': 'Cleanup completato: {compressedHistory} cronologie compresse, {compressedCache} cache compresse, {deletedHistory} cronologie eliminate, {cleanedCache} cache pulite',
+      'settings.cleanup.completed':
+        'Cleanup completato: {compressedHistory} cronologie compresse, {compressedCache} cache compresse, {deletedHistory} cronologie eliminate, {cleanedCache} cache pulite',
       'settings.cleanup.error': 'Errore durante il cleanup:',
       'settings.cache.confirmClear': 'Sei sicuro di voler cancellare la cache?',
       'settings.cache.cleared': 'Cache cancellata',
       'settings.logs.confirmClear': 'Sei sicuro di voler cancellare i log?',
       'settings.logs.cleared': 'Log cancellati',
-      
+
       // History
       'history.title': 'Cronologia Analisi',
       'history.modalTitle': 'Cronologia',
@@ -266,8 +272,10 @@ export const I18n = {
       'history.addFavorite': 'Aggiungi ai preferiti',
       'history.removeFavorite': 'Rimuovi dai preferiti',
       'history.noArticles': 'Nessun articolo disponibile',
-      'history.confirmClearSingle': 'Sei sicuro di voler cancellare tutta la cronologia degli articoli singoli?',
-      'history.confirmClearMulti': 'Sei sicuro di voler cancellare tutta la cronologia delle analisi Multi Articolo?',
+      'history.confirmClearSingle':
+        'Sei sicuro di voler cancellare tutta la cronologia degli articoli singoli?',
+      'history.confirmClearMulti':
+        'Sei sicuro di voler cancellare tutta la cronologia delle analisi Multi Articolo?',
       'history.favoritesNotDeleted': '⭐ {count} articoli preferiti NON verranno eliminati.',
       'history.favoritesNotDeletedMulti': '⭐ {count} analisi preferite NON verranno eliminate.',
       'history.actionCannotUndo': 'Questa azione non può essere annullata.',
@@ -285,7 +293,7 @@ export const I18n = {
       'history.confirmDelete': 'Sei sicuro di voler eliminare questo riassunto?',
       'history.deleteTitle': 'Elimina Riassunto',
       'history.copyError': 'Errore durante la copia',
-      
+
       // Multi Analysis
       'multi.title': '🔬 Analisi Multi Articolo',
       'multi.modalTitle': 'Analisi',
@@ -304,19 +312,20 @@ export const I18n = {
       'multi.searchArticles': '🔍 Cerca articoli...',
       'multi.filterProvider': 'Tutti i provider',
       'multi.noArticles': 'Nessun articolo disponibile',
-      'multi.minArticles': 'Seleziona almeno 2 articoli per l\'analisi',
+      'multi.minArticles': "Seleziona almeno 2 articoli per l'analisi",
       'multi.minArticlesTitle': 'Selezione Insufficiente',
-      'multi.minOptions': 'Seleziona almeno un\'opzione di analisi',
+      'multi.minOptions': "Seleziona almeno un'opzione di analisi",
       'multi.minOptionsTitle': 'Nessuna Opzione',
       'multi.checkingCorrelation': 'Verifica correlazione articoli...',
       'multi.startingAnalysis': 'Avvio analisi...',
-      'multi.analysisError': 'Errore durante l\'analisi:',
+      'multi.analysisError': "Errore durante l'analisi:",
       'multi.errorDetails': 'Dettagli:',
       'multi.errorTitle': 'Errore',
       'multi.preparingAnalysis': 'Preparazione analisi...',
       'multi.analysisInProgress': 'Analisi in Corso',
       'multi.unrelatedTitle': 'Articoli Non Correlati',
-      'multi.unrelatedMessage': 'Gli articoli selezionati sembrano trattare argomenti completamente scollegati.',
+      'multi.unrelatedMessage':
+        'Gli articoli selezionati sembrano trattare argomenti completamente scollegati.',
       'multi.unrelatedQuestion': 'Come vuoi procedere?',
       'multi.qaOnly': 'Solo Q&A',
       'multi.fullAnalysis': 'Analisi Completa',
@@ -324,7 +333,8 @@ export const I18n = {
       'multi.comparisonNotGenerated': 'Confronto non generato',
       'multi.qaNotEnabled': 'Q&A non abilitato',
       'multi.qaInteractiveTitle': '💬 Q&A Interattivo',
-      'multi.qaInteractiveDesc': 'Fai domande sui {count} articoli selezionati. Il sistema risponderà basandosi esclusivamente sui loro contenuti.',
+      'multi.qaInteractiveDesc':
+        'Fai domande sui {count} articoli selezionati. Il sistema risponderà basandosi esclusivamente sui loro contenuti.',
       'multi.qaPlaceholder': 'Scrivi la tua domanda...',
       'multi.qaSubmit': 'Invia',
       'multi.qaYou': 'Tu:',
@@ -333,7 +343,7 @@ export const I18n = {
       'multi.qaError': 'Errore:',
       'multi.qaNoApiKey': 'API key non configurata',
       'multi.exporterNotLoaded': '{exporter} non caricato. Ricarica la pagina.',
-      'multi.exportError': 'Errore durante l\'esportazione {type}:',
+      'multi.exportError': "Errore durante l'esportazione {type}:",
       'multi.exportTitle': 'Esporta {type}',
       'multi.exportSelectContent': 'Seleziona contenuto da esportare:',
       'multi.exportGlobalSummary': '📝 Riassunto Globale',
@@ -351,7 +361,6 @@ export const I18n = {
       'multi.copyError': 'Errore durante la copia',
     },
 
-    
     en: {
       // Header
       'app.title': 'Web Site Summarizer',
@@ -360,14 +369,15 @@ export const I18n = {
       'multi.analysis': 'Multi Article Analysis',
       'pdf.analysis': 'PDF Analysis',
       'settings.title': 'Settings',
-      
+
       // Initial State
       'initial.welcome': 'Welcome',
       'initial.language': '🌍 Output Language:',
       'initial.contentType': '📝 Article Type:',
-      'initial.contentType.hint': 'Select the article type to save tokens, otherwise leave "🔍 Automatic Detection" and the LLM will classify the content autonomously and use the most suitable prompt for analysis.',
+      'initial.contentType.hint':
+        'Select the article type to save tokens, otherwise leave "🔍 Automatic Detection" and the LLM will classify the content autonomously and use the most suitable prompt for analysis.',
       'initial.analyze': '🔍 Analyze Page',
-      
+
       // Content Types
       'contentType.auto': '🔍 Automatic Detection',
       'contentType.general': '📄 General Article',
@@ -376,32 +386,32 @@ export const I18n = {
       'contentType.tutorial': '💻 Tutorial/Guide',
       'contentType.business': '💼 Business/Case Study',
       'contentType.opinion': '💭 Opinion/Editorial',
-      
+
       // Languages
       'language.it': 'Italian',
       'language.en': 'English',
       'language.es': 'Spanish',
       'language.fr': 'French',
       'language.de': 'German',
-      
+
       // Controls
       'controls.provider': 'Provider:',
       'controls.language': '🌍 Language:',
       'controls.contentType': '📝 Type:',
       'controls.summaryLength': '📏 Summary Length:',
       'controls.generate': '⚡ Generate Summary',
-      
+
       // Article Info
       'article.title': '📄 Title:',
       'article.length': '📊 Length:',
       'article.words': 'words',
       'article.readingTime': 'min reading',
-      
+
       // Summary Length
       'summaryLength.short': '📝 Short (40%)',
       'summaryLength.medium': '📄 Medium (60%)',
       'summaryLength.detailed': '📋 Detailed (75%)',
-      
+
       // Tabs
       'tab.summary': 'Summary',
       'tab.keypoints': 'Key Points',
@@ -409,7 +419,7 @@ export const I18n = {
       'tab.citations': 'Citations',
       'tab.qa': 'Q&A',
       'tab.notes': 'Notes',
-      
+
       // Actions
       'action.readingMode': '📖 Reading Mode',
       'action.pdf': '📄 PDF',
@@ -421,30 +431,31 @@ export const I18n = {
       'action.save': '💾 Save',
       'action.cancel': 'Cancel',
       'action.confirm': 'OK',
-      
+
       // Translation
       'translation.empty': 'Click the button to translate the full article',
       'translation.button': '🌍 Translate Article',
       'translation.loading': 'Translating... This may take 10-30 seconds.',
       'translation.errorMessage': '❌ Translation error:',
       'translation.clickToTranslate': 'Click the button to translate the full article',
-      
+
       // Same Language Detection
       'sameLanguage.title': 'Text already in {language}',
-      'sameLanguage.message': 'The text appears to be already in {language}. What would you like to do?',
+      'sameLanguage.message':
+        'The text appears to be already in {language}. What would you like to do?',
       'sameLanguage.translate': '🔄 Translate anyway (reformat and improve)',
       'sameLanguage.useOriginal': '📄 Use original text',
       'sameLanguage.cancel': '✕ Cancel',
-      
+
       // Citations
       'citations.empty': '📚 Extract citations and bibliographic references from the article',
       'citations.button': '📖 Extract Citations',
-      
+
       // Q&A
       'qa.title': '💬 Ask a question about the article',
       'qa.placeholder': 'E.g.: What are the practical implications?',
       'qa.ask': 'Ask',
-      
+
       // Loading
       'loading.extract': 'Extracting content...',
       'loading.classify': 'Detecting article type...',
@@ -453,7 +464,7 @@ export const I18n = {
       'loading.fromHistory': 'from history',
       'loading.detected': 'Detected:',
       'loading.detectedAI': '(AI)',
-      
+
       // Errors
       'error.noArticle': 'No article detected on this page. Try with a blog or news article.',
       'error.tooShort': 'Article too short to summarize (minimum 200 words).',
@@ -461,7 +472,7 @@ export const I18n = {
       'error.invalidKey': 'Invalid API key. Check your settings.',
       'error.tooManyRequests': 'Too many requests. Try again in a few seconds.',
       'error.network': 'Connection error. Check your internet connection.',
-      
+
       // Modal System
       'modal.defaultTitle': 'AI Article Summarizer',
       'modal.cancel': 'Cancel',
@@ -470,7 +481,7 @@ export const I18n = {
       'modal.successTitle': 'Success',
       'modal.errorTitle': 'Error',
       'modal.warningTitle': 'Warning',
-      
+
       // User Feedback
       'cache.badge': 'From cache',
       'feedback.copied': '✓ Copied!',
@@ -480,7 +491,7 @@ export const I18n = {
       'feedback.translating': '⏳ Translating...',
       'feedback.checkmark': '✓',
       'feedback.loading': '⏳',
-      
+
       // Export
       'export.markdown': 'Export Markdown',
       'export.pdf': 'Export PDF',
@@ -494,7 +505,7 @@ export const I18n = {
       'export.noSelection': 'Select at least one section to export',
       'export.noSelectionTitle': 'No Selection',
       'export.error': 'Export error',
-      
+
       // Email
       'email.title': 'Send via Email',
       'email.recipient': 'Recipient email:',
@@ -507,11 +518,11 @@ export const I18n = {
       'email.includeQA': '💬 Q&A',
       'email.send': 'Send',
       'email.error': 'Email sending error:',
-      
+
       // Settings
       'settings.title': 'Settings - AI Article Summarizer',
       'settings.apiKeys': '🔑 API Keys',
-      'settings.apiKeys.desc': 'Your keys are saved locally and encrypted for security.',
+      'settings.apiKeys.desc': 'Your keys are saved locally in your browser.',
       'settings.test': '🧪 Test',
       'settings.test.enterKey': '❌ Enter a key',
       'settings.test.testing': '⏳ Testing...',
@@ -543,7 +554,8 @@ export const I18n = {
       'settings.perf.cacheDesc': 'Save summaries in cache to avoid duplicate API calls',
       'settings.perf.cacheTTL': 'Cache Duration (days)',
       'settings.perf.enableFallback': 'Enable Automatic Fallback between Providers',
-      'settings.perf.fallbackDesc': 'If the selected provider fails, automatically try another configured provider.',
+      'settings.perf.fallbackDesc':
+        'If the selected provider fails, automatically try another configured provider.',
       'settings.perf.enableCompression': 'Enable Data Compression',
       'settings.perf.compressionDesc': 'Automatically compress old history and cache to save space',
       'settings.perf.autoCleanup': 'Automatic Cleanup',
@@ -579,13 +591,14 @@ export const I18n = {
       'settings.toast.prefSaved': 'Preferences saved successfully',
       'settings.toast.perfSaved': 'Performance settings saved',
       'settings.cleanup.running': 'Cleanup in progress...',
-      'settings.cleanup.completed': 'Cleanup completed: {compressedHistory} histories compressed, {compressedCache} caches compressed, {deletedHistory} histories deleted, {cleanedCache} caches cleaned',
+      'settings.cleanup.completed':
+        'Cleanup completed: {compressedHistory} histories compressed, {compressedCache} caches compressed, {deletedHistory} histories deleted, {cleanedCache} caches cleaned',
       'settings.cleanup.error': 'Cleanup error:',
       'settings.cache.confirmClear': 'Are you sure you want to clear the cache?',
       'settings.cache.cleared': 'Cache cleared',
       'settings.logs.confirmClear': 'Are you sure you want to clear the logs?',
       'settings.logs.cleared': 'Logs cleared',
-      
+
       // History
       'history.title': 'Analysis History',
       'history.modalTitle': 'History',
@@ -613,7 +626,8 @@ export const I18n = {
       'history.removeFavorite': 'Remove from favorites',
       'history.noArticles': 'No articles available',
       'history.confirmClearSingle': 'Are you sure you want to clear all single article history?',
-      'history.confirmClearMulti': 'Are you sure you want to clear all multi-article analysis history?',
+      'history.confirmClearMulti':
+        'Are you sure you want to clear all multi-article analysis history?',
       'history.favoritesNotDeleted': '⭐ {count} favorite articles will NOT be deleted.',
       'history.favoritesNotDeletedMulti': '⭐ {count} favorite analyses will NOT be deleted.',
       'history.actionCannotUndo': 'This action cannot be undone.',
@@ -631,7 +645,7 @@ export const I18n = {
       'history.confirmDelete': 'Are you sure you want to delete this summary?',
       'history.deleteTitle': 'Delete Summary',
       'history.copyError': 'Copy error',
-      
+
       // Multi Analysis
       'multi.title': '🔬 Multi Article Analysis',
       'multi.modalTitle': 'Analysis',
@@ -662,7 +676,8 @@ export const I18n = {
       'multi.preparingAnalysis': 'Preparing analysis...',
       'multi.analysisInProgress': 'Analysis in Progress',
       'multi.unrelatedTitle': 'Unrelated Articles',
-      'multi.unrelatedMessage': 'The selected articles appear to cover completely unrelated topics.',
+      'multi.unrelatedMessage':
+        'The selected articles appear to cover completely unrelated topics.',
       'multi.unrelatedQuestion': 'How do you want to proceed?',
       'multi.qaOnly': 'Q&A Only',
       'multi.fullAnalysis': 'Full Analysis',
@@ -670,7 +685,8 @@ export const I18n = {
       'multi.comparisonNotGenerated': 'Comparison not generated',
       'multi.qaNotEnabled': 'Q&A not enabled',
       'multi.qaInteractiveTitle': '💬 Interactive Q&A',
-      'multi.qaInteractiveDesc': 'Ask questions about the {count} selected articles. The system will answer based exclusively on their contents.',
+      'multi.qaInteractiveDesc':
+        'Ask questions about the {count} selected articles. The system will answer based exclusively on their contents.',
       'multi.qaPlaceholder': 'Write your question...',
       'multi.qaSubmit': 'Submit',
       'multi.qaYou': 'You:',
@@ -697,7 +713,6 @@ export const I18n = {
       'multi.copyError': 'Copy error',
     },
 
-    
     // SPANISH - Seguirà lo stesso pattern di EN (da completare)
     es: {
       'app.title': 'Web Site Summarizer',
@@ -711,7 +726,7 @@ export const I18n = {
       'export.pdf': 'Exportar PDF',
       // ... altre chiavi seguono pattern EN
     },
-    
+
     // FRENCH - Seguirà lo stesso pattern di EN (da completare)
     fr: {
       'app.title': 'Web Site Summarizer',
@@ -725,7 +740,7 @@ export const I18n = {
       'export.pdf': 'Exporter PDF',
       // ... altre chiavi seguono pattern EN
     },
-    
+
     // GERMAN - Seguirà lo stesso pattern di EN (da completare)
     de: {
       'app.title': 'Web Site Summarizer',
@@ -738,9 +753,9 @@ export const I18n = {
       'export.markdown': 'Markdown Exportieren',
       'export.pdf': 'PDF Exportieren',
       // ... altre chiavi seguono pattern EN
-    }
+    },
   },
-  
+
   // Inizializza la lingua
   async init() {
     const lang = await StorageManager.getUILanguage();
@@ -749,7 +764,22 @@ export const I18n = {
     }
     this.updateUI();
   },
-  
+
+  // Inizializzazione completa per una pagina: init + carica lingua UI + event listener
+  async initPage() {
+    await this.init();
+    const savedUILanguage = await StorageManager.getUILanguage();
+    const uiLanguageSelect = document.getElementById('uiLanguageSelect');
+    if (savedUILanguage && uiLanguageSelect) {
+      uiLanguageSelect.value = savedUILanguage;
+    }
+    if (uiLanguageSelect) {
+      uiLanguageSelect.addEventListener('change', async (e) => {
+        await this.setLanguage(e.target.value);
+      });
+    }
+  },
+
   // Cambia lingua
   async setLanguage(lang) {
     if (this.translations[lang]) {
@@ -758,33 +788,33 @@ export const I18n = {
       this.updateUI();
     }
   },
-  
+
   // Ottieni traduzione
   t(key) {
     const translation = this.translations[this.currentLanguage]?.[key];
     return translation || key;
   },
-  
+
   // Ottieni traduzione con sostituzione placeholder
   tf(key, replacements = {}) {
     let translation = this.t(key);
-    Object.keys(replacements).forEach(placeholder => {
+    Object.keys(replacements).forEach((placeholder) => {
       translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
     });
     return translation;
   },
-  
+
   // Aggiorna tutti gli elementi con data-i18n
   updateUI() {
     // Aggiorna elementi con data-i18n (testo)
-    document.querySelectorAll('[data-i18n]').forEach(element => {
+    document.querySelectorAll('[data-i18n]').forEach((element) => {
       const key = element.getAttribute('data-i18n');
       const translation = this.t(key);
-      
+
       // Gestisci placeholder per input
       if (element.tagName === 'INPUT' && element.hasAttribute('placeholder')) {
         element.setAttribute('placeholder', translation);
-      } 
+      }
       // Gestisci option in select
       else if (element.tagName === 'OPTION') {
         element.textContent = translation;
@@ -794,14 +824,14 @@ export const I18n = {
         element.textContent = translation;
       }
     });
-    
+
     // Aggiorna elementi con data-i18n-title (attributo title)
-    document.querySelectorAll('[data-i18n-title]').forEach(element => {
+    document.querySelectorAll('[data-i18n-title]').forEach((element) => {
       const key = element.getAttribute('data-i18n-title');
       const translation = this.t(key);
       element.setAttribute('title', translation);
     });
-    
+
     // Aggiorna anche il titolo della pagina se presente
     const titleElement = document.querySelector('title');
     const titleKey = titleElement?.getAttribute('data-i18n');
@@ -809,16 +839,16 @@ export const I18n = {
       document.title = this.t(titleKey);
     }
   },
-  
+
   // Ottieni tutte le lingue disponibili
   getAvailableLanguages() {
     return [
       { code: 'it', name: 'Italiano', flag: '🇮🇹' },
-      { code: 'en', name: 'English', flag: '🇺🇸' }
+      { code: 'en', name: 'English', flag: '🇺🇸' },
       // ES, FR, DE disponibili ma non ancora tradotte al 100%
       // { code: 'es', name: 'Español', flag: '🇪🇸' },
       // { code: 'fr', name: 'Français', flag: '🇫🇷' },
       // { code: 'de', name: 'Deutsch', flag: '🇩🇪' }
     ];
-  }
+  },
 };

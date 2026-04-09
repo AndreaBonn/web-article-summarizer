@@ -1,12 +1,19 @@
 // Advanced Analysis - Q&A e Bias Detection
+import { Logger } from '../core/logger.js';
+
 export class AdvancedAnalysis {
   // Q&A System
   static async askQuestion(question, article, summary, provider, apiKey, settings) {
     const systemPrompt = this.getQASystemPrompt(provider, settings.outputLanguage || 'it');
-    const userPrompt = this.buildQAPrompt(question, article, summary, settings.outputLanguage || 'it');
-    
+    const userPrompt = this.buildQAPrompt(
+      question,
+      article,
+      summary,
+      settings.outputLanguage || 'it',
+    );
+
     const prompt = { systemPrompt, userPrompt };
-    
+
     try {
       let response;
       switch (provider) {
@@ -30,7 +37,7 @@ export class AdvancedAnalysis {
       throw new Error(`Errore Q&A: ${error.message}`);
     }
   }
-  
+
   static getQASystemPrompt(provider, language) {
     // Prompt ottimizzati per modello (da prompts/Q&A.md)
     const prompts = {
@@ -65,7 +72,7 @@ STILE DI COMUNICAZIONE:
 - Linguaggio fluido e naturale pur mantenendo accuratezza tecnica
 
 Rispondi sempre in italiano.`,
-        
+
         en: `You are an expert assistant specialized in analyzing articles and providing precise answers to questions based exclusively on their content.
 
 CORE PRINCIPLES:
@@ -95,7 +102,7 @@ COMMUNICATION STYLE:
 - Never fabricate, embellish, or extend beyond what the article supports
 - Fluid, natural language while maintaining technical accuracy
 
-Always answer in English.`
+Always answer in English.`,
       },
       groq: {
         it: `Sei un assistente esperto nell'analisi di articoli e nella risposta a domande basate esclusivamente sul loro contenuto.
@@ -122,7 +129,7 @@ STILE:
 - Mai inventare informazioni
 
 Rispondi sempre in italiano.`,
-        
+
         en: `You are an expert assistant specialized in analyzing articles and answering questions based exclusively on their content.
 
 CORE PRINCIPLES:
@@ -146,9 +153,9 @@ STYLE:
 - More detailed for complex questions
 - Never fabricate information
 
-Always answer in English.`
+Always answer in English.`,
       },
-      
+
       openai: {
         it: `Sei un assistente esperto specializzato nell'analisi di articoli e nella risposta a domande basate esclusivamente sul loro contenuto.
 
@@ -174,7 +181,7 @@ STILE:
 - Non inventare mai informazioni
 
 Rispondi sempre in italiano.`,
-        
+
         en: `You are an expert assistant specialized in analyzing articles and answering questions based exclusively on their content.
 
 CORE PRINCIPLES:
@@ -198,9 +205,9 @@ STYLE:
 - More detailed for complex questions
 - Never fabricate information
 
-Always answer in English.`
+Always answer in English.`,
       },
-      
+
       anthropic: {
         it: `Sei un assistente esperto nella comprensione della lettura, specializzato nel rispondere a domande con alta fedeltà al materiale di origine. Il tuo ruolo è aiutare gli utenti a comprendere ed estrarre informazioni dagli articoli rispondendo alle loro domande basandoti esclusivamente sul contenuto dell'articolo.
 
@@ -229,7 +236,7 @@ STILE RISPOSTA:
 - Non inventare, abbellire o estendere mai oltre ciò che l'articolo supporta
 
 Rispondi sempre in italiano.`,
-        
+
         en: `You are an expert reading comprehension assistant specialized in answering questions with high fidelity to source material. Your role is to help users understand and extract information from articles by answering their questions based exclusively on the article's content.
 
 CORE PRINCIPLES:
@@ -256,64 +263,78 @@ RESPONSE STYLE:
 - Structured responses for multi-part questions
 - Never fabricate, embellish, or extend beyond what the article supports
 
-Always answer in English.`
-      }
+Always answer in English.`,
+      },
     };
-    
+
     // Aggiungi prompt per altre lingue (ES, FR, DE) usando versione inglese adattata
-    Object.keys(prompts).forEach(prov => {
-      prompts[prov].es = prompts[prov].en.replace(/Always answer in English\./g, 'Siempre responde en español.');
-      prompts[prov].fr = prompts[prov].en.replace(/Always answer in English\./g, 'Réponds toujours en français.');
-      prompts[prov].de = prompts[prov].en.replace(/Always answer in English\./g, 'Antworte immer auf Deutsch.');
+    Object.keys(prompts).forEach((prov) => {
+      prompts[prov].es = prompts[prov].en.replace(
+        /Always answer in English\./g,
+        'Siempre responde en español.',
+      );
+      prompts[prov].fr = prompts[prov].en.replace(
+        /Always answer in English\./g,
+        'Réponds toujours en français.',
+      );
+      prompts[prov].de = prompts[prov].en.replace(
+        /Always answer in English\./g,
+        'Antworte immer auf Deutsch.',
+      );
     });
-    
+
     // Fallback per altre lingue (usa inglese)
     const providerPrompts = prompts[provider] || prompts.groq;
     return providerPrompts[language] || providerPrompts.en;
   }
-  
+
   static buildQAPrompt(question, article, summary, language) {
     const labels = {
       it: {
         article: 'ARTICOLO',
         summary: 'RIASSUNTO',
         question: 'DOMANDA',
-        instruction: 'Rispondi alla domanda basandoti sul contenuto dell\'articolo. Se citi informazioni specifiche, indica il paragrafo (§N).'
+        instruction:
+          "Rispondi alla domanda basandoti sul contenuto dell'articolo. Se citi informazioni specifiche, indica il paragrafo (§N).",
       },
       en: {
         article: 'ARTICLE',
         summary: 'SUMMARY',
         question: 'QUESTION',
-        instruction: 'Answer the question based on the article content. If you cite specific information, indicate the paragraph (§N).'
+        instruction:
+          'Answer the question based on the article content. If you cite specific information, indicate the paragraph (§N).',
       },
       es: {
         article: 'ARTÍCULO',
         summary: 'RESUMEN',
         question: 'PREGUNTA',
-        instruction: 'Responde a la pregunta basándote en el contenido del artículo. Si citas información específica, indica el párrafo (§N).'
+        instruction:
+          'Responde a la pregunta basándote en el contenido del artículo. Si citas información específica, indica el párrafo (§N).',
       },
       fr: {
         article: 'ARTICLE',
         summary: 'RÉSUMÉ',
         question: 'QUESTION',
-        instruction: 'Réponds à la question en te basant sur le contenu de l\'article. Si tu cites des informations spécifiques, indique le paragraphe (§N).'
+        instruction:
+          "Réponds à la question en te basant sur le contenu de l'article. Si tu cites des informations spécifiques, indique le paragraphe (§N).",
       },
       de: {
         article: 'ARTIKEL',
         summary: 'ZUSAMMENFASSUNG',
         question: 'FRAGE',
-        instruction: 'Beantworte die Frage basierend auf dem Artikelinhalt. Wenn du spezifische Informationen zitierst, gib den Absatz an (§N).'
-      }
+        instruction:
+          'Beantworte die Frage basierend auf dem Artikelinhalt. Wenn du spezifische Informationen zitierst, gib den Absatz an (§N).',
+      },
     };
-    
+
     const l = labels[language] || labels.it;
-    
+
     // Formatta articolo con paragrafi numerati
     let formattedArticle = `**Titolo:** ${article.title}\n\n`;
-    article.paragraphs.forEach(p => {
+    article.paragraphs.forEach((p) => {
       formattedArticle += `§${p.id}: ${p.text}\n\n`;
     });
-    
+
     return `# ${l.article}
 
 ${formattedArticle}
@@ -334,170 +355,213 @@ ${question}
 
 ${l.instruction}`;
   }
-  
+
   // API Calls
+  static async _fetchWithTimeout(url, options, timeoutMs = 60000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Timeout: il provider non ha risposto entro 60 secondi. Riprova.');
+      }
+      throw error;
+    }
+  }
+
   static async callGroqQA(apiKey, prompt) {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
+    const response = await this._fetchWithTimeout(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: prompt.systemPrompt },
+            { role: 'user', content: prompt.userPrompt },
+          ],
+          temperature: 0.4,
+          max_tokens: 1500,
+        }),
       },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: prompt.systemPrompt },
-          { role: 'user', content: prompt.userPrompt }
-        ],
-        temperature: 0.4,
-        max_tokens: 1500
-      })
-    });
-    
+    );
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error?.message || 'Errore API Groq');
     }
-    
+
     const data = await response.json();
+    if (!data.choices || data.choices.length === 0 || !data.choices[0].message?.content) {
+      throw new Error('Risposta vuota dal provider. Riprova.');
+    }
     return data.choices[0].message.content;
   }
-  
+
   static async callOpenAIQA(apiKey, prompt) {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await this._fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: prompt.systemPrompt },
-          { role: 'user', content: prompt.userPrompt }
+          { role: 'user', content: prompt.userPrompt },
         ],
         temperature: 0.4,
-        max_tokens: 1500
-      })
+        max_tokens: 1500,
+      }),
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error?.message || 'Errore API OpenAI');
     }
-    
+
     const data = await response.json();
+    if (!data.choices || data.choices.length === 0 || !data.choices[0].message?.content) {
+      throw new Error('Risposta vuota dal provider. Riprova.');
+    }
     return data.choices[0].message.content;
   }
-  
+
   static async callAnthropicQA(apiKey, prompt) {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await this._fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
         max_tokens: 1500,
         temperature: 0.4,
         system: prompt.systemPrompt,
-        messages: [
-          { role: 'user', content: prompt.userPrompt }
-        ]
-      })
+        messages: [{ role: 'user', content: prompt.userPrompt }],
+      }),
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error?.message || 'Errore API Claude');
     }
-    
+
     const data = await response.json();
+    if (!data.content || data.content.length === 0 || !data.content[0].text) {
+      throw new Error('Claude ha restituito una risposta vuota. Riprova.');
+    }
     return data.content[0].text;
   }
-  
+
   // Helper per estrarre il testo dalla risposta Gemini
   static extractGeminiText(data) {
-    console.log('Gemini QA response structure:', JSON.stringify(data, null, 2));
-    
     if (!data.candidates || data.candidates.length === 0) {
-      console.error('Gemini error - no candidates:', data);
-      const errorMsg = data.error?.message || data.promptFeedback?.blockReason || 'Nessun candidato nella risposta';
+      Logger.error('Gemini error - no candidates:', data);
+      const errorMsg =
+        data.error?.message ||
+        data.promptFeedback?.blockReason ||
+        'Nessun candidato nella risposta';
       throw new Error(`Risposta Gemini non valida: ${errorMsg}`);
     }
-    
+
     const candidate = data.candidates[0];
-    
+
     // Controlla se il contenuto è stato bloccato
     if (candidate.finishReason === 'SAFETY' || candidate.finishReason === 'RECITATION') {
       throw new Error(`Contenuto bloccato da Gemini: ${candidate.finishReason}`);
     }
-    
+
     // Gemini 2.5-pro può terminare con MAX_TOKENS se usa troppi token per il reasoning
     if (candidate.finishReason === 'MAX_TOKENS') {
-      console.warn('Gemini ha raggiunto il limite di token. Thoughts tokens:', data.usageMetadata?.thoughtsTokenCount);
-      throw new Error('Gemini ha raggiunto il limite di token. Aumenta maxOutputTokens o riduci la lunghezza del prompt.');
+      Logger.warn(
+        'Gemini ha raggiunto il limite di token. Thoughts tokens:',
+        data.usageMetadata?.thoughtsTokenCount,
+      );
+      throw new Error(
+        'Gemini ha raggiunto il limite di token. Aumenta maxOutputTokens o riduci la lunghezza del prompt.',
+      );
     }
-    
+
     if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
-      console.error('Gemini error - invalid content structure:', candidate);
+      Logger.error('Gemini error - invalid content structure:', candidate);
       throw new Error('Risposta Gemini non valida: nessun contenuto generato');
     }
-    
+
     const text = candidate.content.parts[0].text;
     if (!text || text.trim().length === 0) {
       throw new Error('Risposta Gemini vuota');
     }
-    
+
     return text;
   }
 
   static async callGeminiQA(apiKey, prompt) {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `${prompt.systemPrompt}\n\n${prompt.userPrompt}`
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 8000,  // Aumentato per gemini-2.5-pro che usa token per reasoning
-          topP: 0.95,
-          topK: 40
+    const response = await this._fetchWithTimeout(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
         },
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE'
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `${prompt.systemPrompt}\n\n${prompt.userPrompt}`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 8000, // Aumentato per gemini-2.5-pro che usa token per reasoning
+            topP: 0.95,
+            topK: 40,
           },
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE'
-          },
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE'
-          },
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE'
-          }
-        ]
-      })
-    });
-    
+          safetySettings: [
+            {
+              category: 'HARM_CATEGORY_HARASSMENT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_HATE_SPEECH',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_NONE',
+            },
+          ],
+        }),
+      },
+    );
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error?.message || 'Errore API Gemini');
     }
-    
+
     const data = await response.json();
     return this.extractGeminiText(data);
   }

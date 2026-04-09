@@ -1,5 +1,6 @@
 // history-io.js — Email, import/export, reading mode
 
+import { Logger } from '../../utils/core/logger.js';
 import { state } from './state.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
@@ -27,7 +28,7 @@ export async function sendCurrentEmail() {
 
     // Popola lista
     savedEmailsList.innerHTML = '';
-    savedEmails.forEach(email => {
+    savedEmails.forEach((email) => {
       const item = document.createElement('div');
       item.className = 'saved-email-item';
 
@@ -45,7 +46,7 @@ export async function sendCurrentEmail() {
         if (e.target === deleteBtn) return;
 
         // Deseleziona tutti
-        document.querySelectorAll('.saved-email-item').forEach(i => {
+        document.querySelectorAll('.saved-email-item').forEach((i) => {
           i.classList.remove('selected');
         });
 
@@ -62,7 +63,7 @@ export async function sendCurrentEmail() {
         const confirmed = await Modal.confirm(
           `Vuoi rimuovere "${email}" dalla lista?`,
           'Rimuovi Email',
-          '🗑️'
+          '🗑️',
         );
 
         if (confirmed) {
@@ -143,12 +144,22 @@ export async function sendCurrentEmail() {
     const options = {
       includeSummary: document.getElementById('emailIncludeSummary').checked,
       includeKeypoints: document.getElementById('emailIncludeKeypoints').checked,
-      includeTranslation: document.getElementById('emailIncludeTranslation').checked && state.currentEntry.translation,
-      includeQA: document.getElementById('emailIncludeQA').checked && state.currentEntry.qa && state.currentEntry.qa.length > 0
+      includeTranslation:
+        document.getElementById('emailIncludeTranslation').checked &&
+        state.currentEntry.translation,
+      includeQA:
+        document.getElementById('emailIncludeQA').checked &&
+        state.currentEntry.qa &&
+        state.currentEntry.qa.length > 0,
     };
 
     // Verifica che almeno una opzione sia selezionata
-    if (!options.includeSummary && !options.includeKeypoints && !options.includeTranslation && !options.includeQA) {
+    if (
+      !options.includeSummary &&
+      !options.includeKeypoints &&
+      !options.includeTranslation &&
+      !options.includeQA
+    ) {
       await Modal.alert('Seleziona almeno una sezione da includere', 'Nessuna Selezione', '⚠️');
       return;
     }
@@ -161,8 +172,10 @@ export async function sendCurrentEmail() {
       state.currentEntry.article,
       options.includeSummary ? state.currentEntry.summary : null,
       options.includeKeypoints ? state.currentEntry.keyPoints : null,
-      options.includeTranslation && state.currentEntry.translation ? state.currentEntry.translation.text : null,
-      options.includeQA ? state.currentEntry.qa : null
+      options.includeTranslation && state.currentEntry.translation
+        ? state.currentEntry.translation.text
+        : null,
+      options.includeQA ? state.currentEntry.qa : null,
     );
 
     // Apri client email
@@ -175,7 +188,7 @@ export async function sendCurrentEmail() {
     await Modal.alert(
       'Il client email è stato aperto. Verifica e invia il messaggio.',
       'Email Preparata',
-      '✅'
+      '✅',
     );
 
     // Cleanup
@@ -217,7 +230,6 @@ export async function sendCurrentEmail() {
   emailInput.addEventListener('keypress', handleEnter);
 }
 
-
 // Open Reading Mode from History
 export async function openReadingModeFromHistory() {
   if (!state.currentEntry) return;
@@ -230,10 +242,10 @@ export async function openReadingModeFromHistory() {
     translation: state.currentEntry.translation || null,
     citations: state.currentEntry.citations || null,
     qa: state.currentEntry.qa || null,
-    metadata: state.currentEntry.metadata || {}
+    metadata: state.currentEntry.metadata || {},
   };
 
-  console.log('📖 Opening reading mode with data:', readingData);
+  Logger.debug('Opening reading mode with data:', readingData);
 
   // Save to chrome.storage.local (persists across tabs)
   await chrome.storage.local.set({ readingModeData: readingData });
@@ -241,7 +253,6 @@ export async function openReadingModeFromHistory() {
   // Open reading mode in new tab
   window.open(chrome.runtime.getURL('src/pages/reading-mode/reading-mode.html'), '_blank');
 }
-
 
 // ===== BACKUP/EXPORT CRONOLOGIA =====
 
@@ -274,14 +285,14 @@ export async function downloadHistory() {
         singleArticles: singleHistory,
         multiAnalysis: multiHistory,
         settings: settings,
-        stats: stats
+        stats: stats,
       },
       metadata: {
         totalSingleArticles: singleHistory.length,
         totalMultiAnalysis: multiHistory.length,
         totalSummaries: stats.totalSummaries || 0,
-        totalWords: stats.totalWords || 0
-      }
+        totalWords: stats.totalWords || 0,
+      },
     };
 
     // Converti in JSON
@@ -312,17 +323,16 @@ export async function downloadHistory() {
     // Mostra statistiche
     await Modal.alert(
       `Backup completato con successo!\n\n` +
-      `📄 Articoli singoli: ${singleHistory.length}\n` +
-      `🔬 Analisi multiple: ${multiHistory.length}\n` +
-      `📊 Totale riassunti: ${stats.totalSummaries || 0}\n` +
-      `📝 Parole elaborate: ${(stats.totalWords || 0).toLocaleString()}\n\n` +
-      `File salvato:\n${filename}`,
+        `📄 Articoli singoli: ${singleHistory.length}\n` +
+        `🔬 Analisi multiple: ${multiHistory.length}\n` +
+        `📊 Totale riassunti: ${stats.totalSummaries || 0}\n` +
+        `📝 Parole elaborate: ${(stats.totalWords || 0).toLocaleString()}\n\n` +
+        `File salvato:\n${filename}`,
       'Backup Completato',
-      '✅'
+      '✅',
     );
-
   } catch (error) {
-    console.error('Errore download cronologia:', error);
+    Logger.error('Errore download cronologia:', error);
 
     const btn = document.getElementById('downloadHistoryBtn');
     btn.textContent = '❌ Errore';
@@ -334,11 +344,10 @@ export async function downloadHistory() {
 
     await Modal.error(
       'Errore durante il download della cronologia: ' + error.message,
-      'Errore Download'
+      'Errore Download',
     );
   }
 }
-
 
 /**
  * Importa cronologia da file JSON
@@ -360,14 +369,14 @@ export async function importHistory(event) {
     // Chiedi conferma
     const confirmed = await Modal.confirm(
       `Vuoi importare questo backup?\n\n` +
-      `📅 Data backup:\n${new Date(backup.exportDate).toLocaleString('it-IT')}\n\n` +
-      `📄 Articoli singoli: ${backup.metadata.totalSingleArticles || 0}\n` +
-      `🔬 Analisi multiple: ${backup.metadata.totalMultiAnalysis || 0}\n\n` +
-      `⚠️ ATTENZIONE:\n` +
-      `Questo AGGIUNGERÀ i dati al tuo storico\n` +
-      `esistente (non li sostituirà).`,
+        `📅 Data backup:\n${new Date(backup.exportDate).toLocaleString('it-IT')}\n\n` +
+        `📄 Articoli singoli: ${backup.metadata.totalSingleArticles || 0}\n` +
+        `🔬 Analisi multiple: ${backup.metadata.totalMultiAnalysis || 0}\n\n` +
+        `⚠️ ATTENZIONE:\n` +
+        `Questo AGGIUNGERÀ i dati al tuo storico\n` +
+        `esistente (non li sostituirà).`,
       'Conferma Importazione',
-      '📥'
+      '📥',
     );
 
     if (!confirmed) {
@@ -386,7 +395,7 @@ export async function importHistory(event) {
     let importedSingle = 0;
     if (backup.data.singleArticles && Array.isArray(backup.data.singleArticles)) {
       const currentHistory = await HistoryManager.getHistory();
-      const currentIds = new Set(currentHistory.map(h => h.id));
+      const currentIds = new Set(currentHistory.map((h) => h.id));
 
       for (const article of backup.data.singleArticles) {
         // Evita duplicati basati su ID
@@ -401,7 +410,7 @@ export async function importHistory(event) {
             article.translation,
             article.qa,
             article.citations,
-            article.notes
+            article.notes,
           );
           importedSingle++;
         }
@@ -412,7 +421,7 @@ export async function importHistory(event) {
     let importedMulti = 0;
     if (backup.data.multiAnalysis && Array.isArray(backup.data.multiAnalysis)) {
       const currentMulti = await HistoryManager.getMultiAnalysisHistory();
-      const currentIds = new Set(currentMulti.map(h => h.id));
+      const currentIds = new Set(currentMulti.map((h) => h.id));
 
       for (const analysis of backup.data.multiAnalysis) {
         // Evita duplicati basati su ID
@@ -439,15 +448,14 @@ export async function importHistory(event) {
     // Mostra successo
     await Modal.alert(
       `Importazione completata con successo!\n\n` +
-      `📄 Articoli singoli importati: ${importedSingle}\n` +
-      `🔬 Analisi multiple importate: ${importedMulti}\n\n` +
-      `La cronologia è stata aggiornata.`,
+        `📄 Articoli singoli importati: ${importedSingle}\n` +
+        `🔬 Analisi multiple importate: ${importedMulti}\n\n` +
+        `La cronologia è stata aggiornata.`,
       'Importazione Completata',
-      '✅'
+      '✅',
     );
-
   } catch (error) {
-    console.error('Errore importazione cronologia:', error);
+    Logger.error('Errore importazione cronologia:', error);
 
     const btn = document.getElementById('importHistoryBtn');
     btn.textContent = '❌ Errore';
@@ -459,10 +467,10 @@ export async function importHistory(event) {
 
     await Modal.error(
       `Errore durante l'importazione della cronologia:\n\n` +
-      `${error.message}\n\n` +
-      `Assicurati che il file sia un backup valido\n` +
-      `generato da questa estensione.`,
-      'Errore Importazione'
+        `${error.message}\n\n` +
+        `Assicurati che il file sia un backup valido\n` +
+        `generato da questa estensione.`,
+      'Errore Importazione',
     );
   } finally {
     // Reset input

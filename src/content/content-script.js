@@ -1,18 +1,28 @@
 // Content Script - Esegue nell'ambito della pagina web
 import { ContentExtractor } from '../utils/core/content-extractor.js';
+import { Logger } from '../utils/core/logger.js';
+
+const HIGHLIGHT_DURATION_MS = 3000;
+const CITATION_HIGHLIGHT_DURATION_MS = 8000;
+const MIN_PARAGRAPH_LENGTH = 20;
 
 let paragraphMap = new Map();
 let extractedArticle = null;
 
 // Listener per messaggi dal popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Accetta solo messaggi dalla propria estensione
+  if (sender.id !== chrome.runtime.id) {
+    return false;
+  }
+
   if (request.action === 'extractArticle') {
     try {
       extractedArticle = ContentExtractor.extract(document);
-      
+
       // Crea mappa paragrafi → elementi DOM
       buildParagraphMap();
-      
+
       sendResponse({ success: true, article: extractedArticle });
     } catch (error) {
       sendResponse({ success: false, error: error.message });
@@ -20,7 +30,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Non restituire true se la risposta è sincrona
     return false;
   }
-  
+
   if (request.action === 'highlightParagraph') {
     try {
       highlightParagraph(request.paragraphNumber);
@@ -30,18 +40,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return false;
   }
-  
+
   if (request.action === 'highlightText') {
     try {
       const found = highlightTextInPage(request.text);
       sendResponse({ success: found });
     } catch (error) {
-      console.error('Errore highlight text:', error);
+      Logger.error('Errore highlight text:', error);
       sendResponse({ success: false, error: error.message });
     }
     return false;
   }
-  
+
   if (request.action === 'getUrl') {
     sendResponse({ url: window.location.href });
     return false;
@@ -50,14 +60,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 function buildParagraphMap() {
   if (!extractedArticle) return;
-  
+
   paragraphMap.clear();
   const allParagraphs = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6');
-  
+
   let validIndex = 0;
-  allParagraphs.forEach(el => {
+  allParagraphs.forEach((el) => {
     const text = el.textContent.trim();
-    if (text.length > 20) {
+    if (text.length > MIN_PARAGRAPH_LENGTH) {
       validIndex++;
       paragraphMap.set(validIndex, el);
     }
@@ -66,14 +76,14 @@ function buildParagraphMap() {
 
 function highlightParagraph(paragraphNumber) {
   // Rimuovi highlight precedenti
-  document.querySelectorAll('.ai-summarizer-highlight').forEach(el => {
+  document.querySelectorAll('.ai-summarizer-highlight').forEach((el) => {
     el.classList.remove('ai-summarizer-highlight');
   });
-  
+
   // Gestisci range (es: "3-5")
   let paragraphs = [];
   if (typeof paragraphNumber === 'string' && paragraphNumber.includes('-')) {
-    const [start, end] = paragraphNumber.split('-').map(n => parseInt(n));
+    const [start, end] = paragraphNumber.split('-').map((n) => parseInt(n));
     for (let i = start; i <= end; i++) {
       if (paragraphMap.has(i)) {
         paragraphs.push(paragraphMap.get(i));
@@ -85,23 +95,23 @@ function highlightParagraph(paragraphNumber) {
       paragraphs.push(paragraphMap.get(num));
     }
   }
-  
+
   if (paragraphs.length === 0) return;
-  
+
   // Scrolla al primo paragrafo
   paragraphs[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-  
+
   // Aggiungi highlight
-  paragraphs.forEach(el => {
+  paragraphs.forEach((el) => {
     el.classList.add('ai-summarizer-highlight');
   });
-  
-  // Rimuovi dopo 3 secondi
+
+  // Rimuovi dopo HIGHLIGHT_DURATION_MS
   setTimeout(() => {
-    paragraphs.forEach(el => {
+    paragraphs.forEach((el) => {
       el.classList.remove('ai-summarizer-highlight');
     });
-  }, 3000);
+  }, HIGHLIGHT_DURATION_MS);
 }
 
 // Inietta CSS per highlight
@@ -116,63 +126,60 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-
 // Evidenzia testo specifico nella pagina (per citazioni)
 function highlightTextInPage(searchText) {
   // Rimuovi highlight precedenti
-  document.querySelectorAll('.citation-highlight').forEach(el => {
+  document.querySelectorAll('.citation-highlight').forEach((el) => {
     const parent = el.parentNode;
     parent.replaceChild(document.createTextNode(el.textContent), el);
     parent.normalize();
   });
-  
+
   if (!searchText || searchText.length < 10) {
     return false;
   }
-  
+
   // Normalizza il testo di ricerca
   const normalizeText = (text) => {
     return text
       .toLowerCase()
-      .replace(/[""''«»]/g, '"')  // Normalizza virgolette
-      .replace(/\s+/g, ' ')        // Normalizza spazi
+      .replace(/[""''«»]/g, '"') // Normalizza virgolette
+      .replace(/\s+/g, ' ') // Normalizza spazi
       .trim();
   };
-  
+
   const searchNormalized = normalizeText(searchText);
-  
+
   // Cerca il testo nella pagina
-  const walker = document.createTreeWalker(
-    document.body,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode: function(node) {
-        // Ignora script, style, e nodi già evidenziati
-        if (node.parentElement.tagName === 'SCRIPT' || 
-            node.parentElement.tagName === 'STYLE' ||
-            node.parentElement.classList.contains('citation-highlight')) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        return NodeFilter.FILTER_ACCEPT;
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode: function (node) {
+      // Ignora script, style, e nodi già evidenziati
+      if (
+        node.parentElement.tagName === 'SCRIPT' ||
+        node.parentElement.tagName === 'STYLE' ||
+        node.parentElement.classList.contains('citation-highlight')
+      ) {
+        return NodeFilter.FILTER_REJECT;
       }
-    }
-  );
-  
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+
   const nodesToHighlight = [];
   let node;
-  
+
   // Cerca match esatti o parziali
-  while (node = walker.nextNode()) {
+  while ((node = walker.nextNode())) {
     const text = node.textContent;
     const textNormalized = normalizeText(text);
-    
+
     // Match esatto (normalizzato)
     if (textNormalized.includes(searchNormalized)) {
       nodesToHighlight.push({
         node: node,
         text: text,
         searchText: searchText,
-        exact: true
+        exact: true,
       });
     }
     // Match parziale (prime 30 parole o 150 caratteri)
@@ -183,7 +190,7 @@ function highlightTextInPage(searchText) {
           node: node,
           text: text,
           searchText: searchText.substring(0, 150),
-          exact: false
+          exact: false,
         });
       }
     }
@@ -192,7 +199,7 @@ function highlightTextInPage(searchText) {
       // Estrai le prime 5 parole significative
       const keywords = searchNormalized
         .split(' ')
-        .filter(w => w.length > 4)
+        .filter((w) => w.length > 4)
         .slice(0, 5);
 
       let keywordMatches = 0;
@@ -209,7 +216,7 @@ function highlightTextInPage(searchText) {
           text: text,
           searchText: searchText,
           exact: false,
-          keywordMatch: true
+          keywordMatch: true,
         });
       }
     }
@@ -218,87 +225,91 @@ function highlightTextInPage(searchText) {
   if (nodesToHighlight.length === 0) {
     return false;
   }
-  
+
   // Evidenzia i nodi trovati
-  nodesToHighlight.forEach(({ node, text, searchText: textToHighlight, exact, keywordMatch }, idx) => {
-    const parent = node.parentElement;
-    
-    // Per keyword match, evidenzia tutto il nodo
-    if (keywordMatch) {
-      const highlight = document.createElement('span');
-      highlight.className = 'citation-highlight';
-      highlight.style.backgroundColor = '#ffeb3b';
-      highlight.style.padding = '2px 4px';
-      highlight.style.borderRadius = '3px';
-      highlight.style.fontWeight = 'bold';
-      highlight.textContent = text;
-      
-      parent.replaceChild(highlight, node);
-      
-      if (idx === 0) {
-        highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
-    
-    // Per match esatti/parziali, evidenzia solo la parte corrispondente
-    const textNormalized = normalizeText(text);
-    const searchNormalized = normalizeText(textToHighlight);
-    const index = textNormalized.indexOf(searchNormalized);
-    
-    if (index !== -1) {
-      // Trova l'indice nel testo originale (non normalizzato)
-      // Questo è approssimativo ma funziona nella maggior parte dei casi
-      const originalIndex = text.toLowerCase().indexOf(textToHighlight.toLowerCase().substring(0, 50));
-      
-      if (originalIndex !== -1) {
-        const before = text.substring(0, originalIndex);
-        const matchLength = Math.min(textToHighlight.length, text.length - originalIndex);
-        const match = text.substring(originalIndex, originalIndex + matchLength);
-        const after = text.substring(originalIndex + matchLength);
-        
-        const fragment = document.createDocumentFragment();
-        
-        if (before) fragment.appendChild(document.createTextNode(before));
-        
+  nodesToHighlight.forEach(
+    ({ node, text, searchText: textToHighlight, exact, keywordMatch }, idx) => {
+      const parent = node.parentElement;
+
+      // Per keyword match, evidenzia tutto il nodo
+      if (keywordMatch) {
         const highlight = document.createElement('span');
         highlight.className = 'citation-highlight';
         highlight.style.backgroundColor = '#ffeb3b';
         highlight.style.padding = '2px 4px';
         highlight.style.borderRadius = '3px';
         highlight.style.fontWeight = 'bold';
-        highlight.textContent = match;
-        fragment.appendChild(highlight);
-        
-        if (after) fragment.appendChild(document.createTextNode(after));
-        
-        parent.replaceChild(fragment, node);
-        
+        highlight.textContent = text;
+
+        parent.replaceChild(highlight, node);
+
         if (idx === 0) {
           highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
+        return;
       }
-    }
-  });
-  
+
+      // Per match esatti/parziali, evidenzia solo la parte corrispondente
+      const textNormalized = normalizeText(text);
+      const searchNormalized = normalizeText(textToHighlight);
+      const index = textNormalized.indexOf(searchNormalized);
+
+      if (index !== -1) {
+        // Trova l'indice nel testo originale (non normalizzato)
+        // Questo è approssimativo ma funziona nella maggior parte dei casi
+        const originalIndex = text
+          .toLowerCase()
+          .indexOf(textToHighlight.toLowerCase().substring(0, 50));
+
+        if (originalIndex !== -1) {
+          const before = text.substring(0, originalIndex);
+          const matchLength = Math.min(textToHighlight.length, text.length - originalIndex);
+          const match = text.substring(originalIndex, originalIndex + matchLength);
+          const after = text.substring(originalIndex + matchLength);
+
+          const fragment = document.createDocumentFragment();
+
+          if (before) fragment.appendChild(document.createTextNode(before));
+
+          const highlight = document.createElement('span');
+          highlight.className = 'citation-highlight';
+          highlight.style.backgroundColor = '#ffeb3b';
+          highlight.style.padding = '2px 4px';
+          highlight.style.borderRadius = '3px';
+          highlight.style.fontWeight = 'bold';
+          highlight.textContent = match;
+          fragment.appendChild(highlight);
+
+          if (after) fragment.appendChild(document.createTextNode(after));
+
+          parent.replaceChild(fragment, node);
+
+          if (idx === 0) {
+            highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }
+    },
+  );
+
   // Se trovato almeno un match, scroll al primo
   if (nodesToHighlight.length > 0) {
     const firstHighlight = document.querySelector('.citation-highlight');
     if (firstHighlight) {
       firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-      // Rimuovi highlight dopo 8 secondi
+      // Rimuovi highlight dopo CITATION_HIGHLIGHT_DURATION_MS
       setTimeout(() => {
-        document.querySelectorAll('.citation-highlight').forEach(el => {
+        document.querySelectorAll('.citation-highlight').forEach((el) => {
           const parent = el.parentNode;
           parent.replaceChild(document.createTextNode(el.textContent), el);
           parent.normalize();
         });
-      }, 8000);
+      }, CITATION_HIGHLIGHT_DURATION_MS);
     }
-    
+
     return true;
   }
-  
+
   return false;
 }

@@ -1,6 +1,7 @@
 // Auto Maintenance - Cleanup automatico in background
 import { CacheManager } from '../storage/cache-manager.js';
 import { CompressionManager } from '../storage/compression-manager.js';
+import { Logger } from '../core/logger.js';
 
 export class AutoMaintenance {
   constructor() {
@@ -14,11 +15,11 @@ export class AutoMaintenance {
   async initialize() {
     // Controlla se è necessario eseguire la manutenzione
     const shouldRun = await this.shouldRunMaintenance();
-    
+
     if (shouldRun) {
       await this.runMaintenance();
     }
-    
+
     // Programma la prossima manutenzione
     this.scheduleMaintenance();
   }
@@ -30,15 +31,15 @@ export class AutoMaintenance {
     try {
       const result = await chrome.storage.local.get([this.lastMaintenanceKey]);
       const lastRun = result[this.lastMaintenanceKey];
-      
+
       if (!lastRun) {
         return true; // Prima esecuzione
       }
-      
+
       const timeSinceLastRun = Date.now() - lastRun;
       return timeSinceLastRun >= this.maintenanceInterval;
     } catch (error) {
-      console.error('Errore nel controllare ultima manutenzione:', error);
+      Logger.error('Errore nel controllare ultima manutenzione:', error);
       return false;
     }
   }
@@ -47,17 +48,17 @@ export class AutoMaintenance {
    * Esegue la manutenzione completa
    */
   async runMaintenance() {
-    console.log('🧹 Avvio manutenzione automatica...');
-    
+    Logger.debug('Avvio manutenzione automatica...');
+
     try {
       // Ottieni impostazioni
       const settings = await this.getSettings();
-      
+
       if (!settings.autoCleanup) {
-        console.log('⏭️ Auto cleanup disabilitato, skip manutenzione');
+        Logger.debug('Auto cleanup disabilitato, skip manutenzione');
         return;
       }
-      
+
       const results = {
         timestamp: Date.now(),
         cacheExpired: 0,
@@ -65,67 +66,67 @@ export class AutoMaintenance {
         historyCompressed: 0,
         cacheCompressed: 0,
         historyDeleted: 0,
-        errors: []
+        errors: [],
       };
-      
+
       // 1. Pulisci cache scadute
       try {
         const cacheManager = new CacheManager();
         results.cacheExpired = await cacheManager.cleanExpired();
-        console.log(`✅ Cache scadute pulite: ${results.cacheExpired}`);
+        Logger.debug(`Cache scadute pulite: ${results.cacheExpired}`);
       } catch (error) {
-        console.error('Errore pulizia cache scadute:', error);
+        Logger.error('Errore pulizia cache scadute:', error);
         results.errors.push({ step: 'cleanExpired', error: error.message });
       }
-      
+
       // 2. Pulisci cache LRU
       try {
         const cacheManager = new CacheManager();
         results.cacheLRU = await cacheManager.cleanLRU(100);
-        console.log(`✅ Cache LRU pulite: ${results.cacheLRU}`);
+        Logger.info(`Cache LRU pulite: ${results.cacheLRU}`);
       } catch (error) {
-        console.error('Errore pulizia cache LRU:', error);
+        Logger.error('Errore pulizia cache LRU:', error);
         results.errors.push({ step: 'cleanLRU', error: error.message });
       }
-      
+
       // 3. Comprimi dati vecchi (se abilitato)
       if (settings.enableCompression) {
         try {
           const compressionManager = new CompressionManager();
-          
+
           // Comprimi cronologia > 30 giorni
           results.historyCompressed = await compressionManager.compressOldHistory(30);
-          console.log(`✅ Cronologie compresse: ${results.historyCompressed}`);
-          
+          Logger.info(`Cronologie compresse: ${results.historyCompressed}`);
+
           // Comprimi cache > 7 giorni
           results.cacheCompressed = await compressionManager.compressOldCache(7);
-          console.log(`✅ Cache compresse: ${results.cacheCompressed}`);
+          Logger.info(`Cache compresse: ${results.cacheCompressed}`);
         } catch (error) {
-          console.error('Errore compressione:', error);
+          Logger.error('Errore compressione:', error);
           results.errors.push({ step: 'compression', error: error.message });
         }
       }
-      
+
       // 4. Elimina cronologia molto vecchia (> 180 giorni)
       try {
         results.historyDeleted = await this.deleteOldHistory(180);
-        console.log(`✅ Cronologie eliminate: ${results.historyDeleted}`);
+        Logger.info(`Cronologie eliminate: ${results.historyDeleted}`);
       } catch (error) {
-        console.error('Errore eliminazione cronologia:', error);
+        Logger.error('Errore eliminazione cronologia:', error);
         results.errors.push({ step: 'deleteHistory', error: error.message });
       }
-      
+
       // Salva timestamp ultima manutenzione
       await chrome.storage.local.set({
         [this.lastMaintenanceKey]: Date.now(),
-        lastMaintenanceResults: results
+        lastMaintenanceResults: results,
       });
-      
-      console.log('✅ Manutenzione completata:', results);
-      
+
+      Logger.info('Manutenzione completata:', results);
+
       return results;
     } catch (error) {
-      console.error('Errore durante manutenzione:', error);
+      Logger.error('Errore durante manutenzione:', error);
       throw error;
     }
   }
@@ -137,19 +138,19 @@ export class AutoMaintenance {
     try {
       const result = await chrome.storage.local.get(['summaryHistory']);
       const history = result.summaryHistory || [];
-      
-      const cutoffDate = Date.now() - (daysOld * 24 * 60 * 60 * 1000);
-      const filteredHistory = history.filter(entry => entry.timestamp >= cutoffDate);
-      
+
+      const cutoffDate = Date.now() - daysOld * 24 * 60 * 60 * 1000;
+      const filteredHistory = history.filter((entry) => entry.timestamp >= cutoffDate);
+
       const deletedCount = history.length - filteredHistory.length;
-      
+
       if (deletedCount > 0) {
         await chrome.storage.local.set({ summaryHistory: filteredHistory });
       }
-      
+
       return deletedCount;
     } catch (error) {
-      console.error('Errore eliminazione cronologia:', error);
+      Logger.error('Errore eliminazione cronologia:', error);
       return 0;
     }
   }
@@ -160,15 +161,17 @@ export class AutoMaintenance {
   async getSettings() {
     try {
       const result = await chrome.storage.local.get(['settings']);
-      return result.settings || {
-        autoCleanup: true,
-        enableCompression: true
-      };
+      return (
+        result.settings || {
+          autoCleanup: true,
+          enableCompression: true,
+        }
+      );
     } catch (error) {
-      console.error('Errore lettura impostazioni:', error);
+      Logger.error('Errore lettura impostazioni:', error);
       return {
         autoCleanup: true,
-        enableCompression: true
+        enableCompression: true,
       };
     }
   }
@@ -179,9 +182,12 @@ export class AutoMaintenance {
   scheduleMaintenance() {
     // Esegui manutenzione ogni 24 ore
     setTimeout(() => {
-      this.runMaintenance().then(() => {
-        this.scheduleMaintenance(); // Riprogramma
-      });
+      this.runMaintenance()
+        .then(() => this.scheduleMaintenance())
+        .catch((error) => {
+          Logger.error('Manutenzione automatica fallita:', error);
+          this.scheduleMaintenance();
+        });
     }, this.maintenanceInterval);
   }
 
@@ -190,17 +196,20 @@ export class AutoMaintenance {
    */
   async getLastMaintenanceStats() {
     try {
-      const result = await chrome.storage.local.get(['lastMaintenanceResults', this.lastMaintenanceKey]);
-      
+      const result = await chrome.storage.local.get([
+        'lastMaintenanceResults',
+        this.lastMaintenanceKey,
+      ]);
+
       return {
         lastRun: result[this.lastMaintenanceKey],
         results: result.lastMaintenanceResults,
-        nextRun: result[this.lastMaintenanceKey] 
+        nextRun: result[this.lastMaintenanceKey]
           ? result[this.lastMaintenanceKey] + this.maintenanceInterval
-          : null
+          : null,
       };
     } catch (error) {
-      console.error('Errore lettura statistiche manutenzione:', error);
+      Logger.error('Errore lettura statistiche manutenzione:', error);
       return null;
     }
   }
@@ -216,11 +225,11 @@ export class AutoMaintenance {
 // Inizializza al caricamento (se in background script)
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
   const autoMaintenance = new AutoMaintenance();
-  
+
   // Inizializza dopo 1 minuto dal caricamento
   setTimeout(() => {
-    autoMaintenance.initialize().catch(error => {
-      console.error('Errore inizializzazione auto-maintenance:', error);
+    autoMaintenance.initialize().catch((error) => {
+      Logger.error('Errore inizializzazione auto-maintenance:', error);
     });
   }, 60000); // 1 minuto
 }

@@ -4,10 +4,17 @@
 
 import { APIClient } from '../../utils/ai/api-client.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
+import { Logger } from '../../utils/core/logger.js';
 
 // Translate PDF text
-export async function translatePDFText(text, targetLanguage, provider, apiKey, forceTranslate = false) {
-  console.log('Translating PDF text to:', targetLanguage, 'Force:', forceTranslate);
+export async function translatePDFText(
+  text,
+  targetLanguage,
+  provider,
+  apiKey,
+  forceTranslate = false,
+) {
+  Logger.info('Translating PDF text to:', targetLanguage, 'Force:', forceTranslate);
 
   // Language names for prompt
   const languageNames = {
@@ -15,7 +22,7 @@ export async function translatePDFText(text, targetLanguage, provider, apiKey, f
     en: 'inglese',
     es: 'spagnolo',
     fr: 'francese',
-    de: 'tedesco'
+    de: 'tedesco',
   };
 
   const targetLangName = languageNames[targetLanguage] || targetLanguage;
@@ -52,8 +59,8 @@ ${text}`;
       userPrompt,
       {
         temperature: 0.3,
-        maxTokens: 4000
-      }
+        maxTokens: 4000,
+      },
     );
 
     // Check if same language detected
@@ -63,14 +70,14 @@ ${text}`;
 
     return { sameLanguage: false, translation };
   } catch (error) {
-    console.error('API translation error:', error);
+    Logger.error('API translation error:', error);
     throw new Error('Errore durante la traduzione: ' + error.message);
   }
 }
 
 // Extract citations from PDF text
 export async function extractPDFCitations(text, filename, provider, settings) {
-  console.log('Extracting citations from PDF:', filename);
+  Logger.info('Extracting citations from PDF:', filename);
 
   const apiKey = await StorageManager.getApiKey(provider);
   if (!apiKey) {
@@ -114,8 +121,8 @@ Rispondi in formato JSON come specificato.`;
       userPrompt,
       {
         temperature: 0.1,
-        maxTokens: 2000
-      }
+        maxTokens: 2000,
+      },
     );
 
     // Parse JSON response
@@ -128,18 +135,17 @@ Rispondi in formato JSON come specificato.`;
     // Fallback if no JSON
     return {
       citations: [],
-      total_citations: 0
+      total_citations: 0,
     };
-
   } catch (error) {
-    console.error('Error extracting PDF citations:', error);
+    Logger.error('Error extracting PDF citations:', error);
     throw new Error('Errore estrazione citazioni: ' + error.message);
   }
 }
 
 // Ask question about PDF
 export async function askQuestionPDF(question, extractedText, summary, provider, apiKey) {
-  console.log('Asking question about PDF:', question);
+  Logger.info('Asking question about PDF:', question);
 
   // Build prompt
   const systemPrompt = `Sei un assistente esperto nell'analisi di documenti.
@@ -163,20 +169,14 @@ ${question}
 Rispondi alla domanda basandoti sul documento sopra.`;
 
   try {
-    const answer = await APIClient.generateCompletion(
-      provider,
-      apiKey,
-      systemPrompt,
-      userPrompt,
-      {
-        temperature: 0.3,
-        maxTokens: 1000
-      }
-    );
+    const answer = await APIClient.generateCompletion(provider, apiKey, systemPrompt, userPrompt, {
+      temperature: 0.3,
+      maxTokens: 1000,
+    });
 
     return answer;
   } catch (error) {
-    console.error('Error asking question about PDF:', error);
+    Logger.error('Error asking question about PDF:', error);
     throw new Error('Errore durante la risposta: ' + error.message);
   }
 }

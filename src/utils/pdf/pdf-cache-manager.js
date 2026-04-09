@@ -1,4 +1,6 @@
 // PDFCacheManager - Gestione cache e cronologia PDF
+import { Logger } from '../core/logger.js';
+
 export class PDFCacheManager {
   constructor() {
     this.STORAGE_KEY = 'pdf_analysis_history';
@@ -16,10 +18,10 @@ export class PDFCacheManager {
       const arrayBuffer = await file.arrayBuffer();
       const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
       return hashHex;
     } catch (error) {
-      console.error('Errore calcolo hash:', error);
+      Logger.error('Errore calcolo hash:', error);
       throw new Error('Impossibile calcolare hash del file');
     }
   }
@@ -33,17 +35,17 @@ export class PDFCacheManager {
     try {
       const fileHash = await this.calculateFileHash(file);
       const history = await this.getHistory();
-      
-      const cached = history.find(entry => entry.fileHash === fileHash);
-      
+
+      const cached = history.find((entry) => entry.fileHash === fileHash);
+
       if (cached) {
-        console.log('✓ PDF trovato in cache:', cached.filename);
+        Logger.info('✓ PDF trovato in cache:', cached.filename);
         return { found: true, data: cached, fileHash };
       }
-      
+
       return { found: false, fileHash };
     } catch (error) {
-      console.error('Errore check cache:', error);
+      Logger.error('Errore check cache:', error);
       return { found: false };
     }
   }
@@ -62,7 +64,7 @@ export class PDFCacheManager {
       if (!fileHash) {
         fileHash = await this.calculateFileHash(file);
       }
-      
+
       const entry = {
         id: `pdf_${Date.now()}`,
         type: 'pdf',
@@ -75,27 +77,27 @@ export class PDFCacheManager {
           summary: analysis.summary,
           keyPoints: analysis.keyPoints,
           quotes: analysis.quotes || [],
-          translation: analysis.translation || null
+          translation: analysis.translation || null,
         },
         timestamp: Date.now(),
         apiProvider,
-        hasLivePreview: false
+        hasLivePreview: false,
       };
-      
+
       const history = await this.getHistory();
       history.unshift(entry);
-      
+
       // Limita a MAX_ENTRIES
       if (history.length > this.MAX_ENTRIES) {
         history.splice(this.MAX_ENTRIES);
       }
-      
+
       await this.saveHistory(history);
-      console.log('✓ Analisi PDF salvata:', entry.filename);
-      
+      Logger.info('✓ Analisi PDF salvata:', entry.filename);
+
       return entry;
     } catch (error) {
-      console.error('Errore salvataggio analisi:', error);
+      Logger.error('Errore salvataggio analisi:', error);
       throw error;
     }
   }
@@ -109,7 +111,7 @@ export class PDFCacheManager {
       const result = await chrome.storage.local.get([this.STORAGE_KEY]);
       return result[this.STORAGE_KEY] || [];
     } catch (error) {
-      console.error('Errore lettura cronologia:', error);
+      Logger.error('Errore lettura cronologia:', error);
       return [];
     }
   }
@@ -122,7 +124,7 @@ export class PDFCacheManager {
     try {
       await chrome.storage.local.set({ [this.STORAGE_KEY]: history });
     } catch (error) {
-      console.error('Errore salvataggio cronologia:', error);
+      Logger.error('Errore salvataggio cronologia:', error);
       throw error;
     }
   }
@@ -134,11 +136,11 @@ export class PDFCacheManager {
   async deleteEntry(entryId) {
     try {
       const history = await this.getHistory();
-      const filtered = history.filter(entry => entry.id !== entryId);
+      const filtered = history.filter((entry) => entry.id !== entryId);
       await this.saveHistory(filtered);
-      console.log('✓ Entry eliminato:', entryId);
+      Logger.info('✓ Entry eliminato:', entryId);
     } catch (error) {
-      console.error('Errore eliminazione entry:', error);
+      Logger.error('Errore eliminazione entry:', error);
       throw error;
     }
   }
@@ -150,16 +152,16 @@ export class PDFCacheManager {
   async cleanOldEntries(daysToKeep = 30) {
     try {
       const history = await this.getHistory();
-      const cutoffTime = Date.now() - (daysToKeep * 24 * 60 * 60 * 1000);
-      
-      const filtered = history.filter(entry => entry.timestamp > cutoffTime);
-      
+      const cutoffTime = Date.now() - daysToKeep * 24 * 60 * 60 * 1000;
+
+      const filtered = history.filter((entry) => entry.timestamp > cutoffTime);
+
       if (filtered.length < history.length) {
         await this.saveHistory(filtered);
-        console.log(`✓ Puliti ${history.length - filtered.length} elementi vecchi`);
+        Logger.info(`✓ Puliti ${history.length - filtered.length} elementi vecchi`);
       }
     } catch (error) {
-      console.error('Errore pulizia cronologia:', error);
+      Logger.error('Errore pulizia cronologia:', error);
     }
   }
 
@@ -171,15 +173,15 @@ export class PDFCacheManager {
     try {
       const history = await this.getHistory();
       const bytesInUse = await chrome.storage.local.getBytesInUse(this.STORAGE_KEY);
-      
+
       return {
         totalEntries: history.length,
         bytesInUse,
         maxEntries: this.MAX_ENTRIES,
-        daysToKeep: this.DAYS_TO_KEEP
+        daysToKeep: this.DAYS_TO_KEEP,
       };
     } catch (error) {
-      console.error('Errore statistiche storage:', error);
+      Logger.error('Errore statistiche storage:', error);
       return null;
     }
   }

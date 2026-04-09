@@ -4,6 +4,7 @@
 import { state, elements } from './state.js';
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { PDFExporter } from '../../utils/export/pdf-exporter.js';
+import { Logger } from '../../utils/core/logger.js';
 
 // Copy all content
 export async function copyAll() {
@@ -43,7 +44,11 @@ export async function copyAll() {
     }
 
     // Aggiungi citazioni se presenti
-    if (state.currentData.citations && state.currentData.citations.citations && state.currentData.citations.citations.length > 0) {
+    if (
+      state.currentData.citations &&
+      state.currentData.citations.citations &&
+      state.currentData.citations.citations.length > 0
+    ) {
       text += `${'='.repeat(60)}\n\n`;
       text += `CITAZIONI (${state.currentData.citations.citations.length}):\n\n`;
       state.currentData.citations.citations.forEach((citation, index) => {
@@ -72,7 +77,7 @@ export async function copyAll() {
         elements.copyBtn.textContent = originalText;
       }, 2000);
     } catch (error) {
-      console.error('Copy error:', error);
+      Logger.error('Copy error:', error);
       alert('Errore durante la copia');
     }
     return;
@@ -109,7 +114,11 @@ export async function copyAll() {
   }
 
   // Aggiungi citazioni se presenti
-  if (state.currentData.citations && state.currentData.citations.citations && state.currentData.citations.citations.length > 0) {
+  if (
+    state.currentData.citations &&
+    state.currentData.citations.citations &&
+    state.currentData.citations.citations.length > 0
+  ) {
     text += `${'='.repeat(60)}\n\n`;
     text += `CITAZIONI (${state.currentData.citations.citations.length}):\n\n`;
     state.currentData.citations.citations.forEach((citation, index) => {
@@ -138,7 +147,7 @@ export async function copyAll() {
       elements.copyBtn.textContent = originalText;
     }, 2000);
   } catch (error) {
-    console.error('Copy error:', error);
+    Logger.error('Copy error:', error);
     alert('Errore durante la copia');
   }
 }
@@ -159,19 +168,23 @@ export async function exportToPDF() {
     const { article, pdf, summary, keyPoints, metadata } = state.currentData;
 
     // Gestisci sia articoli che PDF
-    const articleData = state.currentData.isPDF || pdf ? {
-      title: pdf?.name || state.currentData.filename || 'Documento PDF',
-      url: 'PDF Document',
-      content: state.currentData.extractedText || pdf?.text || '',
-      wordCount: 0,
-      readingTimeMinutes: 0
-    } : article;
+    const articleData =
+      state.currentData.isPDF || pdf
+        ? {
+            title: pdf?.name || state.currentData.filename || 'Documento PDF',
+            url: 'PDF Document',
+            content: state.currentData.extractedText || pdf?.text || '',
+            wordCount: 0,
+            readingTimeMinutes: 0,
+          }
+        : article;
 
-    const metadataData = metadata || state.currentData.metadata || {
-      provider: state.currentData.apiProvider || 'AI',
-      language: 'it',
-      contentType: 'pdf'
-    };
+    const metadataData = metadata ||
+      state.currentData.metadata || {
+        provider: state.currentData.apiProvider || 'AI',
+        language: 'it',
+        contentType: 'pdf',
+      };
 
     await PDFExporter.exportToPDF(
       articleData,
@@ -180,7 +193,7 @@ export async function exportToPDF() {
       metadataData,
       state.currentData.translation,
       state.currentData.qa,
-      state.currentData.citations
+      state.currentData.citations,
     );
 
     // Successo
@@ -189,10 +202,9 @@ export async function exportToPDF() {
       elements.exportBtn.textContent = originalText;
       elements.exportBtn.disabled = false;
     }, 2000);
-
   } catch (error) {
-    console.error('Export error:', error);
-    alert('Errore durante l\'esportazione PDF: ' + error.message);
+    Logger.error('Export error:', error);
+    alert("Errore durante l'esportazione PDF: " + error.message);
     elements.exportBtn.textContent = '📄 PDF';
     elements.exportBtn.disabled = false;
   }

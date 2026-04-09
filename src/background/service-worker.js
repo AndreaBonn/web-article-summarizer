@@ -1,4 +1,4 @@
-// Background Service Worker - Gestisce chiamate API
+// Background Service Worker - Handles API calls
 import { StorageManager } from '../utils/storage/storage-manager.js';
 import { PromptRegistry } from '../utils/ai/prompt-registry.js';
 import { APIClient } from '../utils/ai/api-client.js';
@@ -9,75 +9,91 @@ import { AutoMaintenance } from '../utils/core/auto-maintenance.js';
 import { CitationExtractor } from '../utils/ai/citation-extractor.js';
 import { InputSanitizer } from '../utils/security/input-sanitizer.js';
 import { ErrorHandler } from '../utils/core/error-handler.js';
+import { Logger } from '../utils/core/logger.js';
 
-// Inizializza manutenzione automatica cache
+// Initialize automatic cache maintenance
 const autoMaintenance = new AutoMaintenance();
-autoMaintenance.initialize().catch(err =>
-  console.error('AutoMaintenance init fallita:', err)
-);
+autoMaintenance.initialize().catch((err) => Logger.error('AutoMaintenance init failed:', err));
+
+// MV3 Lifecycle Events
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    Logger.info('AI Article Summarizer installato');
+  } else if (details.reason === 'update') {
+    Logger.info(
+      'AI Article Summarizer aggiornato alla versione',
+      chrome.runtime.getManifest().version,
+    );
+  }
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Validate that the message comes from this extension
+  if (sender.id !== chrome.runtime.id) {
+    return false;
+  }
+
   if (request.action === 'generateSummary') {
     handleGenerateSummary(request.article, request.provider, request.settings)
-      .then(result => {
+      .then((result) => {
         sendResponse({ success: true, result });
       })
-      .catch(error => {
-        console.error('Errore generazione:', error);
+      .catch((error) => {
+        Logger.error('Errore generazione:', error);
         sendResponse({ success: false, error: error.message });
       });
-    return true; // Mantiene il canale aperto per risposta asincrona
+    return true; // Keep the channel open for async response
   }
-  
+
   if (request.action === 'extractCitations') {
     handleExtractCitations(request.article, request.provider, request.settings)
-      .then(result => {
+      .then((result) => {
         sendResponse({ success: true, result });
       })
-      .catch(error => {
-        console.error('Errore estrazione citazioni:', error);
+      .catch((error) => {
+        Logger.error('Errore estrazione citazioni:', error);
         sendResponse({ success: false, error: error.message });
       });
     return true;
   }
-  
+
   if (request.action === 'testApiKey') {
     testApiKey(request.provider, request.apiKey)
       .then(() => {
         sendResponse({ success: true });
       })
-      .catch(error => {
-        console.error('Errore test API:', error);
+      .catch((error) => {
+        Logger.error('Errore test API:', error);
         sendResponse({ success: false, error: error.message });
       });
     return true;
   }
-  
-  // Restituisci false per altri messaggi
+
+  // Return false for other messages
   return false;
 });
 
 async function handleGenerateSummary(article, provider, settings) {
   const startTime = Date.now();
 
-  // Decripta solo la API key del provider richiesto
+  // Decrypt only the API key for the requested provider
   const apiKey = await StorageManager.getApiKey(provider);
   if (!apiKey) {
     throw new Error('API key non configurata. Vai nelle impostazioni.');
   }
 
-  // Ottieni impostazioni performance
+  // Get performance settings
   const performanceSettings = await StorageManager.getSettings();
   const enableCache = performanceSettings.enableCache !== false;
 
-  // Genera hash del contenuto per validazione cache
+  // Generate content hash for cache validation
   const contentHash = CacheManager.hashContent(article.content);
 
-  // Istanzia CacheManager una sola volta
+  // Instantiate CacheManager only once
   const cacheManager = enableCache ? new CacheManager() : null;
 
   try {
-    // 1. Controlla cache con validazione contenuto
+    // 1. Check cache with content validation
     if (cacheManager) {
       const cached = await cacheManager.get(article.url, provider, settings, contentHash);
       if (cached) {
@@ -85,33 +101,42 @@ async function handleGenerateSummary(article, provider, settings) {
           summary: cached.summary,
           keyPoints: cached.keyPoints,
           fromCache: true,
-          usedProvider: provider
+          usedProvider: provider,
         };
       }
     }
 
-    // 2. Chiama API con retry
+    // 2. Call API with retry
     const responseText = await APIClient.callAPI(provider, apiKey, article, settings);
 
-    // 3. Parsa risposta
+    // 3. Parse response
     const { summary, keyPoints } = APIClient.parseResponse(responseText);
 
-    // 4. Salva in cache con hash contenuto
+    // 4. Save to cache with content hash
     if (cacheManager) {
       await cacheManager.set(
-        article.url, provider, settings,
+        article.url,
+        provider,
+        settings,
         { summary, keyPoints },
-        null, contentHash
+        null,
+        contentHash,
       );
     }
 
-    // 5. Aggiorna statistiche
+    // 5. Update statistics
     const generationTime = Date.now() - startTime;
     await StorageManager.updateStats(provider, article.wordCount, generationTime);
 
-    return { summary, keyPoints, fromCache: false, usedProvider: provider, generationTime };
+    return {
+      summary,
+      keyPoints,
+      fromCache: false,
+      usedProvider: provider,
+      generationTime,
+    };
   } catch (error) {
-    console.error('Errore generazione riassunto:', error);
+    Logger.error('Errore generazione riassunto:', error);
     const errorMessage = ErrorHandler.getErrorMessage(error);
     await ErrorHandler.logError(error, 'handleGenerateSummary');
     throw new Error(errorMessage);
@@ -121,20 +146,18 @@ async function handleGenerateSummary(article, provider, settings) {
 async function testApiKey(provider, apiKey) {
   const testArticle = {
     title: 'Test Article',
-    paragraphs: [
-      { id: 1, text: 'This is a test paragraph to verify API connectivity.' }
-    ],
+    paragraphs: [{ id: 1, text: 'This is a test paragraph to verify API connectivity.' }],
     wordCount: 10,
     readingTimeMinutes: 1,
-    content: 'This is a test paragraph to verify API connectivity.'
+    content: 'This is a test paragraph to verify API connectivity.',
   };
-  
+
   const testSettings = {
     summaryLength: 'short',
     tone: 'neutral',
-    autoDetectLanguage: true
+    autoDetectLanguage: true,
   };
-  
+
   try {
     await APIClient.callAPI(provider, apiKey, testArticle, testSettings);
     return true;
@@ -142,7 +165,6 @@ async function testApiKey(provider, apiKey) {
     throw new Error(`Test fallito: ${error.message}`);
   }
 }
-
 
 async function handleExtractCitations(article, provider, settings) {
   const startTime = Date.now();
@@ -157,10 +179,10 @@ async function handleExtractCitations(article, provider, settings) {
   const contentHash = CacheManager.hashContent(article.content);
   const cacheKey = article.url + '_citations';
 
-  // Istanzia CacheManager una sola volta
+  // Instantiate CacheManager only once
   const cacheManager = enableCache ? new CacheManager() : null;
 
-  // 1. Controlla cache
+  // 1. Check cache
   if (cacheManager) {
     const cached = await cacheManager.get(cacheKey, provider, { type: 'citations' }, contentHash);
     if (cached) {
@@ -168,19 +190,31 @@ async function handleExtractCitations(article, provider, settings) {
     }
   }
 
-  // 2. Estrai citazioni da API
+  // 2. Extract citations from API
   try {
     const citations = await CitationExtractor.extractCitations(article, provider, apiKey, settings);
 
-    // 3. Salva in cache
+    // 3. Save to cache
     if (cacheManager) {
-      await cacheManager.set(cacheKey, provider, { type: 'citations' }, citations, null, contentHash);
+      await cacheManager.set(
+        cacheKey,
+        provider,
+        { type: 'citations' },
+        citations,
+        null,
+        contentHash,
+      );
     }
 
     const extractionTime = Date.now() - startTime;
-    return { citations, fromCache: false, usedProvider: provider, extractionTime };
+    return {
+      citations,
+      fromCache: false,
+      usedProvider: provider,
+      extractionTime,
+    };
   } catch (error) {
-    console.error('Errore estrazione citazioni:', error);
+    Logger.error('Errore estrazione citazioni:', error);
     const errorMessage = ErrorHandler.getErrorMessage(error);
     await ErrorHandler.logError(error, 'handleExtractCitations');
     throw new Error(errorMessage);

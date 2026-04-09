@@ -1,5 +1,8 @@
 // Error Handler - Gestione centralizzata degli errori con feedback utente
 import { Modal } from './modal.js';
+import { Logger } from './logger.js';
+
+const MAX_ERROR_LOGS = 50;
 
 export class ErrorHandler {
   /**
@@ -8,9 +11,9 @@ export class ErrorHandler {
   static async showError(error, context = '') {
     const errorMessage = this.getErrorMessage(error);
     const fullMessage = context ? `${context}: ${errorMessage}` : errorMessage;
-    
-    console.error('❌ Errore:', error);
-    
+
+    Logger.error('Errore:', error);
+
     // Mostra notifica visiva all'utente
     if (typeof Modal !== 'undefined') {
       await Modal.error(fullMessage, 'Errore');
@@ -18,19 +21,19 @@ export class ErrorHandler {
       // Fallback se Modal non è disponibile
       alert(fullMessage);
     }
-    
+
     // Log per telemetria
     await this.logError(error, context);
-    
+
     return errorMessage;
   }
-  
+
   /**
    * Converte errori tecnici in messaggi user-friendly
    */
   static getErrorMessage(error) {
     const message = error.message || error.toString();
-    
+
     // Errori di estrazione articolo
     if (message.includes('No article found')) {
       return 'Nessun articolo rilevato in questa pagina. Prova con un articolo di blog o news.';
@@ -38,10 +41,10 @@ export class ErrorHandler {
     if (message.includes('Article too short')) {
       return 'Articolo troppo breve per essere riassunto (minimo 200 parole).';
     }
-    
+
     // Errori API
     if (message.includes('API key non configurata')) {
-      return 'API key non configurata. Clicca sull\'icona ⚙️ per configurare.';
+      return "API key non configurata. Clicca sull'icona ⚙️ per configurare.";
     }
     if (message.includes('401') || message.includes('Unauthorized')) {
       return 'API key non valida. Verifica la configurazione nelle impostazioni.';
@@ -58,7 +61,7 @@ export class ErrorHandler {
     if (message.includes('503') || message.includes('Service Unavailable')) {
       return 'Servizio temporaneamente non disponibile. Riprova più tardi.';
     }
-    
+
     // Errori di rete
     if (message.includes('Network') || message.includes('fetch')) {
       return 'Errore di connessione. Verifica la tua connessione internet.';
@@ -66,22 +69,28 @@ export class ErrorHandler {
     if (message.includes('timeout')) {
       return 'Richiesta scaduta. Il server ha impiegato troppo tempo a rispondere.';
     }
-    
+
     // Errori di Chrome Extension
     if (message.includes('chrome://') || message.includes('chrome-extension://')) {
       return 'Impossibile analizzare pagine interne di Chrome.';
     }
-    
+    if (
+      message.includes('Could not establish connection') ||
+      message.includes('Receiving end does not exist')
+    ) {
+      return 'Impossibile comunicare con la pagina. Ricarica la pagina (F5) e riprova.';
+    }
+
     // Errori di cache
     if (message.includes('QUOTA_BYTES')) {
       return 'Spazio di archiviazione esaurito. Pulisci la cache nelle impostazioni.';
     }
-    
+
     // Errore non riconosciuto — messaggio generico per l'utente
-    console.error('Errore non classificato:', message);
+    Logger.error('Errore non classificato:', message);
     return 'Si è verificato un errore imprevisto. Riprova.';
   }
-  
+
   /**
    * Log errore per telemetria
    */
@@ -89,7 +98,7 @@ export class ErrorHandler {
     try {
       const result = await chrome.storage.local.get(['errorLogs']);
       const logs = result.errorLogs || [];
-      
+
       logs.push({
         message: error.message || error.toString(),
         context,
@@ -101,21 +110,23 @@ export class ErrorHandler {
               return u.origin + u.pathname;
             }
             return 'background-sw';
-          } catch { return 'unknown'; }
-        })()
+          } catch {
+            return 'unknown';
+          }
+        })(),
       });
-      
-      // Mantieni solo gli ultimi 50 errori
-      if (logs.length > 50) {
+
+      // Mantieni solo gli ultimi MAX_ERROR_LOGS errori
+      if (logs.length > MAX_ERROR_LOGS) {
         logs.shift();
       }
-      
+
       await chrome.storage.local.set({ errorLogs: logs });
     } catch (logError) {
-      console.error('Impossibile salvare log errore:', logError);
+      Logger.error('Impossibile salvare log errore:', logError);
     }
   }
-  
+
   /**
    * Ottieni statistiche errori
    */
@@ -123,28 +134,26 @@ export class ErrorHandler {
     try {
       const result = await chrome.storage.local.get(['errorLogs']);
       const logs = result.errorLogs || [];
-      
-      const last24h = logs.filter(log => 
-        Date.now() - log.timestamp < 24 * 60 * 60 * 1000
-      );
-      
+
+      const last24h = logs.filter((log) => Date.now() - log.timestamp < 24 * 60 * 60 * 1000);
+
       const errorTypes = {};
-      last24h.forEach(log => {
+      last24h.forEach((log) => {
         const type = this.categorizeError(log.message);
         errorTypes[type] = (errorTypes[type] || 0) + 1;
       });
-      
+
       return {
         total: logs.length,
         last24h: last24h.length,
-        errorTypes
+        errorTypes,
       };
     } catch (error) {
-      console.error('Errore nel calcolare statistiche errori:', error);
+      Logger.error('Errore nel calcolare statistiche errori:', error);
       return null;
     }
   }
-  
+
   /**
    * Categorizza errore per statistiche
    */
@@ -163,14 +172,14 @@ export class ErrorHandler {
     }
     return 'Other';
   }
-  
+
   /**
    * Pulisci log errori
    */
   static async clearErrorLogs() {
     await chrome.storage.local.remove(['errorLogs']);
   }
-  
+
   /**
    * Wrapper per try-catch con gestione automatica errori
    */

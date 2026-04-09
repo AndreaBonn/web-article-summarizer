@@ -1,5 +1,6 @@
 // PDFAnalyzer - Estrazione e analisi PDF
 import * as pdfjsLib from 'pdfjs-dist';
+import { Logger } from '../core/logger.js';
 import { PDFCacheManager } from './pdf-cache-manager.js';
 import { StorageManager } from '../storage/storage-manager.js';
 import { APIClient } from '../ai/api-client.js';
@@ -11,11 +12,12 @@ export class PDFAnalyzer {
       FILE_TOO_LARGE: 'File troppo grande. Massimo 20MB.',
       INVALID_FILE_TYPE: 'File non valido. Carica un file PDF.',
       PASSWORD_PROTECTED: 'PDF protetto da password. Rimuovi la protezione e riprova.',
-      EXTRACTION_FAILED: 'Impossibile estrarre testo. Il PDF potrebbe essere scansionato o corrotto.',
+      EXTRACTION_FAILED:
+        'Impossibile estrarre testo. Il PDF potrebbe essere scansionato o corrotto.',
       INSUFFICIENT_TEXT: 'Testo estratto insufficiente. Il PDF potrebbe essere scansionato.',
-      API_ERROR: 'Errore durante l\'analisi. Riprova più tardi.',
+      API_ERROR: "Errore durante l'analisi. Riprova più tardi.",
       STORAGE_FULL: 'Storage pieno. Elimina alcune analisi dalla cronologia.',
-      NETWORK_ERROR: 'Errore di rete. Controlla la connessione.'
+      NETWORK_ERROR: 'Errore di rete. Controlla la connessione.',
     };
   }
 
@@ -31,15 +33,15 @@ export class PDFAnalyzer {
     try {
       // Validazione file
       this.validateFile(file);
-      
+
       if (progressCallback) progressCallback('📄 Verifica cache...', 10);
-      
+
       // Check cache
       const cacheResult = await this.cacheManager.checkCache(file);
-      
+
       if (cacheResult.found) {
         if (progressCallback) progressCallback('✓ Caricato da cache', 100);
-        
+
         // Ritorna dati dalla cache (senza pdfFile - non serializzabile)
         return {
           ...cacheResult.data.analysis,
@@ -48,41 +50,51 @@ export class PDFAnalyzer {
           extractedText: cacheResult.data.extractedText,
           hasLivePreview: false, // Sempre false, mostriamo testo estratto
           isFromCache: true,
-          fileHash: cacheResult.fileHash
+          fileHash: cacheResult.fileHash,
         };
       }
-      
+
       // Estrazione testo
       if (progressCallback) progressCallback('📄 Estrazione testo PDF...', 20);
       const { text: extractedText, pageCount } = await this.extractTextFromPDF(file);
-      
+
       // Verifica testo sufficiente
       if (extractedText.length < 100) {
         throw new Error(this.ERROR_MESSAGES.INSUFFICIENT_TEXT);
       }
-      
+
       // Analisi con API
       if (progressCallback) progressCallback('🤖 Analisi con AI...', 40);
-      const analysis = await this.callAnalysisAPI(extractedText, apiProvider, settings, progressCallback);
+      const analysis = await this.callAnalysisAPI(
+        extractedText,
+        apiProvider,
+        settings,
+        progressCallback,
+      );
       analysis.pageCount = pageCount;
-      
+
       // Salva in cache
       if (progressCallback) progressCallback('💾 Salvataggio...', 90);
-      await this.cacheManager.saveAnalysis(file, extractedText, analysis, apiProvider, cacheResult.fileHash);
-      
+      await this.cacheManager.saveAnalysis(
+        file,
+        extractedText,
+        analysis,
+        apiProvider,
+        cacheResult.fileHash,
+      );
+
       if (progressCallback) progressCallback('✅ Completato!', 100);
-      
+
       return {
         ...analysis,
         filename: file.name,
         extractedText,
         hasLivePreview: false, // Sempre false, mostriamo testo estratto
         isFromCache: false,
-        fileHash: cacheResult.fileHash
+        fileHash: cacheResult.fileHash,
       };
-      
     } catch (error) {
-      console.error('Errore analisi PDF:', error);
+      Logger.error('Errore analisi PDF:', error);
       throw error;
     }
   }
@@ -93,11 +105,11 @@ export class PDFAnalyzer {
    */
   validateFile(file) {
     const maxSize = 20 * 1024 * 1024; // 20MB
-    
+
     if (file.type !== 'application/pdf') {
       throw new Error(this.ERROR_MESSAGES.INVALID_FILE_TYPE);
     }
-    
+
     if (file.size > maxSize) {
       throw new Error(this.ERROR_MESSAGES.FILE_TOO_LARGE);
     }
@@ -114,38 +126,35 @@ export class PDFAnalyzer {
       if (typeof pdfjsLib === 'undefined') {
         throw new Error('PDF.js non caricato');
       }
-      
+
       const arrayBuffer = await file.arrayBuffer();
       const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
       const pdf = await loadingTask.promise;
-      
+
       const pageCount = pdf.numPages;
       let fullText = '';
-      
+
       // Estrai testo da ogni pagina
       for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
-        
-        const pageText = textContent.items
-          .map(item => item.str)
-          .join(' ');
-        
+
+        const pageText = textContent.items.map((item) => item.str).join(' ');
+
         fullText += `\n\n--- Pagina ${pageNum} ---\n\n${pageText}`;
       }
-      
+
       return {
         text: fullText.trim(),
-        pageCount
+        pageCount,
       };
-      
     } catch (error) {
-      console.error('Errore estrazione PDF:', error);
-      
+      Logger.error('Errore estrazione PDF:', error);
+
       if (error.name === 'PasswordException') {
         throw new Error(this.ERROR_MESSAGES.PASSWORD_PROTECTED);
       }
-      
+
       throw new Error(this.ERROR_MESSAGES.EXTRACTION_FAILED);
     }
   }
@@ -164,28 +173,33 @@ export class PDFAnalyzer {
       if (!apiKey) {
         throw new Error('API key non configurata per ' + provider);
       }
-      
+
       // Prepara prompt per PDF
       const systemPrompt = this.buildSystemPrompt(settings);
       const userPrompt = this.buildUserPrompt(text, settings);
-      
+
       if (progressCallback) progressCallback('🤖 Generazione riassunto...', 50);
-      
+
       // Chiama API
-      const response = await APIClient.generateCompletion(provider, apiKey, systemPrompt, userPrompt, {
-        temperature: 0.3,
-        maxTokens: 4000
-      });
-      
+      const response = await APIClient.generateCompletion(
+        provider,
+        apiKey,
+        systemPrompt,
+        userPrompt,
+        {
+          temperature: 0.3,
+          maxTokens: 4000,
+        },
+      );
+
       if (progressCallback) progressCallback('🔑 Estrazione punti chiave...', 70);
-      
+
       // Parse risposta
       const analysis = this.parseAnalysisResponse(response);
-      
+
       return analysis;
-      
     } catch (error) {
-      console.error('Errore API:', error);
+      Logger.error('Errore API:', error);
       throw new Error(this.ERROR_MESSAGES.API_ERROR + ': ' + error.message);
     }
   }
@@ -200,9 +214,9 @@ export class PDFAnalyzer {
       en: 'inglese',
       es: 'spagnolo',
       fr: 'francese',
-      de: 'tedesco'
+      de: 'tedesco',
     };
-    
+
     return `Sei un esperto analista di documenti. Il tuo compito è analizzare documenti PDF e fornire:
 1. Un riassunto chiaro e conciso
 2. I punti chiave più importanti
@@ -229,9 +243,9 @@ Formato risposta (JSON):
     const lengthInstructions = {
       short: 'Crea un riassunto breve (circa 40% del contenuto originale)',
       medium: 'Crea un riassunto medio (circa 60% del contenuto originale)',
-      detailed: 'Crea un riassunto dettagliato (circa 75% del contenuto originale)'
+      detailed: 'Crea un riassunto dettagliato (circa 75% del contenuto originale)',
     };
-    
+
     return `Analizza questo documento PDF:
 
 ${text}
@@ -256,23 +270,22 @@ Rispondi in formato JSON come specificato.`;
         return {
           summary: parsed.summary || '',
           keyPoints: parsed.keyPoints || [],
-          quotes: parsed.quotes || []
+          quotes: parsed.quotes || [],
         };
       }
-      
+
       // Fallback: parsing manuale
       return {
         summary: response,
         keyPoints: [],
-        quotes: []
+        quotes: [],
       };
-      
     } catch (error) {
-      console.error('Errore parsing risposta:', error);
+      Logger.error('Errore parsing risposta:', error);
       return {
         summary: response,
         keyPoints: [],
-        quotes: []
+        quotes: [],
       };
     }
   }
@@ -285,12 +298,12 @@ Rispondi in formato JSON come specificato.`;
   async loadFromHistory(entryId) {
     try {
       const history = await this.cacheManager.getHistory();
-      const entry = history.find(e => e.id === entryId);
-      
+      const entry = history.find((e) => e.id === entryId);
+
       if (!entry) {
         throw new Error('Analisi non trovata');
       }
-      
+
       return {
         ...entry.analysis,
         filename: entry.filename,
@@ -299,11 +312,10 @@ Rispondi in formato JSON come specificato.`;
         hasLivePreview: false,
         isFromCache: true,
         timestamp: entry.timestamp,
-        apiProvider: entry.apiProvider
+        apiProvider: entry.apiProvider,
       };
-      
     } catch (error) {
-      console.error('Errore caricamento da cronologia:', error);
+      Logger.error('Errore caricamento da cronologia:', error);
       throw error;
     }
   }

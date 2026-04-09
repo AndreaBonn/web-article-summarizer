@@ -13,47 +13,54 @@ import { I18n } from '../../utils/i18n/i18n.js';
 import { ProgressTracker } from '../../utils/core/progress-tracker.js';
 import { eventCleanup } from '../../utils/core/event-cleanup.js';
 import { ErrorHandler } from '../../utils/core/error-handler.js';
+import { Logger } from '../../utils/core/logger.js';
 
-// Inizializzazione
+// Initialization
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    console.log('Popup inizializzato');
+    Logger.info('Popup inizializzato');
 
-    // Inizializza elementi DOM
+    // Initialize DOM elements
     initElements();
 
-    // Inizializza i18n
+    // Initialize i18n
     await I18n.init();
 
-    // Inizializza Progress Tracker
+    // Initialize Progress Tracker
     state.progressTracker = new ProgressTracker(
       elements.loadingState,
       elements.loadingText,
       document.getElementById('progressBar'),
-      document.getElementById('progressPercent')
+      document.getElementById('progressPercent'),
     );
 
-    // Definisci gli step del processo
+    // Define process steps
     state.progressTracker.defineSteps([
       { name: 'extract', label: '📄 Estrazione articolo', weight: 10 },
       { name: 'classify', label: '🔍 Classificazione tipo', weight: 15 },
       { name: 'generate', label: '🤖 Generazione riassunto', weight: 60 },
       { name: 'keypoints', label: '🔑 Estrazione punti chiave', weight: 10 },
-      { name: 'save', label: '💾 Salvataggio', weight: 5 }
+      { name: 'save', label: '💾 Salvataggio', weight: 5 },
     ]);
 
-    // Carica impostazioni
+    // Load settings
     const settings = await StorageManager.getSettings();
     elements.providerSelect.value = settings.selectedProvider;
 
-    // Carica lingua UI salvata
+    // Initialize theme icon based on saved settings
+    if (settings.darkMode) {
+      elements.themeToggleBtn.textContent = '☀️';
+      elements.themeToggleBtn.title = 'Tema Chiaro';
+    }
+
+    // Load saved UI language
     const savedUILanguage = await StorageManager.getUILanguage();
     const uiLanguageSelect = document.getElementById('uiLanguageSelect');
     if (savedUILanguage && uiLanguageSelect) {
       uiLanguageSelect.value = savedUILanguage;
     }
 
-    // Carica lingua output salvata
+    // Load saved output language
     const savedLanguage = await StorageManager.getSelectedLanguage();
     if (savedLanguage) {
       state.selectedLanguage = savedLanguage;
@@ -61,12 +68,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       elements.languageSelectReady.value = savedLanguage;
     }
 
-    // Imposta sempre "auto" come default all'apertura
+    // Always set "auto" as default on open
     state.selectedContentType = 'auto';
     elements.contentTypeSelect.value = 'auto';
     elements.contentTypeSelectReady.value = 'auto';
 
-    // 🆕 Event listener per cambio lingua UI (con cleanup)
+    // Event listener for UI language change (with cleanup)
     if (uiLanguageSelect) {
       const handleUILanguageChange = async (e) => {
         await I18n.setLanguage(e.target.value);
@@ -74,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       eventCleanup.addEventListener(uiLanguageSelect, 'change', handleUILanguageChange);
     }
 
-    // 🆕 Event listeners con cleanup automatico
+    // Event listeners with automatic cleanup
     eventCleanup.addEventListener(elements.analyzeBtn, 'click', analyzeArticle);
     eventCleanup.addEventListener(elements.generateBtn, 'click', generateSummary);
     eventCleanup.addEventListener(elements.retryBtn, 'click', analyzeArticle);
@@ -86,7 +93,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       chrome.tabs.create({ url: 'src/pages/history/history.html' });
     });
     eventCleanup.addEventListener(elements.multiAnalysisBtn, 'click', () => {
-      chrome.tabs.create({ url: 'src/pages/multi-analysis/multi-analysis.html' });
+      chrome.tabs.create({
+        url: 'src/pages/multi-analysis/multi-analysis.html',
+      });
     });
     eventCleanup.addEventListener(elements.pdfAnalysisBtn, 'click', () => {
       chrome.tabs.create({ url: 'src/pages/pdf-analysis/pdf-analysis.html' });
@@ -101,22 +110,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     eventCleanup.addEventListener(elements.translateBtn, 'click', translateArticle);
     eventCleanup.addEventListener(elements.extractCitationsBtn, 'click', extractCitations);
 
-    // Inizializza Voice Controller
+    // Initialize Voice Controller
     await initVoiceController();
 
-    // Event listener per domanda vocale
+    // Event listener for voice question
     const voiceQuestionBtn = document.getElementById('voiceQuestionBtn');
     if (voiceQuestionBtn) {
       eventCleanup.addEventListener(voiceQuestionBtn, 'click', handleVoiceQuestion);
     }
 
     // Tabs
-    document.querySelectorAll('.tab').forEach(tab => {
+    document.querySelectorAll('.tab').forEach((tab) => {
       const handleTabClick = () => switchTab(tab.dataset.tab);
       eventCleanup.addEventListener(tab, 'click', handleTabClick);
     });
 
-    // Salva provider selezionato
+    // Save selected provider
     const handleProviderChange = async () => {
       const settings = await StorageManager.getSettings();
       settings.selectedProvider = elements.providerSelect.value;
@@ -124,48 +133,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     eventCleanup.addEventListener(elements.providerSelect, 'change', handleProviderChange);
 
-    // Salva lingua selezionata (pagina iniziale)
+    // Save selected language (initial page)
     const handleLanguageChange = async () => {
       state.selectedLanguage = elements.languageSelect.value;
-      elements.languageSelectReady.value = state.selectedLanguage; // Sincronizza
+      elements.languageSelectReady.value = state.selectedLanguage; // Sync
       await StorageManager.saveSelectedLanguage(state.selectedLanguage);
-      console.log('Lingua selezionata:', state.selectedLanguage);
+      Logger.debug('Lingua selezionata:', state.selectedLanguage);
     };
     eventCleanup.addEventListener(elements.languageSelect, 'change', handleLanguageChange);
 
-    // Salva lingua selezionata (pagina ready)
+    // Save selected language (ready page)
     const handleLanguageReadyChange = async () => {
       state.selectedLanguage = elements.languageSelectReady.value;
-      elements.languageSelect.value = state.selectedLanguage; // Sincronizza
+      elements.languageSelect.value = state.selectedLanguage; // Sync
       await StorageManager.saveSelectedLanguage(state.selectedLanguage);
-      console.log('Lingua selezionata:', state.selectedLanguage);
+      Logger.debug('Lingua selezionata:', state.selectedLanguage);
     };
-    eventCleanup.addEventListener(elements.languageSelectReady, 'change', handleLanguageReadyChange);
+    eventCleanup.addEventListener(
+      elements.languageSelectReady,
+      'change',
+      handleLanguageReadyChange,
+    );
 
-    // Gestisci cambio tipo di contenuto (pagina iniziale)
+    // Handle content type change (initial page)
     const handleContentTypeChange = () => {
       state.selectedContentType = elements.contentTypeSelect.value;
-      elements.contentTypeSelectReady.value = state.selectedContentType; // Sincronizza
-      console.log('Tipo di contenuto selezionato:', state.selectedContentType);
+      elements.contentTypeSelectReady.value = state.selectedContentType; // Sync
+      Logger.debug('Tipo di contenuto selezionato:', state.selectedContentType);
     };
     eventCleanup.addEventListener(elements.contentTypeSelect, 'change', handleContentTypeChange);
 
-    // Gestisci cambio tipo di contenuto (pagina ready)
+    // Handle content type change (ready page)
     const handleContentTypeReadyChange = () => {
       state.selectedContentType = elements.contentTypeSelectReady.value;
-      elements.contentTypeSelect.value = state.selectedContentType; // Sincronizza
-      console.log('Tipo di contenuto selezionato:', state.selectedContentType);
+      elements.contentTypeSelect.value = state.selectedContentType; // Sync
+      Logger.debug('Tipo di contenuto selezionato:', state.selectedContentType);
     };
-    eventCleanup.addEventListener(elements.contentTypeSelectReady, 'change', handleContentTypeReadyChange);
+    eventCleanup.addEventListener(
+      elements.contentTypeSelectReady,
+      'change',
+      handleContentTypeReadyChange,
+    );
 
-    console.log('Event listeners configurati con cleanup automatico');
+    Logger.info('Event listeners configurati con cleanup automatico');
 
-    // 🆕 Log statistiche listener
+    // Log listener statistics
     const stats = eventCleanup.getStats();
-    console.log(`📊 Listener registrati: ${stats.totalListeners} su ${stats.totalElements} elementi`);
+    Logger.debug(
+      `📊 Listener registrati: ${stats.totalListeners} su ${stats.totalElements} elementi`,
+    );
   } catch (error) {
-    console.error('Errore inizializzazione popup:', error);
-    // 🆕 Usa ErrorHandler per mostrare errore all'utente
+    Logger.error('Errore inizializzazione popup:', error);
+    // Use ErrorHandler to display error to the user
     await ErrorHandler.showError(error, 'Inizializzazione popup');
   }
 });
@@ -173,9 +192,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function reset() {
   state.currentArticle = null;
   state.currentResults = null;
-  state.currentQA = []; // Pulisci anche le Q&A
+  state.currentQA = []; // Clear Q&A as well
 
-  // Reset tipo di articolo a 'auto'
+  // Reset content type to 'auto'
   state.selectedContentType = 'auto';
   elements.contentTypeSelect.value = 'auto';
   elements.contentTypeSelectReady.value = 'auto';
@@ -188,11 +207,11 @@ async function toggleTheme() {
   const settings = await StorageManager.getSettings();
   const newDarkMode = !settings.darkMode;
 
-  // Aggiorna impostazioni
+  // Update settings
   settings.darkMode = newDarkMode;
   await StorageManager.saveSettings(settings);
 
-  // Applica tema
+  // Apply theme
   if (newDarkMode) {
     document.body.classList.add('dark-mode');
     elements.themeToggleBtn.textContent = '☀️';
@@ -203,18 +222,6 @@ async function toggleTheme() {
     elements.themeToggleBtn.title = 'Tema Scuro';
   }
 }
-
-// Inizializza icona tema all'avvio
-document.addEventListener('DOMContentLoaded', async () => {
-  const settings = await StorageManager.getSettings();
-  if (settings.darkMode) {
-    // elements può non essere ancora inizializzato qui se questo listener
-    // gira prima del principale. Il primo DOMContentLoaded chiama initElements(),
-    // quindi l'ordine di registrazione garantisce che questo giri dopo.
-    elements.themeToggleBtn.textContent = '☀️';
-    elements.themeToggleBtn.title = 'Tema Chiaro';
-  }
-});
 
 // Open Reading Mode
 async function openReadingMode() {
@@ -234,12 +241,17 @@ async function openReadingMode() {
     metadata: {
       provider: elements.providerSelect.value,
       language: state.selectedLanguage,
-      contentType: state.currentResults.detectedContentType || state.selectedContentType
-    }
+      contentType: state.currentResults.detectedContentType || state.selectedContentType,
+    },
   };
 
   // Save to chrome.storage.local (persists across tabs)
-  await chrome.storage.local.set({ readingModeData: readingData });
+  try {
+    await chrome.storage.local.set({ readingModeData: readingData });
+  } catch (error) {
+    showError('Impossibile aprire la modalità lettura: spazio di archiviazione insufficiente.');
+    return;
+  }
 
   // Open reading mode in new tab
   chrome.tabs.create({ url: 'src/pages/reading-mode/reading-mode.html' });

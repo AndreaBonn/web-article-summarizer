@@ -4,6 +4,7 @@
 
 import { state, elements } from './state.js';
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
+import { Logger } from '../../utils/core/logger.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { Translator } from '../../utils/core/translator.js';
@@ -19,14 +20,14 @@ export async function translateArticle() {
   // For PDFs, check if we have extracted text - gestisci diverse strutture
   const extractedText = state.currentData.extractedText || state.currentData.pdf?.text;
   if (state.currentData.isPDF && !extractedText) {
-    console.error('No extracted text for PDF translation');
+    Logger.error('No extracted text for PDF translation');
     await Modal.error('Testo non disponibile per la traduzione');
     return;
   }
 
   // For articles, check if we have article object
   if (!state.currentData.isPDF && !state.currentData.article) {
-    console.error('No article for translation');
+    Logger.error('No article for translation');
     return;
   }
 
@@ -54,7 +55,7 @@ export async function translateArticle() {
         targetLanguage,
         provider,
         apiKey,
-        false // Non forzare traduzione
+        false, // Non forzare traduzione
       );
 
       // Check if same language detected
@@ -69,13 +70,13 @@ export async function translateArticle() {
             targetLanguage,
             provider,
             apiKey,
-            true // Forza traduzione/riformattazione
+            true, // Forza traduzione/riformattazione
           );
         } else if (choice === 'ignore') {
           // Use original text - usa la variabile già estratta
           translationResult = {
             sameLanguage: false,
-            translation: extractedText
+            translation: extractedText,
           };
         } else {
           // User cancelled
@@ -90,13 +91,15 @@ export async function translateArticle() {
         state.currentData.article,
         targetLanguage,
         provider,
-        apiKey
+        apiKey,
       );
       translationResult = { sameLanguage: false, translation };
     }
 
     // Display translation
-    const title = state.currentData.isPDF ? state.currentData.filename : state.currentData.article.title;
+    const title = state.currentData.isPDF
+      ? state.currentData.filename
+      : state.currentData.article.title;
     const translation = translationResult.translation;
 
     elements.translationTabContent.innerHTML = `
@@ -111,9 +114,8 @@ export async function translateArticle() {
 
     // Update in storage
     await updateDataInStorage();
-
   } catch (error) {
-    console.error('Translation error:', error);
+    Logger.error('Translation error:', error);
     elements.translationTabContent.innerHTML = `
       <div class="empty-state">
         <p style="color: var(--text-primary);">❌ ${HtmlSanitizer.escape(error.message)}</p>
@@ -135,14 +137,14 @@ export async function extractCitations() {
   // For PDFs, check if we have extracted text - gestisci diverse strutture
   const extractedText = state.currentData.extractedText || state.currentData.pdf?.text;
   if (state.currentData.isPDF && !extractedText) {
-    console.error('No extracted text for PDF citations');
-    await Modal.error('Testo non disponibile per l\'estrazione citazioni');
+    Logger.error('No extracted text for PDF citations');
+    await Modal.error("Testo non disponibile per l'estrazione citazioni");
     return;
   }
 
   // For articles, check if we have article object
   if (!state.currentData.isPDF && !state.currentData.article) {
-    console.error('No article for citations');
+    Logger.error('No article for citations');
     return;
   }
 
@@ -159,23 +161,18 @@ export async function extractCitations() {
     if (state.currentData.isPDF) {
       // For PDFs, extract citations from extracted text - usa la variabile già estratta
       const filename = state.currentData.filename || state.currentData.pdf?.name || 'PDF';
-      citations = await extractPDFCitations(
-        extractedText,
-        filename,
-        provider,
-        settings
-      );
+      citations = await extractPDFCitations(extractedText, filename, provider, settings);
     } else {
       // For articles, call background script
       const response = await chrome.runtime.sendMessage({
         action: 'extractCitations',
         article: state.currentData.article,
         provider: provider,
-        settings: settings
+        settings: settings,
       });
 
       if (!response.success) {
-        throw new Error(response.error || 'Errore durante l\'estrazione');
+        throw new Error(response.error || "Errore durante l'estrazione");
       }
 
       citations = response.result.citations;
@@ -185,7 +182,8 @@ export async function extractCitations() {
     let html = '<div class="citations-content">';
 
     if (citations && citations.citations && citations.citations.length > 0) {
-      const totalCitations = citations.total_citations || citations.totalCount || citations.citations.length;
+      const totalCitations =
+        citations.total_citations || citations.totalCount || citations.citations.length;
       html += `<h3>📚 ${totalCitations} Citazioni Trovate</h3>`;
 
       citations.citations.forEach((citation, index) => {
@@ -214,9 +212,8 @@ export async function extractCitations() {
 
     // Update in storage
     await updateDataInStorage();
-
   } catch (error) {
-    console.error('Citations error:', error);
+    Logger.error('Citations error:', error);
     elements.citationsTabContent.innerHTML = `
       <div class="empty-state">
         <p style="color: var(--text-primary);">❌ ${HtmlSanitizer.escape(error.message)}</p>
@@ -331,23 +328,23 @@ export async function askQuestion() {
         state.currentData.extractedText,
         state.currentData.summary,
         provider,
-        apiKey
+        apiKey,
       );
     } else {
       // For articles, prepare article with paragraphs structure
       const articleWithParagraphs = {
         ...state.currentData.article,
-        paragraphs: []
+        paragraphs: [],
       };
 
       // Convert content to paragraphs if needed
       if (state.currentData.article.content && !state.currentData.article.paragraphs) {
         const paragraphs = state.currentData.article.content.split('\n\n');
         articleWithParagraphs.paragraphs = paragraphs
-          .filter(p => p.trim())
+          .filter((p) => p.trim())
           .map((text, index) => ({
             id: index + 1,
-            text: text.trim()
+            text: text.trim(),
           }));
       } else if (state.currentData.article.paragraphs) {
         articleWithParagraphs.paragraphs = state.currentData.article.paragraphs;
@@ -360,7 +357,7 @@ export async function askQuestion() {
         state.currentData.summary,
         provider,
         apiKey,
-        settings
+        settings,
       );
     }
 
@@ -372,14 +369,13 @@ export async function askQuestion() {
     state.currentData.qa.push({
       question,
       answer,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Update in storage
     await updateDataInStorage();
-
   } catch (error) {
-    console.error('Q&A error:', error);
+    Logger.error('Q&A error:', error);
     qaItem.querySelector('.qa-answer').textContent = `❌ Errore: ${error.message}`;
   }
 }
@@ -393,8 +389,8 @@ export async function updateDataInStorage() {
       const pdfHistory = result.pdf_analysis_history || [];
 
       // Find existing entry by fileHash
-      const existingIndex = pdfHistory.findIndex(item =>
-        item.fileHash === state.currentData.fileHash
+      const existingIndex = pdfHistory.findIndex(
+        (item) => item.fileHash === state.currentData.fileHash,
       );
 
       if (existingIndex >= 0) {
@@ -403,15 +399,16 @@ export async function updateDataInStorage() {
           ...pdfHistory[existingIndex],
           analysis: {
             ...pdfHistory[existingIndex].analysis,
-            translation: state.currentData.translation || pdfHistory[existingIndex].analysis.translation,
+            translation:
+              state.currentData.translation || pdfHistory[existingIndex].analysis.translation,
             citations: state.currentData.citations || pdfHistory[existingIndex].analysis.citations,
-            qa: state.currentData.qa || pdfHistory[existingIndex].analysis.qa
+            qa: state.currentData.qa || pdfHistory[existingIndex].analysis.qa,
           },
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
 
         await chrome.storage.local.set({ pdf_analysis_history: pdfHistory });
-        console.log('💾 Dati PDF aggiornati nella cronologia');
+        Logger.info('💾 Dati PDF aggiornati nella cronologia');
       }
     } else {
       // For articles, update in article history
@@ -419,8 +416,8 @@ export async function updateDataInStorage() {
       const history = result.summaryHistory || [];
 
       // Find existing entry by URL
-      const existingIndex = history.findIndex(item =>
-        item.article && item.article.url === state.currentData.article.url
+      const existingIndex = history.findIndex(
+        (item) => item.article && item.article.url === state.currentData.article.url,
       );
 
       if (existingIndex >= 0) {
@@ -430,16 +427,16 @@ export async function updateDataInStorage() {
           translation: state.currentData.translation || history[existingIndex].translation,
           citations: state.currentData.citations || history[existingIndex].citations,
           qa: state.currentData.qa || history[existingIndex].qa,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
 
         await chrome.storage.local.set({ summaryHistory: history });
-        console.log('💾 Dati aggiornati nella cronologia');
+        Logger.info('💾 Dati aggiornati nella cronologia');
       } else {
-        console.warn('⚠️ Articolo non trovato nella cronologia');
+        Logger.warn('⚠️ Articolo non trovato nella cronologia');
       }
     }
   } catch (error) {
-    console.error('Error updating storage:', error);
+    Logger.error('Error updating storage:', error);
   }
 }

@@ -1,43 +1,31 @@
 // Reading Mode - Voice Module
-// Gestisce TTS, STT e controllo dimensione font
+// Gestisce: TTS controls, STT per Q&A, font size
 
 import { state, elements } from './state.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { STTManager } from '../../utils/voice/stt-manager.js';
+import { Logger } from '../../utils/core/logger.js';
+import {
+  setupTTSEventListeners,
+  handleTTSPlay as helperTTSPlay,
+  handleTTSPause as helperTTSPause,
+  handleTTSStop as helperTTSStop,
+} from '../../shared/voice-page-helper.js';
 
 // ============================================
 // VOICE CONTROLS
 // ============================================
 
 /**
- * Setup voice event listeners
+ * Setup voice event listeners (TTS + STT)
  */
 export function setupVoiceEventListeners() {
-  // TTS events
-  window.addEventListener('tts:started', () => {
-    updateTTSButtons('playing');
-  });
-
-  window.addEventListener('tts:paused', () => {
-    updateTTSButtons('paused');
-  });
-
-  window.addEventListener('tts:resumed', () => {
-    updateTTSButtons('playing');
-  });
-
-  window.addEventListener('tts:stopped', () => {
-    updateTTSButtons('stopped');
-  });
-
-  window.addEventListener('tts:ended', () => {
-    updateTTSButtons('stopped');
-  });
-
-  window.addEventListener('tts:error', (event) => {
-    console.error('TTS Error:', event.detail);
-    updateTTSButtons('stopped');
-    alert('Errore nella lettura vocale: ' + event.detail.error);
+  // Pulsanti TTS: risolti via elements (popolati da initElements in reading-mode.js)
+  setupTTSEventListeners({
+    elements,
+    onError: (errorDetail) => {
+      alert('Errore nella lettura vocale: ' + errorDetail.error);
+    },
   });
 
   // STT events
@@ -50,7 +38,6 @@ export function setupVoiceEventListeners() {
   });
 
   window.addEventListener('stt:interim', (event) => {
-    // Mostra trascrizione provvisoria
     if (elements.qaInput) {
       elements.qaInput.value = event.detail.transcript;
       elements.qaInput.style.fontStyle = 'italic';
@@ -59,7 +46,6 @@ export function setupVoiceEventListeners() {
   });
 
   window.addEventListener('stt:result', (event) => {
-    // Trascrizione finale
     if (elements.qaInput) {
       elements.qaInput.value = event.detail.transcript;
       elements.qaInput.style.fontStyle = 'normal';
@@ -81,7 +67,7 @@ export function setupVoiceEventListeners() {
   });
 
   window.addEventListener('stt:error', (event) => {
-    console.error('STT Error:', event.detail);
+    Logger.error('STT Error:', event.detail);
     if (elements.qaVoiceBtn) {
       elements.qaVoiceBtn.classList.remove('listening');
       elements.qaVoiceBtn.textContent = '🎤';
@@ -92,86 +78,35 @@ export function setupVoiceEventListeners() {
 }
 
 /**
- * Update TTS button states
- */
-function updateTTSButtons(buttonState) {
-  if (!elements.ttsPlayBtn || !elements.ttsPauseBtn || !elements.ttsStopBtn) return;
-
-  switch (buttonState) {
-    case 'playing':
-      elements.ttsPlayBtn.style.display = 'none';
-      elements.ttsPauseBtn.style.display = 'inline-block';
-      elements.ttsStopBtn.style.display = 'inline-block';
-      elements.ttsPauseBtn.classList.add('active');
-      break;
-
-    case 'paused':
-      elements.ttsPlayBtn.style.display = 'inline-block';
-      elements.ttsPauseBtn.style.display = 'none';
-      elements.ttsStopBtn.style.display = 'inline-block';
-      elements.ttsPlayBtn.textContent = '▶️';
-      elements.ttsPlayBtn.title = 'Riprendi';
-      break;
-
-    case 'stopped':
-      elements.ttsPlayBtn.style.display = 'inline-block';
-      elements.ttsPauseBtn.style.display = 'none';
-      elements.ttsStopBtn.style.display = 'none';
-      elements.ttsPlayBtn.textContent = '🔊';
-      elements.ttsPlayBtn.title = 'Leggi ad alta voce';
-      elements.ttsPauseBtn.classList.remove('active');
-      break;
-  }
-}
-
-/**
  * Handle TTS play/resume
  */
 export function handleTTSPlay() {
-  if (!state.voiceController) return;
+  const lang = state.currentData?.metadata?.language || 'it';
+  const voiceLang = VoiceController.mapLanguageCode(lang);
 
-  const ttsState = state.voiceController.getTTSState();
-
-  if (ttsState.isPaused) {
-    // Resume
-    state.voiceController.resumeSpeaking();
-  } else {
-    // Start new reading
-    const textToRead = getCurrentTabText();
-    if (!textToRead) {
-      alert('Nessun testo da leggere');
-      return;
-    }
-
-    // Get language from metadata
-    const lang = state.currentData?.metadata?.language || 'it';
-    const voiceLang = VoiceController.mapLanguageCode(lang);
-
-    state.voiceController.speak(textToRead, voiceLang);
-  }
+  helperTTSPlay(state.voiceController, getCurrentTabText, voiceLang, () => {
+    alert('Nessun testo da leggere');
+  });
 }
 
 /**
  * Handle TTS pause
  */
 export function handleTTSPause() {
-  if (!state.voiceController) return;
-  state.voiceController.pauseSpeaking();
+  helperTTSPause(state.voiceController);
 }
 
 /**
  * Handle TTS stop
  */
 export function handleTTSStop() {
-  if (!state.voiceController) return;
-  state.voiceController.stopSpeaking();
+  helperTTSStop(state.voiceController);
 }
 
 /**
  * Get text from current active tab
  */
 function getCurrentTabText() {
-  // Find active tab
   const activeTab = document.querySelector('.summary-tab.active');
   if (!activeTab) return null;
 
@@ -204,7 +139,7 @@ function getCurrentTabText() {
     case 'qa':
       if (!state.currentData?.qa || state.currentData.qa.length === 0) return null;
       return state.currentData.qa
-        .map(item => `Domanda: ${item.question}. Risposta: ${item.answer}`)
+        .map((item) => `Domanda: ${item.question}. Risposta: ${item.answer}`)
         .join('. ');
 
     default:
@@ -222,32 +157,25 @@ export async function handleVoiceInput() {
   }
 
   if (!STTManager.isSupported()) {
-    alert('Il riconoscimento vocale non è supportato in questo browser. Usa Chrome, Edge o Safari.');
+    alert(
+      'Il riconoscimento vocale non è supportato in questo browser. Usa Chrome, Edge o Safari.',
+    );
     return;
   }
 
   const sttState = state.voiceController.getSTTState();
 
   if (sttState.isListening) {
-    // Stop listening
     state.voiceController.stopListening();
     return;
   }
 
   try {
-    // Get language from metadata
     const lang = state.currentData?.metadata?.language || 'it';
     const voiceLang = VoiceController.mapLanguageCode(lang);
-
-    // Start listening
-    const transcript = await state.voiceController.startListening(voiceLang);
-
-    // Transcript is already set in input by event listener
-    // User can now click "Chiedi" or press Enter
-
+    await state.voiceController.startListening(voiceLang);
   } catch (error) {
-    console.error('Voice input error:', error);
-    // Error is already shown by event listener
+    Logger.error('Voice input error:', error);
   }
 }
 
@@ -279,7 +207,6 @@ function applyFontSize() {
     elements.fontSizeLabel.textContent = size;
   }
 
-  // Update button states
   if (elements.fontDecreaseBtn) {
     elements.fontDecreaseBtn.disabled = currentFontSizeIndex === 0;
   }
@@ -287,7 +214,6 @@ function applyFontSize() {
     elements.fontIncreaseBtn.disabled = currentFontSizeIndex === FONT_SIZES.length - 1;
   }
 
-  // Save to localStorage
   localStorage.setItem('readingModeFontSize', size);
 }
 

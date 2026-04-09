@@ -2,6 +2,7 @@
  * VoiceController - Coordina TTS e STT per Q&A vocale
  * @module utils/voice-controller
  */
+import { Logger } from '../core/logger.js';
 import { TTSManager } from './tts-manager.js';
 import { STTManager } from './stt-manager.js';
 
@@ -17,16 +18,16 @@ export class VoiceController {
    */
   async initialize() {
     if (this.isInitialized) return;
-    
+
     // Verifica supporto STT
     if (!STTManager.isSupported()) {
-      console.warn('⚠️ Riconoscimento vocale non supportato');
+      Logger.warn('⚠️ Riconoscimento vocale non supportato');
     }
-    
+
     // Carica voci TTS disponibili
     const voices = await this.ttsManager.getAvailableVoices();
-    console.log(`🔊 ${voices.length} voci TTS disponibili`);
-    
+    Logger.info(`🔊 ${voices.length} voci TTS disponibili`);
+
     this.isInitialized = true;
   }
 
@@ -125,11 +126,11 @@ export class VoiceController {
    */
   static mapLanguageCode(outputLang) {
     const languageMap = {
-      'it': 'it-IT',
-      'en': 'en-US',
-      'es': 'es-ES',
-      'fr': 'fr-FR',
-      'de': 'de-DE'
+      it: 'it-IT',
+      en: 'en-US',
+      es: 'es-ES',
+      fr: 'fr-FR',
+      de: 'de-DE',
     };
     return languageMap[outputLang] || 'it-IT';
   }

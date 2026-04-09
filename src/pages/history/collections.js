@@ -1,14 +1,15 @@
 // history-collections.js — PDF e Multi-analysis history
 
+import { Logger } from '../../utils/core/logger.js';
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { Modal } from '../../utils/core/modal.js';
 
 export async function loadPDFHistory() {
-  console.log('Caricamento cronologia PDF...');
+  Logger.info('Caricamento cronologia PDF...');
   const history = await HistoryManager.getPDFHistory();
-  console.log('Trovati', history.length, 'PDF analizzati');
+  Logger.info('Trovati', history.length, 'PDF analizzati');
   const container = document.getElementById('pdfHistoryList');
 
   if (history.length === 0) {
@@ -22,10 +23,10 @@ export async function loadPDFHistory() {
     return;
   }
 
-  container.innerHTML = history.map(entry => createPDFCard(entry)).join('');
+  container.innerHTML = history.map((entry) => createPDFCard(entry)).join('');
 
   // Aggiungi event listeners
-  document.querySelectorAll('.pdf-card').forEach(card => {
+  document.querySelectorAll('.pdf-card').forEach((card) => {
     const id = parseInt(card.dataset.id);
 
     card.addEventListener('click', (e) => {
@@ -60,13 +61,15 @@ function createPDFCard(entry) {
   const isFavorite = entry.favorite || false;
   const hasTranslation = !!entry.translation;
   const hasQA = entry.qa && entry.qa.length > 0;
-  const hasCitations = entry.citations && entry.citations.citations && entry.citations.citations.length > 0;
+  const hasCitations =
+    entry.citations && entry.citations.citations && entry.citations.citations.length > 0;
   const hasNotes = !!entry.notes;
 
   const badges = [];
   if (hasTranslation) badges.push('<span class="badge">🌍 Tradotto</span>');
   if (hasQA) badges.push(`<span class="badge">💬 ${entry.qa.length} Q&A</span>`);
-  if (hasCitations) badges.push(`<span class="badge">📚 ${entry.citations.citations.length} Citazioni</span>`);
+  if (hasCitations)
+    badges.push(`<span class="badge">📚 ${entry.citations.citations.length} Citazioni</span>`);
   if (hasNotes) badges.push('<span class="badge">📝 Note</span>');
   if (entry.metadata.fromCache) badges.push('<span class="badge cache-badge">⚡ Cache</span>');
 
@@ -99,7 +102,10 @@ function createPDFCard(entry) {
         <div class="keypoints-preview">
           <strong>🔑 Punti Chiave:</strong>
           <ul>
-            ${entry.keyPoints.slice(0, 3).map(kp => `<li>${HtmlSanitizer.escape(kp.title)}</li>`).join('')}
+            ${entry.keyPoints
+              .slice(0, 3)
+              .map((kp) => `<li>${HtmlSanitizer.escape(kp.title)}</li>`)
+              .join('')}
             ${entry.keyPoints.length > 3 ? `<li><em>+${entry.keyPoints.length - 3} altri...</em></li>` : ''}
           </ul>
         </div>
@@ -138,7 +144,7 @@ async function openPDF(id) {
     extractedText: entry.pdf.text,
     pageCount: entry.pdf.pages,
     filename: entry.pdf.name,
-    apiProvider: entry.metadata.provider
+    apiProvider: entry.metadata.provider,
   };
 
   // Salva in storage
@@ -152,7 +158,7 @@ async function deletePDF(id) {
   const confirmed = await Modal.confirm(
     'Sei sicuro di voler eliminare questo PDF dalla cronologia?\n\nQuesta azione non può essere annullata.',
     'Elimina PDF',
-    '🗑️'
+    '🗑️',
   );
 
   if (!confirmed) return;
@@ -162,9 +168,9 @@ async function deletePDF(id) {
 }
 
 export async function loadMultiAnalysisHistory() {
-  console.log('Caricamento cronologia multi-analisi...');
+  Logger.info('Caricamento cronologia multi-analisi...');
   const history = await HistoryManager.getMultiAnalysisHistory();
-  console.log('Trovate', history.length, 'analisi Multi Articolo');
+  Logger.info('Trovate', history.length, 'analisi Multi Articolo');
   const container = document.getElementById('multiAnalysisList');
 
   if (history.length === 0) {
@@ -178,15 +184,16 @@ export async function loadMultiAnalysisHistory() {
     return;
   }
 
-  container.innerHTML = history.map(entry => createMultiAnalysisCard(entry)).join('');
+  container.innerHTML = history.map((entry) => createMultiAnalysisCard(entry)).join('');
 
   // Aggiungi event listeners
-  document.querySelectorAll('.multi-analysis-card').forEach(card => {
+  document.querySelectorAll('.multi-analysis-card').forEach((card) => {
     const id = parseInt(card.dataset.id);
 
     card.addEventListener('click', (e) => {
       // Non aprire se si clicca sulla stella o sul pulsante elimina
-      if (e.target.closest('.multi-analysis-btn') || e.target.closest('.btn-favorite-multi')) return;
+      if (e.target.closest('.multi-analysis-btn') || e.target.closest('.btn-favorite-multi'))
+        return;
 
       openMultiAnalysis(id);
     });
@@ -241,9 +248,18 @@ function createMultiAnalysisCard(entry) {
 
       <div class="multi-analysis-articles">
         <div class="multi-analysis-articles-title">${HtmlSanitizer.escape(I18n.t('multi.articlesIncluded'))}</div>
-        ${entry.articles && entry.articles.length > 0 ? entry.articles.slice(0, 3).map(a => `
+        ${
+          entry.articles && entry.articles.length > 0
+            ? entry.articles
+                .slice(0, 3)
+                .map(
+                  (a) => `
           <div class="multi-analysis-article-item">${HtmlSanitizer.escape(a.title || 'Titolo non disponibile')}</div>
-        `).join('') : '<div class="multi-analysis-article-item">Nessun articolo</div>'}
+        `,
+                )
+                .join('')
+            : '<div class="multi-analysis-article-item">Nessun articolo</div>'
+        }
         ${entry.articles && entry.articles.length > 3 ? `<div class="multi-analysis-article-item">... e altri ${entry.articles.length - 3}</div>` : ''}
       </div>
 
@@ -255,9 +271,9 @@ function createMultiAnalysisCard(entry) {
 }
 
 async function openMultiAnalysis(id) {
-  console.log('Apertura analisi Multi Articolo ID:', id);
+  Logger.debug('Apertura analisi Multi Articolo ID:', id);
   const entry = await HistoryManager.getMultiAnalysisById(id);
-  console.log('Entry trovata:', entry);
+  Logger.debug('Entry trovata:', entry);
 
   if (!entry) {
     await Modal.error('Analisi non trovata');
@@ -266,28 +282,33 @@ async function openMultiAnalysis(id) {
 
   // Verifica che i dati siano validi
   if (!entry.analysis || !entry.articles) {
-    await Modal.error('Questa analisi ha una struttura dati non valida. Prova a eliminarla e rifare l\'analisi.');
+    await Modal.error(
+      "Questa analisi ha una struttura dati non valida. Prova a eliminarla e rifare l'analisi.",
+    );
     return;
   }
 
   // Apri la pagina multi-analysis con i dati salvati
-  chrome.storage.local.set({
-    reopenMultiAnalysis: {
-      id: entry.id,
-      analysis: entry.analysis,
-      articles: entry.articles
-    }
-  }, () => {
-    console.log('Reindirizzamento a multi-analysis.html');
-    window.location.href = chrome.runtime.getURL('src/pages/multi-analysis/multi-analysis.html');
-  });
+  chrome.storage.local.set(
+    {
+      reopenMultiAnalysis: {
+        id: entry.id,
+        analysis: entry.analysis,
+        articles: entry.articles,
+      },
+    },
+    () => {
+      Logger.debug('Reindirizzamento a multi-analysis.html');
+      window.location.href = chrome.runtime.getURL('src/pages/multi-analysis/multi-analysis.html');
+    },
+  );
 }
 
 async function deleteMultiAnalysis(id) {
   const confirmed = await Modal.confirm(
     'Vuoi eliminare questa analisi Multi Articolo?',
     'Conferma Eliminazione',
-    '⚠️'
+    '⚠️',
   );
 
   if (confirmed) {

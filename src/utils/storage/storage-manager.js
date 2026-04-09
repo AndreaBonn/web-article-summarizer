@@ -1,7 +1,10 @@
 // Storage Manager - Gestione API keys e impostazioni
 // Le API key sono salvate in chrome.storage.local che è sandboxed per estensione.
+import { Logger } from '../core/logger.js';
 // Non viene usata cifratura custom perché in un'estensione Chrome il codice sorgente
 // è sempre leggibile — un segreto hardcoded non offre protezione reale.
+
+const MAX_TRANSLATION_CACHE = 50;
 
 export class StorageManager {
   // API Keys management
@@ -25,31 +28,43 @@ export class StorageManager {
         await this.saveApiKey(provider, plainKey);
         return plainKey;
       } catch (e) {
-        console.error(`Migrazione API key ${provider} fallita:`, e);
-        return null;
+        Logger.error(`Migrazione API key ${provider} fallita:`, e);
+        throw new Error(
+          `La API key di ${provider} è in un formato obsoleto e non può essere letta. Reinserisci la chiave nelle impostazioni.`,
+        );
       }
     }
     return stored;
   }
 
-  // Migrazione legacy: decripta key cifrate con il vecchio segreto hardcoded
+  // DEPRECATED: Legacy migration — remove after v3.0.0
+  // This secret was used in v1.x to encrypt API keys in storage.
+  // The encryption was security theater (key visible in source code).
+  // Kept only to auto-migrate existing users to plaintext storage.
   static async _decryptLegacyKey(encryptedData) {
     const LEGACY_SECRET = 'ai-summarizer-v1-secret-key-2024';
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
     const keyMaterial = await crypto.subtle.importKey(
-      'raw', encoder.encode(LEGACY_SECRET), 'PBKDF2', false, ['deriveKey']
+      'raw',
+      encoder.encode(LEGACY_SECRET),
+      'PBKDF2',
+      false,
+      ['deriveKey'],
     );
     const salt = this._base64ToArrayBuffer(encryptedData.salt);
     const key = await crypto.subtle.deriveKey(
       { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
       keyMaterial,
-      { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt'],
     );
     const iv = this._base64ToArrayBuffer(encryptedData.iv);
     const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv }, key,
-      this._base64ToArrayBuffer(encryptedData.encrypted)
+      { name: 'AES-GCM', iv },
+      key,
+      this._base64ToArrayBuffer(encryptedData.encrypted),
     );
     return decoder.decode(decrypted);
   }
@@ -69,25 +84,16 @@ export class StorageManager {
   }
 
   static async getSettings() {
-    try {
-      const result = await chrome.storage.local.get(['settings']);
-      return result.settings || {
+    const result = await chrome.storage.local.get(['settings']);
+    return (
+      result.settings || {
         selectedProvider: 'groq',
         contentType: 'auto',
         summaryLength: 'medium',
         tone: 'neutral',
-        saveHistory: true
-      };
-    } catch (error) {
-      console.error('Errore getSettings:', error);
-      return {
-        selectedProvider: 'groq',
-        contentType: 'auto',
-        summaryLength: 'medium',
-        tone: 'neutral',
-        saveHistory: true
-      };
-    }
+        saveHistory: true,
+      }
+    );
   }
 
   // Language management (output language for AI)
@@ -99,7 +105,7 @@ export class StorageManager {
     const result = await chrome.storage.local.get(['selectedLanguage']);
     return result.selectedLanguage || 'it'; // Default: Italiano
   }
-  
+
   // UI Language management (interface language)
   static async saveUILanguage(language) {
     await chrome.storage.local.set({ uiLanguage: language });
@@ -126,7 +132,7 @@ export class StorageManager {
     const data = encoder.encode(str);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
     return 'tcache_' + hashHex.slice(0, 16);
   }
 
@@ -159,14 +165,14 @@ export class StorageManager {
       provider,
       url,
       targetLanguage,
-      originalLanguage
+      originalLanguage,
     };
 
-    // LRU eviction - mantieni max 50 traduzioni
+    // LRU eviction - mantieni max MAX_TRANSLATION_CACHE traduzioni
     const entries = Object.entries(cache);
-    if (entries.length > 50) {
+    if (entries.length > MAX_TRANSLATION_CACHE) {
       entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-      cache = Object.fromEntries(entries.slice(-50));
+      cache = Object.fromEntries(entries.slice(-MAX_TRANSLATION_CACHE));
     }
 
     await chrome.storage.local.set({ translationCache: cache });
@@ -188,14 +194,14 @@ export class StorageManager {
       totalSummaries: 0,
       totalWords: 0,
       providerUsage: {},
-      totalTime: 0
+      totalTime: 0,
     };
-    
+
     stats.totalSummaries++;
     stats.totalWords += wordCount;
     stats.providerUsage[provider] = (stats.providerUsage[provider] || 0) + 1;
     stats.totalTime += generationTime;
-    
+
     await chrome.storage.local.set({ stats });
   }
 }

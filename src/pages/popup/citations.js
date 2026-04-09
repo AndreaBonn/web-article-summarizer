@@ -8,6 +8,7 @@ import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { CitationExtractor } from '../../utils/ai/citation-extractor.js';
 import { Modal } from '../../utils/core/modal.js';
+import { Logger } from '../../utils/core/logger.js';
 
 // Citations System
 export async function extractCitations() {
@@ -29,7 +30,7 @@ export async function extractCitations() {
       action: 'extractCitations',
       article: state.currentArticle,
       provider: provider,
-      settings: settings
+      settings: settings,
     });
 
     if (!response.success) {
@@ -50,22 +51,22 @@ export async function extractCitations() {
         const badge = document.createElement('span');
         badge.className = 'cache-badge';
         badge.textContent = 'Da cache';
-        badge.style.cssText = 'background: #4caf50; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;';
+        badge.style.cssText =
+          'background: #4caf50; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;';
         citationsHeader.appendChild(badge);
       }
-      console.log('📚 Citazioni caricate dalla cache');
+      Logger.info('📚 Citazioni caricate dalla cache');
     } else {
-      console.log('🔄 Citazioni estratte da API');
+      Logger.info('🔄 Citazioni estratte da API');
     }
 
     // Salva nella cronologia
     if (state.currentArticle && state.currentArticle.url) {
       await HistoryManager.updateSummaryWithCitations(state.currentArticle.url, citationsData);
-      console.log('💾 Citazioni salvate in cronologia');
+      Logger.info('💾 Citazioni salvate in cronologia');
     }
-
   } catch (error) {
-    console.error('Errore estrazione citazioni:', error);
+    Logger.error('Errore estrazione citazioni:', error);
     elements.citationsContent.innerHTML = `
       <div class="error-box">
         <p>❌ ${HtmlSanitizer.escape(error.message)}</p>
@@ -94,7 +95,8 @@ function displayCitationsData(citationsData) {
   }
 
   // Calcola il numero totale di citazioni con fallback
-  const totalCitations = citationsData.total_citations || citationsData.totalCount || citationsData.citations.length;
+  const totalCitations =
+    citationsData.total_citations || citationsData.totalCount || citationsData.citations.length;
 
   let html = `
     <div class="citations-header">
@@ -122,19 +124,20 @@ function displayCitationsData(citationsData) {
     <div class="citations-list">
   `;
 
-  citationsData.citations.forEach(citation => {
-    const typeIcon = {
-      'direct_quote': '💬',
-      'indirect_quote': '💭',
-      'study_reference': '🔬',
-      'statistic': '📊',
-      'expert_opinion': '👤',
-      'book_reference': '📖',
-      'article_reference': '📄',
-      'report_reference': '📋',
-      'organization_data': '🏢',
-      'web_source': '🌐'
-    }[citation.type] || '📌';
+  citationsData.citations.forEach((citation) => {
+    const typeIcon =
+      {
+        direct_quote: '💬',
+        indirect_quote: '💭',
+        study_reference: '🔬',
+        statistic: '📊',
+        expert_opinion: '👤',
+        book_reference: '📖',
+        article_reference: '📄',
+        report_reference: '📋',
+        organization_data: '🏢',
+        web_source: '🌐',
+      }[citation.type] || '📌';
 
     // Usa quote_text dalla nuova struttura (contenuto sanitizzato)
     const quoteText = citation.quote_text || citation.text || '';
@@ -180,10 +183,12 @@ function displayCitationsData(citationsData) {
     updateMainCitation(e.target.value);
   });
 
-  document.getElementById('copyCitationsBtn').addEventListener('click', () => copyCitationsData(citationsData));
+  document
+    .getElementById('copyCitationsBtn')
+    .addEventListener('click', () => copyCitationsData(citationsData));
 
   // Click handler per evidenziare citazioni nell'articolo
-  document.querySelectorAll('.citation-item').forEach(item => {
+  document.querySelectorAll('.citation-item').forEach((item) => {
     item.addEventListener('click', async () => {
       const citationText = item.dataset.citationText;
       const paragraph = item.dataset.paragraph;
@@ -213,25 +218,25 @@ function updateMainCitation(style) {
 
 function getCitationTypeLabel(type) {
   const labels = {
-    'direct_quote': '💬 Citazione Diretta',
-    'indirect_quote': '💭 Citazione Indiretta',
-    'study_reference': '🔬 Studio/Ricerca',
-    'statistic': '📊 Statistica',
-    'expert_opinion': '👤 Opinione Esperto',
-    'book_reference': '📖 Libro',
-    'article_reference': '📄 Articolo',
-    'report_reference': '📋 Report',
-    'organization_data': '🏢 Dati Organizzazione',
-    'web_source': '🌐 Fonte Web'
+    direct_quote: '💬 Citazione Diretta',
+    indirect_quote: '💭 Citazione Indiretta',
+    study_reference: '🔬 Studio/Ricerca',
+    statistic: '📊 Statistica',
+    expert_opinion: '👤 Opinione Esperto',
+    book_reference: '📖 Libro',
+    article_reference: '📄 Articolo',
+    report_reference: '📋 Report',
+    organization_data: '🏢 Dati Organizzazione',
+    web_source: '🌐 Fonte Web',
   };
   return labels[type] || '📌 Altro';
 }
 
 function getPositionLabel(position) {
   const labels = {
-    'inizio': '📍 Inizio',
-    'metà': '📍 Metà',
-    'fine': '📍 Fine'
+    inizio: '📍 Inizio',
+    metà: '📍 Metà',
+    fine: '📍 Fine',
   };
   return labels[position] || '📍 Articolo';
 }
@@ -243,7 +248,7 @@ async function copyCitationsData(citationsData) {
   const bibliography = CitationExtractor.generateBibliography(
     state.currentArticle,
     citationsData.citations,
-    style
+    style,
   );
 
   try {
@@ -255,7 +260,7 @@ async function copyCitationsData(citationsData) {
       btn.textContent = originalText;
     }, 2000);
   } catch (error) {
-    console.error('Errore copia citazioni:', error);
+    Logger.error('Errore copia citazioni:', error);
     await Modal.error('Impossibile copiare negli appunti', 'Errore');
   }
 }
@@ -267,12 +272,12 @@ async function highlightParagraph(paragraphNumber) {
     // Invia messaggio al content script per evidenziare il paragrafo
     await chrome.tabs.sendMessage(tab.id, {
       action: 'highlightParagraph',
-      paragraphNumber: paragraphNumber
+      paragraphNumber: paragraphNumber,
     });
 
-    console.log(`✅ Paragrafo §${paragraphNumber} evidenziato`);
+    Logger.debug(`✅ Paragrafo §${paragraphNumber} evidenziato`);
   } catch (error) {
-    console.error('Errore highlight paragrafo:', error);
+    Logger.error('Errore highlight paragrafo:', error);
     // Fallback: prova con il testo
     return false;
   }
@@ -283,23 +288,23 @@ async function highlightCitationInArticle(citationText) {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    console.log('🔍 Ricerca citazione nella pagina:', citationText.substring(0, 50) + '...');
+    Logger.debug('🔍 Ricerca citazione nella pagina:', citationText.substring(0, 50) + '...');
 
     // Invia messaggio al content script per evidenziare il testo
     const response = await chrome.tabs.sendMessage(tab.id, {
       action: 'highlightText',
-      text: citationText
+      text: citationText,
     });
 
     if (response && response.success) {
-      console.log('✅ Testo citazione evidenziato');
+      Logger.debug('✅ Testo citazione evidenziato');
       return true;
     } else {
-      console.warn('⚠️ Citazione non trovata nella pagina');
+      Logger.warn('⚠️ Citazione non trovata nella pagina');
       return false;
     }
   } catch (error) {
-    console.error('❌ Errore highlight citazione:', error);
+    Logger.error('❌ Errore highlight citazione:', error);
     // Non mostrare modal per non disturbare l'utente
     return false;
   }

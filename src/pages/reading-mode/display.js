@@ -3,6 +3,7 @@
 
 import { state, elements } from './state.js';
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
+import { Logger } from '../../utils/core/logger.js';
 
 // Display content
 export function displayContent() {
@@ -18,7 +19,7 @@ export function displayContent() {
 
   // Safety check for article
   if (!article) {
-    console.error('Article data is missing');
+    Logger.error('Article data is missing');
     showError('Dati articolo mancanti');
     return;
   }
@@ -50,16 +51,19 @@ export function displayContent() {
 
   // Check if citations exist
   if (state.currentData.citations) {
-    console.log('📚 Struttura citazioni:', state.currentData.citations);
+    Logger.debug('📚 Struttura citazioni:', state.currentData.citations);
 
     // Handle both structures: direct array or nested object
     const citationsList = state.currentData.citations.citations || state.currentData.citations;
 
     if (citationsList && citationsList.length > 0) {
-      console.log('📚 Lista citazioni:', citationsList);
-      console.log('📚 Prima citazione:', citationsList[0]);
+      Logger.debug('📚 Lista citazioni:', citationsList);
+      Logger.debug('📚 Prima citazione:', citationsList[0]);
 
-      const totalCitations = state.currentData.citations.total_citations || state.currentData.citations.totalCount || citationsList.length;
+      const totalCitations =
+        state.currentData.citations.total_citations ||
+        state.currentData.citations.totalCount ||
+        citationsList.length;
       let html = `<div class="citations-content"><h3>📚 ${totalCitations} Citazioni Trovate</h3>`;
 
       citationsList.forEach((citation, index) => {
@@ -73,36 +77,37 @@ export function displayContent() {
 
         // Skip if no meaningful content
         if (!text && !author && !source) {
-          console.warn('Citazione vuota saltata:', citation);
+          Logger.warn('Citazione vuota saltata:', citation);
           return;
         }
 
         // Type icon
-        const typeIcon = {
-          'direct_quote': '💬',
-          'indirect_quote': '💭',
-          'study_reference': '🔬',
-          'statistic': '📊',
-          'expert_opinion': '👤',
-          'book_reference': '📖',
-          'article_reference': '📄',
-          'report_reference': '📋',
-          'organization_data': '🏢',
-          'web_source': '🌐'
-        }[citation.type] || '📌';
+        const typeIcon =
+          {
+            direct_quote: '💬',
+            indirect_quote: '💭',
+            study_reference: '🔬',
+            statistic: '📊',
+            expert_opinion: '👤',
+            book_reference: '📖',
+            article_reference: '📄',
+            report_reference: '📋',
+            organization_data: '🏢',
+            web_source: '🌐',
+          }[citation.type] || '📌';
 
         // Type label
         const typeLabels = {
-          'direct_quote': 'Citazione Diretta',
-          'indirect_quote': 'Citazione Indiretta',
-          'study_reference': 'Riferimento Studio',
-          'statistic': 'Statistica',
-          'expert_opinion': 'Opinione Esperto',
-          'book_reference': 'Riferimento Libro',
-          'article_reference': 'Riferimento Articolo',
-          'report_reference': 'Riferimento Report',
-          'organization_data': 'Dati Organizzazione',
-          'web_source': 'Fonte Web'
+          direct_quote: 'Citazione Diretta',
+          indirect_quote: 'Citazione Indiretta',
+          study_reference: 'Riferimento Studio',
+          statistic: 'Statistica',
+          expert_opinion: 'Opinione Esperto',
+          book_reference: 'Riferimento Libro',
+          article_reference: 'Riferimento Articolo',
+          report_reference: 'Riferimento Report',
+          organization_data: 'Dati Organizzazione',
+          web_source: 'Fonte Web',
         };
         const typeLabel = typeLabels[citation.type] || 'Citazione';
 
@@ -132,7 +137,7 @@ export function displayContent() {
 
   // Check if Q&A exists
   if (state.currentData.qa && state.currentData.qa.length > 0) {
-    state.currentData.qa.forEach(item => {
+    state.currentData.qa.forEach((item) => {
       const qaItem = document.createElement('div');
       qaItem.className = 'qa-item';
       qaItem.innerHTML = `
@@ -179,18 +184,19 @@ function displayArticle(article) {
     // Detect if iframe fails to load
     setTimeout(() => {
       try {
-        const iframeDoc = elements.articleIframe.contentDocument || elements.articleIframe.contentWindow.document;
+        const iframeDoc =
+          elements.articleIframe.contentDocument || elements.articleIframe.contentWindow.document;
         if (!iframeDoc || iframeDoc.body.innerHTML === '') {
-          console.warn('⚠️ Iframe bloccato, switch automatico a vista testo');
+          Logger.warn('⚠️ Iframe bloccato, switch automatico a vista testo');
           switchArticleView('text');
           elements.viewIframeBtn.disabled = true;
           elements.viewIframeBtn.title = 'Iframe bloccato dal sito';
         } else {
-          console.log('✅ Iframe caricato correttamente');
+          Logger.info('✅ Iframe caricato correttamente');
         }
       } catch (e) {
         // Cross-origin error = iframe loaded successfully
-        console.log('✅ Iframe caricato (cross-origin)');
+        Logger.info('✅ Iframe caricato (cross-origin)');
       }
     }, 3000);
   } else {
@@ -201,15 +207,12 @@ function displayArticle(article) {
   }
 }
 
-
-
-
 // Highlight paragraph in article
 function highlightParagraph(paragraphNumber) {
   // Only works in text view
   if (!elements.articleText.classList.contains('hidden')) {
     // Remove previous highlights
-    document.querySelectorAll('.highlight').forEach(el => {
+    document.querySelectorAll('.highlight').forEach((el) => {
       el.classList.remove('highlight');
     });
 
@@ -244,7 +247,7 @@ export function syncScrollPosition(source) {
 // Switch summary tab
 export function switchSummaryTab(tabName) {
   // Update tab buttons
-  document.querySelectorAll('.summary-tab').forEach(tab => {
+  document.querySelectorAll('.summary-tab').forEach((tab) => {
     tab.classList.remove('active');
     if (tab.dataset.tab === tabName) {
       tab.classList.add('active');
@@ -252,7 +255,7 @@ export function switchSummaryTab(tabName) {
   });
 
   // Update tab content
-  document.querySelectorAll('.summary-tab-content').forEach(content => {
+  document.querySelectorAll('.summary-tab-content').forEach((content) => {
     content.classList.remove('active');
   });
 
@@ -265,8 +268,11 @@ export function switchSummaryTab(tabName) {
 // Display summary in tab
 function displaySummaryInTab(summary) {
   // Controlla se il PDF è dalla cache
-  const isFromCache = state.currentData?.isFromCache || state.currentData?.metadata?.fromCache || false;
-  const cacheBadge = isFromCache ? '<span class="cache-badge" style="background: #4caf50; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 12px; display: inline-block;">⚡ Da Cache!</span>' : '';
+  const isFromCache =
+    state.currentData?.isFromCache || state.currentData?.metadata?.fromCache || false;
+  const cacheBadge = isFromCache
+    ? '<span class="cache-badge" style="background: #4caf50; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 12px; display: inline-block;">⚡ Da Cache!</span>'
+    : '';
 
   elements.summaryTabContent.innerHTML = `
     ${cacheBadge}
@@ -301,7 +307,7 @@ function displayKeypointsInTab(keyPoints) {
   elements.keypointsTabContent.innerHTML = html;
 
   // Add click handlers
-  elements.keypointsTabContent.querySelectorAll('.keypoint').forEach(el => {
+  elements.keypointsTabContent.querySelectorAll('.keypoint').forEach((el) => {
     el.addEventListener('click', () => {
       const paragraph = el.dataset.paragraph;
       highlightParagraph(paragraph);
@@ -326,7 +332,6 @@ export function switchArticleView(view) {
 
     // Disable sync scroll (iframe can't sync)
     state.syncScroll = false;
-
   } else {
     // Show text, hide iframe and error
     elements.articleIframe.style.display = 'none';
@@ -346,7 +351,7 @@ export function switchArticleView(view) {
 
 // Display PDF content
 export function displayPDFContent() {
-  console.log('📄 Rendering PDF content:', state.currentData);
+  Logger.info('📄 Rendering PDF content:', state.currentData);
 
   // Update header
   document.querySelector('.reading-header h1').textContent = '📄 Analisi PDF';
@@ -411,7 +416,7 @@ function displayExtractedText(text) {
   // Format text with page markers
   const formattedText = text
     .split(/--- Pagina (\d+) ---/)
-    .filter(part => part.trim())
+    .filter((part) => part.trim())
     .map((part, index) => {
       if (index % 2 === 0) {
         // Page number
@@ -464,11 +469,11 @@ function displayQuotesInTab(quotes) {
 // Helper — get language name
 function getLanguageName(code) {
   const languages = {
-    'it': 'Italiano',
-    'en': 'English',
-    'es': 'Español',
-    'fr': 'Français',
-    'de': 'Deutsch'
+    it: 'Italiano',
+    en: 'English',
+    es: 'Español',
+    fr: 'Français',
+    de: 'Deutsch',
   };
   return languages[code] || code;
 }

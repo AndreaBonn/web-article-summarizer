@@ -1,5 +1,5 @@
-// Popup Analysis Module - Estratto da popup.js
-// Gestisce: analyzeArticle, generateSummary, displayResults, switchTab, copyToClipboard
+// Popup Analysis Module - Extracted from popup.js
+// Handles: analyzeArticle, generateSummary, displayResults, switchTab, copyToClipboard
 
 import { state, elements, showState, showError } from './state.js';
 import { translationState, citationsState } from './features.js';
@@ -10,6 +10,7 @@ import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { ContentClassifier } from '../../utils/ai/content-classifier.js';
 import { CitationExtractor } from '../../utils/ai/citation-extractor.js';
 import { ErrorHandler } from '../../utils/core/error-handler.js';
+import { Logger } from '../../utils/core/logger.js';
 import { addTTSButtons } from './voice.js';
 
 export async function analyzeArticle() {
@@ -17,53 +18,70 @@ export async function analyzeArticle() {
   elements.loadingText.textContent = I18n.t('loading.extract');
 
   try {
-    // Ottieni tab corrente
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    // Get current tab
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
 
-    // Verifica che non sia una pagina chrome://
+    // Verify it is not a chrome:// page
     if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
       throw new Error('Impossibile analizzare pagine interne di Chrome');
     }
 
-    // Estrai articolo
-    const response = await chrome.tabs.sendMessage(tab.id, { action: 'extractArticle' });
+    // Extract article
+    let response;
+    try {
+      response = await chrome.tabs.sendMessage(tab.id, {
+        action: 'extractArticle',
+      });
+    } catch (msgError) {
+      if (
+        msgError.message?.includes('Could not establish connection') ||
+        msgError.message?.includes('Receiving end does not exist')
+      ) {
+        throw new Error('Impossibile comunicare con la pagina. Ricarica la pagina (F5) e riprova.');
+      }
+      throw msgError;
+    }
 
     if (!response || !response.success) {
-      throw new Error(response?.error || 'Errore durante l\'estrazione');
+      throw new Error(response?.error || "Errore durante l'estrazione");
     }
 
     state.currentArticle = response.article;
     state.currentArticle.url = tab.url;
 
-    // Mostra info articolo
+    // Display article info
     elements.articleTitle.textContent = state.currentArticle.title;
     elements.articleStats.textContent = `${state.currentArticle.wordCount} ${I18n.t('article.words')} • ${state.currentArticle.readingTimeMinutes} ${I18n.t('article.readingTime')}`;
 
-    // 🔍 Controlla se l'articolo è già stato analizzato in precedenza
+    // Check if the article has already been analyzed before
     const history = await HistoryManager.getHistory();
-    const previousAnalysis = history.find(entry => entry.article.url === state.currentArticle.url);
+    const previousAnalysis = history.find(
+      (entry) => entry.article.url === state.currentArticle.url,
+    );
 
     if (previousAnalysis && previousAnalysis.metadata && previousAnalysis.metadata.contentType) {
-      // Se l'articolo è già stato analizzato e ha un contentType salvato
+      // Article already analyzed with a saved contentType
       const savedContentType = previousAnalysis.metadata.contentType;
 
-      // Imposta il tipo di articolo salvato nei select
+      // Set the saved article type in selects
       state.selectedContentType = savedContentType;
       elements.contentTypeSelect.value = savedContentType;
       elements.contentTypeSelectReady.value = savedContentType;
 
-      console.log('📋 Tipo di articolo recuperato dalla cronologia:', savedContentType);
+      Logger.info('📋 Tipo di articolo recuperato dalla cronologia:', savedContentType);
 
-      // Mostra un feedback visivo temporaneo
+      // Show temporary visual feedback
       elements.loadingText.textContent = `${I18n.t('loading.articleType')} ${ContentClassifier.getCategoryLabel(savedContentType)} (${I18n.t('loading.fromHistory')})`;
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 800));
     }
 
     showState('ready');
-
   } catch (error) {
-    console.error('Errore analisi:', error);
-    // 🆕 Usa ErrorHandler per gestione errori migliorata
+    Logger.error('Errore analisi:', error);
+
     await ErrorHandler.showError(error, 'Analisi articolo');
   }
 }
@@ -81,49 +99,57 @@ export async function generateSummary() {
     const settings = await StorageManager.getSettings();
     const provider = elements.providerSelect.value;
 
-    // Aggiungi la lingua selezionata alle impostazioni
+    // Add selected language to settings
     settings.outputLanguage = state.selectedLanguage;
 
-    // Aggiungi la lunghezza del riassunto selezionata
+    // Add selected summary length
     const summaryLengthSelect = document.getElementById('summaryLengthSelect');
     if (summaryLengthSelect) {
       settings.summaryLength = summaryLengthSelect.value;
     }
 
-    // STEP 1: Classificazione del tipo di contenuto
+    // STEP 1: Content type classification
     state.progressTracker.setStep('classify');
     let finalContentType = state.selectedContentType;
 
-    console.log('🎯 selectedContentType:', state.selectedContentType);
+    Logger.debug('🎯 selectedContentType:', state.selectedContentType);
 
     if (state.selectedContentType === 'auto') {
-      console.log('🔄 Avvio classificazione automatica...');
+      Logger.debug('🔄 Avvio classificazione automatica...');
       state.progressTracker.setStep('classify', '🔍 Analisi contenuto con AI...');
 
-      console.log('📋 currentArticle:', state.currentArticle);
+      Logger.debug('📋 currentArticle:', state.currentArticle);
 
       try {
-        const classification = await ContentClassifier.classifyArticle(state.currentArticle, 'auto');
+        const classification = await ContentClassifier.classifyArticle(
+          state.currentArticle,
+          'auto',
+        );
         finalContentType = classification.category;
 
-        console.log('✅ Classificazione completata:', classification);
+        Logger.info('✅ Classificazione completata:', classification);
 
         // Mostra la categoria rilevata
         const categoryLabel = ContentClassifier.getCategoryLabel(finalContentType);
         state.progressTracker.setStep('classify', `✓ Rilevato: ${categoryLabel}`);
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise((resolve) => setTimeout(resolve, 800));
       } catch (error) {
-        console.error('❌ Errore classificazione:', error);
+        Logger.error('❌ Errore classificazione:', error);
         await ErrorHandler.logError(error, 'Classificazione contenuto');
-        finalContentType = 'general'; // Fallback
+        finalContentType = 'general';
+        state.progressTracker.setStep(
+          'classify',
+          '⚠️ Classificazione non disponibile — uso tipo Generale',
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1200));
       }
     } else {
-      console.log('👤 Tipo già impostato (manuale o da cronologia):', state.selectedContentType);
+      Logger.debug('👤 Tipo già impostato (manuale o da cronologia):', state.selectedContentType);
       state.progressTracker.setStep('classify', '✓ Tipo già impostato');
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
-    // STEP 2: Generazione riassunto
+    // STEP 2: Summary generation
     state.progressTracker.setStep('generate');
     settings.contentType = finalContentType;
 
@@ -131,7 +157,7 @@ export async function generateSummary() {
       action: 'generateSummary',
       article: state.currentArticle,
       provider: provider,
-      settings: settings
+      settings: settings,
     });
 
     if (!response.success) {
@@ -140,11 +166,11 @@ export async function generateSummary() {
 
     state.currentResults = response.result;
 
-    // STEP 3: Punti chiave (già inclusi, ma mostriamo lo step)
+    // STEP 3: Key points (already included, but show the step)
     state.progressTracker.setStep('keypoints');
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    // STEP 4: Salvataggio
+    // STEP 4: Save
     state.progressTracker.setStep('save');
 
     if (state.selectedContentType === 'auto') {
@@ -155,14 +181,13 @@ export async function generateSummary() {
       state.currentResults.contentTypeMethod = 'manual';
     }
 
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     state.progressTracker.complete();
     displayResults();
-
   } catch (error) {
     state.progressTracker.error(error.message);
-    // 🆕 Usa ErrorHandler per gestione errori migliorata
+
     await ErrorHandler.showError(error, 'Generazione riassunto');
     setTimeout(() => {
       showState('error');
@@ -171,14 +196,14 @@ export async function generateSummary() {
 }
 
 export async function displayResults() {
-  // Mostra riassunto (contenuto AI sanitizzato)
+  // Display summary (sanitized AI content)
   let summaryHtml = `<p>${HtmlSanitizer.escape(state.currentResults.summary)}</p>`;
   if (state.currentResults.fromCache) {
     summaryHtml = `<span class="cache-badge">Da cache</span>` + summaryHtml;
   }
   elements.summaryContent.innerHTML = summaryHtml;
 
-  // Mostra punti chiave
+  // Display key points
   let keypointsHtml = '';
   state.currentResults.keyPoints.forEach((point, index) => {
     keypointsHtml += `
@@ -193,49 +218,56 @@ export async function displayResults() {
   });
   elements.keypointsContent.innerHTML = keypointsHtml;
 
-  // Aggiungi click handler per highlight
-  document.querySelectorAll('.keypoint').forEach(el => {
+  // Add click handler for highlight
+  document.querySelectorAll('.keypoint').forEach((el) => {
     el.addEventListener('click', async () => {
-      const paragraph = el.dataset.paragraph;
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      await chrome.tabs.sendMessage(tab.id, {
-        action: 'highlightParagraph',
-        paragraphNumber: paragraph
-      });
+      try {
+        const paragraph = el.dataset.paragraph;
+        const [tab] = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        await chrome.tabs.sendMessage(tab.id, {
+          action: 'highlightParagraph',
+          paragraphNumber: paragraph,
+        });
+      } catch (error) {
+        Logger.warn('Impossibile evidenziare il paragrafo nella pagina:', error.message);
+      }
     });
   });
 
-  // Salva nella cronologia
+  // Save to history
   try {
     const metadata = {
       provider: elements.providerSelect.value,
       language: state.selectedLanguage,
       contentType: state.currentResults.detectedContentType || state.selectedContentType,
       contentTypeMethod: state.currentResults.contentTypeMethod || 'manual',
-      fromCache: state.currentResults.fromCache || false
+      fromCache: state.currentResults.fromCache || false,
     };
 
     await HistoryManager.saveSummary(
       state.currentArticle,
       state.currentResults.summary,
       state.currentResults.keyPoints,
-      metadata
+      metadata,
     );
   } catch (error) {
-    console.error('Errore salvataggio cronologia:', error);
+    Logger.error('Errore salvataggio cronologia:', error);
   }
 
   showState('results');
 
-  // Aggiungi pulsanti TTS dopo aver mostrato i risultati
+  // Add TTS buttons after displaying results
   setTimeout(() => {
     addTTSButtons();
   }, 100);
 }
 
 export function switchTab(tabName) {
-  // Aggiorna tab attivi
-  document.querySelectorAll('.tab').forEach(tab => {
+  // Update active tabs
+  document.querySelectorAll('.tab').forEach((tab) => {
     tab.classList.remove('active');
     if (tab.dataset.tab === tabName) {
       tab.classList.add('active');
@@ -243,7 +275,7 @@ export function switchTab(tabName) {
   });
 
   // Aggiorna contenuto
-  document.querySelectorAll('.tab-pane').forEach(pane => {
+  document.querySelectorAll('.tab-pane').forEach((pane) => {
     pane.classList.remove('active');
   });
 
@@ -284,11 +316,19 @@ export async function copyToClipboard() {
   }
 
   // Aggiungi citazioni se presenti
-  if (citationsState.value && citationsState.value.citations && citationsState.value.citations.length > 0) {
+  if (
+    citationsState.value &&
+    citationsState.value.citations &&
+    citationsState.value.citations.length > 0
+  ) {
     text += `\n${'='.repeat(50)}\n\n`;
     text += `CITAZIONI E BIBLIOGRAFIA:\n\n`;
     const style = document.getElementById('citationStyleSelect')?.value || 'apa';
-    text += CitationExtractor.generateBibliography(state.currentArticle, citationsState.value.citations, style);
+    text += CitationExtractor.generateBibliography(
+      state.currentArticle,
+      citationsState.value.citations,
+      style,
+    );
   }
 
   try {
@@ -298,6 +338,10 @@ export async function copyToClipboard() {
       elements.copyBtn.textContent = I18n.t('action.copy');
     }, 2000);
   } catch (error) {
-    console.error('Errore copia:', error);
+    Logger.error('Errore copia:', error);
+    elements.copyBtn.textContent = '❌ Errore copia';
+    setTimeout(() => {
+      elements.copyBtn.textContent = I18n.t('action.copy');
+    }, 2000);
   }
 }
