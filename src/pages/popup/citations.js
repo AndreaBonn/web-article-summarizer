@@ -117,7 +117,7 @@ function displayCitationsData(citationsData) {
 
     <div class="article-citation-box">
       <h4>📄 Citazione Articolo Principale</h4>
-      <p style="font-size: 11px; color: #666; margin: 5px 0;">Lo stile selezionato sopra si applica a questa citazione</p>
+      <p class="citation-style-hint">Lo stile selezionato sopra si applica a questa citazione</p>
       <div id="mainCitationText" class="citation-text"></div>
     </div>
 
@@ -152,7 +152,7 @@ function displayCitationsData(citationsData) {
            data-citation-id="${HtmlSanitizer.escape(String(citation.id))}"
            data-citation-text="${escapedText}"
            data-paragraph="${safeParagraph}"
-           style="cursor: pointer;"
+           class="citation-item-clickable"
            title="Clicca per evidenziare nell'articolo">
         <div class="citation-header">
           <span class="citation-icon">${typeIcon}</span>

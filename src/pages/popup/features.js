@@ -222,7 +222,7 @@ export async function translateArticle() {
     Logger.error('Errore traduzione:', error);
     elements.translationContent.innerHTML = `
       <div class="translation-empty">
-        <p style="color: #d63031;">❌ Errore durante la traduzione: ${HtmlSanitizer.escape(error.message)}</p>
+        <p class="translation-error">❌ Errore durante la traduzione: ${HtmlSanitizer.escape(error.message)}</p>
         <button id="translateBtn" class="btn btn-primary">🔄 Riprova</button>
       </div>
     `;

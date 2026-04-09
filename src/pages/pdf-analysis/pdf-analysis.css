@@ -34,8 +34,9 @@ body.dark-theme {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: 
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(240, 242, 255, 0.8) 100%),
     url('../../../public/icons/BackgroundArticleSummarize_light.png');
   background-size: cover;
@@ -44,11 +45,13 @@ body {
   color: var(--text-color);
   line-height: 1.6;
   min-height: 100vh;
-  transition: background 0.3s, color 0.3s;
+  transition:
+    background 0.3s,
+    color 0.3s;
 }
 
 body.dark-theme {
-  background: 
+  background:
     linear-gradient(135deg, rgba(20, 20, 30, 0.85) 0%, rgba(30, 25, 45, 0.9) 100%),
     url('../../../public/icons/BackgroundArticleSummarize_dark.png');
   background-size: cover;
@@ -137,38 +140,62 @@ header h1 {
 }
 
 /* Font Size Classes */
-body[data-font-size="S"] .container {
+body[data-font-size='S'] .container {
   font-size: 14px;
 }
 
-body[data-font-size="M"] .container {
+body[data-font-size='M'] .container {
   font-size: 16px;
 }
 
-body[data-font-size="L"] .container {
+body[data-font-size='L'] .container {
   font-size: 18px;
 }
 
-body[data-font-size="XL"] .container {
+body[data-font-size='XL'] .container {
   font-size: 20px;
 }
 
 /* Adjust headings based on font size */
-body[data-font-size="S"] h1 { font-size: 24px; }
-body[data-font-size="S"] h2 { font-size: 20px; }
-body[data-font-size="S"] h3 { font-size: 16px; }
+body[data-font-size='S'] h1 {
+  font-size: 24px;
+}
+body[data-font-size='S'] h2 {
+  font-size: 20px;
+}
+body[data-font-size='S'] h3 {
+  font-size: 16px;
+}
 
-body[data-font-size="M"] h1 { font-size: 28px; }
-body[data-font-size="M"] h2 { font-size: 22px; }
-body[data-font-size="M"] h3 { font-size: 18px; }
+body[data-font-size='M'] h1 {
+  font-size: 28px;
+}
+body[data-font-size='M'] h2 {
+  font-size: 22px;
+}
+body[data-font-size='M'] h3 {
+  font-size: 18px;
+}
 
-body[data-font-size="L"] h1 { font-size: 32px; }
-body[data-font-size="L"] h2 { font-size: 26px; }
-body[data-font-size="L"] h3 { font-size: 20px; }
+body[data-font-size='L'] h1 {
+  font-size: 32px;
+}
+body[data-font-size='L'] h2 {
+  font-size: 26px;
+}
+body[data-font-size='L'] h3 {
+  font-size: 20px;
+}
 
-body[data-font-size="XL"] h1 { font-size: 36px; }
-body[data-font-size="XL"] h2 { font-size: 30px; }
-body[data-font-size="XL"] h3 { font-size: 24px; }
+body[data-font-size='XL'] h1 {
+  font-size: 36px;
+}
+body[data-font-size='XL'] h2 {
+  font-size: 30px;
+}
+body[data-font-size='XL'] h3 {
+  font-size: 24px;
+}
 
 .ui-language-select {
   padding: 8px 12px;
@@ -503,31 +530,38 @@ body[data-font-size="XL"] h3 { font-size: 24px; }
   .container {
     padding: 16px;
   }
-  
+
   header {
     flex-direction: column;
     gap: 16px;
     align-items: flex-start;
   }
-  
+
   .upload-section {
     padding: 20px;
   }
-  
+
   .drop-zone {
     padding: 32px 16px;
   }
-  
+
   .option-row {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .option-row label {
     min-width: auto;
   }
-  
+
   .option-row select {
     width: 100%;
   }
+}
+
+/* Header toolbar layout (replaces inline style) */
+.header-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }

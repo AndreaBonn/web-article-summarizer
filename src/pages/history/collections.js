@@ -112,7 +112,7 @@ function createPDFCard(entry) {
       </div>
 
       <div class="card-actions">
-        <button class="history-btn btn-delete" title="Elimina" style="flex: 1;">
+        <button class="history-btn btn-delete btn-delete-full" title="Elimina">
           🗑️ Elimina
         </button>
       </div>

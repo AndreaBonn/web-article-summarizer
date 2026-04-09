@@ -156,7 +156,7 @@ function displayArticle(article) {
     <div class="article-content">
       <h1>${HtmlSanitizer.escape(article.title || 'Articolo')}</h1>
       ${article.excerpt ? `<p class="article-excerpt"><em>${HtmlSanitizer.escape(article.excerpt)}</em></p>` : ''}
-      <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+      <hr class="article-divider">
   `;
 
   // Split content into paragraphs (with safety check)
@@ -168,7 +168,7 @@ function displayArticle(article) {
       }
     });
   } else {
-    html += `<p style="color: var(--text-secondary);">Contenuto non disponibile.</p>`;
+    html += `<p class="content-unavailable">Contenuto non disponibile.</p>`;
   }
 
   html += `</div>`;
@@ -271,7 +271,7 @@ function displaySummaryInTab(summary) {
   const isFromCache =
     state.currentData?.isFromCache || state.currentData?.metadata?.fromCache || false;
   const cacheBadge = isFromCache
-    ? '<span class="cache-badge" style="background: #4caf50; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 12px; display: inline-block;">⚡ Da Cache!</span>'
+    ? '<span class="cache-badge cache-badge-green">⚡ Da Cache!</span>'
     : '';
 
   elements.summaryTabContent.innerHTML = `
@@ -404,7 +404,7 @@ function displayExtractedText(text) {
       <div class="extracted-text-container">
         <div class="text-metadata">
           <p><strong>⚠️ Testo non disponibile</strong></p>
-          <p style="color: var(--text-secondary); font-size: 14px;">
+          <p class="text-meta-secondary">
             Il testo estratto non è disponibile per questo PDF.
           </p>
         </div>
@@ -432,11 +432,11 @@ function displayExtractedText(text) {
     <div class="extracted-text-container">
       <div class="text-metadata">
         <p><strong>Testo estratto dal PDF</strong></p>
-        <p style="color: var(--text-secondary); font-size: 14px;">
+        <p class="text-meta-secondary">
           Questo è il testo estratto automaticamente dal documento PDF.
         </p>
       </div>
-      <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
+      <hr class="content-divider">
       ${formattedText}
     </div>
   `;
@@ -483,12 +483,12 @@ export function showError(message) {
   const safeMessage = HtmlSanitizer.escape(message);
   elements.articleContent.innerHTML = `
     <div class="loading-state">
-      <p style="color: var(--text-primary);">❌ ${safeMessage}</p>
+      <p class="error-text">❌ ${safeMessage}</p>
     </div>
   `;
   elements.summaryContent.innerHTML = `
     <div class="loading-state">
-      <p style="color: var(--text-primary);">❌ ${safeMessage}</p>
+      <p class="error-text">❌ ${safeMessage}</p>
     </div>
   `;
 }

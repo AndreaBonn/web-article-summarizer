@@ -31,10 +31,14 @@ body.dark-mode {
 }
 
 body {
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
   font-size: 14px;
   color: var(--text-primary);
-  background: 
+  background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(240, 242, 255, 0.8) 100%),
     url('../../../public/icons/BackgroundArticleSummarize_light.png');
   background-size: cover;
@@ -42,11 +46,13 @@ body {
   background-attachment: fixed;
   line-height: 1.6;
   min-height: 100vh;
-  transition: background 0.3s, color 0.3s;
+  transition:
+    background 0.3s,
+    color 0.3s;
 }
 
 body.dark-mode {
-  background: 
+  background:
     linear-gradient(135deg, rgba(20, 20, 30, 0.85) 0%, rgba(30, 25, 45, 0.9) 100%),
     url('../../../public/icons/BackgroundArticleSummarize_dark.png');
   background-size: cover;
@@ -120,7 +126,9 @@ main {
   padding: 12px;
   background: var(--bg-tertiary);
   border-radius: 6px;
-  transition: background-color 0.3s, color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
 }
 
 /* API Keys */
@@ -160,7 +168,10 @@ main {
   font-family: monospace;
   background: var(--input-bg);
   color: var(--text-primary);
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s;
 }
 
 .input-group input:focus {
@@ -229,7 +240,10 @@ main {
   background: var(--input-bg);
   color: var(--text-primary);
   cursor: pointer;
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s;
 }
 
 .setting-hint {
@@ -261,7 +275,7 @@ main {
   background: var(--bg-tertiary);
 }
 
-.radio-label input[type="radio"] {
+.radio-label input[type='radio'] {
   margin-right: 10px;
   cursor: pointer;
 }
@@ -281,7 +295,7 @@ main {
   background: var(--bg-tertiary);
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   margin-right: 10px;
   cursor: pointer;
 }
@@ -311,7 +325,9 @@ main {
   background: var(--bg-tertiary);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
-  transition: background-color 0.3s, color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
 }
 
 .btn-secondary:hover {
@@ -480,4 +496,11 @@ body.dark-mode .help-item a {
 
 .toast.info {
   background: #3b82f6;
+}
+
+/* UI language select position (replaces inline style) */
+.ui-language-position {
+  position: absolute;
+  top: 20px;
+  right: 20px;
 }

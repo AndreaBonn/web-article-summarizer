@@ -119,7 +119,7 @@ export async function translateArticle() {
     Logger.error('Translation error:', error);
     elements.translationTabContent.innerHTML = `
       <div class="empty-state">
-        <p style="color: var(--text-primary);">❌ ${HtmlSanitizer.escape(error.message)}</p>
+        <p class="error-text">❌ ${HtmlSanitizer.escape(error.message)}</p>
         <button id="translateBtn" class="btn btn-primary">🔄 Riprova</button>
       </div>
     `;
@@ -217,7 +217,7 @@ export async function extractCitations() {
     Logger.error('Citations error:', error);
     elements.citationsTabContent.innerHTML = `
       <div class="empty-state">
-        <p style="color: var(--text-primary);">❌ ${HtmlSanitizer.escape(error.message)}</p>
+        <p class="error-text">❌ ${HtmlSanitizer.escape(error.message)}</p>
         <button id="extractCitationsBtn" class="btn btn-primary">🔄 Riprova</button>
       </div>
     `;
@@ -248,14 +248,14 @@ function showSameLanguageModal(targetLanguage) {
         <div class="custom-modal-icon">ℹ️</div>
         <h3 class="custom-modal-title">${HtmlSanitizer.escape(title)}</h3>
         <p class="custom-modal-message">${HtmlSanitizer.escape(message)}</p>
-        <div class="custom-modal-buttons" style="flex-direction: column; gap: 8px;">
-          <button id="sameLanguageTranslate" class="modal-btn modal-btn-confirm" style="width: 100%;">
+        <div class="custom-modal-buttons modal-buttons-column">
+          <button id="sameLanguageTranslate" class="modal-btn modal-btn-confirm modal-btn-full">
             ${HtmlSanitizer.escape(translateBtn)}
           </button>
-          <button id="sameLanguageIgnore" class="modal-btn modal-btn-secondary" style="width: 100%; background: var(--secondary-color);">
+          <button id="sameLanguageIgnore" class="modal-btn modal-btn-secondary modal-btn-full-secondary">
             ${HtmlSanitizer.escape(useOriginalBtn)}
           </button>
-          <button id="sameLanguageCancel" class="modal-btn modal-btn-cancel" style="width: 100%;">
+          <button id="sameLanguageCancel" class="modal-btn modal-btn-cancel modal-btn-full">
             ${HtmlSanitizer.escape(cancelBtn)}
           </button>
         </div>

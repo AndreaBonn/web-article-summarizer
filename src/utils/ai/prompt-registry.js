@@ -5,6 +5,10 @@ import { getSummaryPrompt } from './prompts/summary-prompts.js';
 import { getKeyPointsPrompt } from './prompts/keypoints-prompts.js';
 import { getTranslationPrompt } from './prompts/translation-prompts.js';
 import { getCitationPrompt } from './prompts/citation-prompts.js';
+import {
+  getClassificationSystemPrompt,
+  getClassificationUserPrompt,
+} from './prompts/classification-prompts.js';
 
 export class PromptRegistry {
   /**
@@ -40,5 +44,21 @@ export class PromptRegistry {
    */
   static getCitationSystemPrompt(provider) {
     return getCitationPrompt(provider);
+  }
+
+  /**
+   * @returns {string}
+   */
+  static getClassificationSystemPrompt() {
+    return getClassificationSystemPrompt();
+  }
+
+  /**
+   * @param {Object} article - Article with title, author, siteName, content
+   * @param {string} contentSample - First ~500 words
+   * @returns {string}
+   */
+  static getClassificationUserPrompt(article, contentSample) {
+    return getClassificationUserPrompt(article, contentSample);
   }
 }

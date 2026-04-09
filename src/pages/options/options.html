@@ -1,310 +1,395 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="settings.title">Impostazioni - AI Article Summarizer</title>
-  <link rel="stylesheet" href="options.css">
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1 data-i18n="settings.title">🤖 AI Article Summarizer - Impostazioni</h1>
-      <select id="uiLanguageSelect" class="ui-language-select" title="Lingua Interfaccia" style="position: absolute; top: 20px; right: 20px;">
-        <option value="it">🇮🇹 Italiano</option>
-        <option value="en">🇺🇸 English</option>
-      </select>
-    </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="settings.title">Impostazioni - AI Article Summarizer</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1 data-i18n="settings.title">🤖 AI Article Summarizer - Impostazioni</h1>
+        <select
+          id="uiLanguageSelect"
+          class="ui-language-select ui-language-position"
+          title="Lingua Interfaccia"
+        >
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="en">🇺🇸 English</option>
+        </select>
+      </header>
 
-    <main>
-      <!-- API Keys Section -->
-      <section class="card">
-        <h2 data-i18n="settings.apiKeys">🔑 API Keys</h2>
-        <p class="info" data-i18n="settings.apiKeys.desc">Le tue chiavi sono salvate localmente e criptate per sicurezza.</p>
+      <main>
+        <!-- API Keys Section -->
+        <section class="card">
+          <h2 data-i18n="settings.apiKeys">🔑 API Keys</h2>
+          <p class="info" data-i18n="settings.apiKeys.desc">
+            Le tue chiavi sono salvate localmente e criptate per sicurezza.
+          </p>
 
-        <div class="api-key-group">
-          <label>
-            <span class="provider-name">🟢 Groq API Key</span>
-            <span class="provider-desc" data-i18n="settings.provider.groq">Veloce ed economico</span>
-          </label>
-          <div class="input-group">
-            <input type="password" id="groqKey" placeholder="gsk_..." />
-            <button class="btn-test" data-provider="groq" data-i18n="settings.test">🧪 Test</button>
+          <div class="api-key-group">
+            <label>
+              <span class="provider-name">🟢 Groq API Key</span>
+              <span class="provider-desc" data-i18n="settings.provider.groq"
+                >Veloce ed economico</span
+              >
+            </label>
+            <div class="input-group">
+              <input type="password" id="groqKey" placeholder="gsk_..." />
+              <button class="btn-test" data-provider="groq" data-i18n="settings.test">
+                🧪 Test
+              </button>
+            </div>
+            <div id="groqStatus" class="status"></div>
           </div>
-          <div id="groqStatus" class="status"></div>
-        </div>
 
-        <div class="api-key-group">
-          <label>
-            <span class="provider-name">🔵 OpenAI API Key</span>
-            <span class="provider-desc" data-i18n="settings.provider.openai">Alta qualità</span>
-          </label>
-          <div class="input-group">
-            <input type="password" id="openaiKey" placeholder="sk-..." />
-            <button class="btn-test" data-provider="openai" data-i18n="settings.test">🧪 Test</button>
+          <div class="api-key-group">
+            <label>
+              <span class="provider-name">🔵 OpenAI API Key</span>
+              <span class="provider-desc" data-i18n="settings.provider.openai">Alta qualità</span>
+            </label>
+            <div class="input-group">
+              <input type="password" id="openaiKey" placeholder="sk-..." />
+              <button class="btn-test" data-provider="openai" data-i18n="settings.test">
+                🧪 Test
+              </button>
+            </div>
+            <div id="openaiStatus" class="status"></div>
           </div>
-          <div id="openaiStatus" class="status"></div>
-        </div>
 
-        <div class="api-key-group">
-          <label>
-            <span class="provider-name">🟣 Anthropic API Key</span>
-            <span class="provider-desc" data-i18n="settings.provider.anthropic">Analisi dettagliata</span>
-          </label>
-          <div class="input-group">
-            <input type="password" id="anthropicKey" placeholder="sk-ant-..." />
-            <button class="btn-test" data-provider="anthropic" data-i18n="settings.test">🧪 Test</button>
+          <div class="api-key-group">
+            <label>
+              <span class="provider-name">🟣 Anthropic API Key</span>
+              <span class="provider-desc" data-i18n="settings.provider.anthropic"
+                >Analisi dettagliata</span
+              >
+            </label>
+            <div class="input-group">
+              <input type="password" id="anthropicKey" placeholder="sk-ant-..." />
+              <button class="btn-test" data-provider="anthropic" data-i18n="settings.test">
+                🧪 Test
+              </button>
+            </div>
+            <div id="anthropicStatus" class="status"></div>
           </div>
-          <div id="anthropicStatus" class="status"></div>
-        </div>
 
-        <div class="api-key-group">
-          <label>
-            <span class="provider-name">🔷 Google Gemini API Key</span>
-            <span class="provider-desc" data-i18n="settings.provider.gemini">Multimodale e versatile</span>
-          </label>
-          <div class="input-group">
-            <input type="password" id="geminiKey" placeholder="AIza..." />
-            <button class="btn-test" data-provider="gemini" data-i18n="settings.test">🧪 Test</button>
+          <div class="api-key-group">
+            <label>
+              <span class="provider-name">🔷 Google Gemini API Key</span>
+              <span class="provider-desc" data-i18n="settings.provider.gemini"
+                >Multimodale e versatile</span
+              >
+            </label>
+            <div class="input-group">
+              <input type="password" id="geminiKey" placeholder="AIza..." />
+              <button class="btn-test" data-provider="gemini" data-i18n="settings.test">
+                🧪 Test
+              </button>
+            </div>
+            <div id="geminiStatus" class="status"></div>
           </div>
-          <div id="geminiStatus" class="status"></div>
-        </div>
 
-        <button id="saveKeysBtn" class="btn btn-primary" data-i18n="settings.save">💾 Salva API Keys</button>
-      </section>
+          <button id="saveKeysBtn" class="btn btn-primary" data-i18n="settings.save">
+            💾 Salva API Keys
+          </button>
+        </section>
 
-      <!-- Preferences Section -->
-      <section class="card">
-        <h2 data-i18n="settings.preferences">⚙️ Preferenze</h2>
+        <!-- Preferences Section -->
+        <section class="card">
+          <h2 data-i18n="settings.preferences">⚙️ Preferenze</h2>
 
-        <div class="setting-group">
-          <label data-i18n="settings.defaultProvider">Provider Predefinito</label>
-          <select id="defaultProvider">
-            <option value="groq">Groq</option>
-            <option value="openai">OpenAI</option>
-            <option value="anthropic">Claude</option>
-            <option value="gemini">Google Gemini</option>
-          </select>
-        </div>
+          <div class="setting-group">
+            <label data-i18n="settings.defaultProvider">Provider Predefinito</label>
+            <select id="defaultProvider">
+              <option value="groq">Groq</option>
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Claude</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+          </div>
 
-        <div class="setting-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="saveHistory" checked />
-            <span data-i18n="settings.saveHistory">Salva Analisi nella Cronologia</span>
-          </label>
-        </div>
+          <div class="setting-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="saveHistory" checked />
+              <span data-i18n="settings.saveHistory">Salva Analisi nella Cronologia</span>
+            </label>
+          </div>
 
-        <div class="setting-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="darkMode" />
-            <span data-i18n="settings.darkMode">🌙 Dark Mode</span>
-          </label>
-        </div>
+          <div class="setting-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="darkMode" />
+              <span data-i18n="settings.darkMode">🌙 Dark Mode</span>
+            </label>
+          </div>
 
-        <button id="saveSettingsBtn" class="btn btn-primary" data-i18n="settings.savePreferences">💾 Salva Preferenze</button>
-      </section>
+          <button id="saveSettingsBtn" class="btn btn-primary" data-i18n="settings.savePreferences">
+            💾 Salva Preferenze
+          </button>
+        </section>
 
-      <!-- Performance & Reliability Section -->
-      <section class="card">
-        <h2 data-i18n="settings.performance">🚀 Performance e Affidabilità</h2>
-        
-        <div class="setting-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="enableCache" checked />
-            <span data-i18n="settings.perf.enableCache">✅ Abilita Cache (riduce costi e velocizza)</span>
-          </label>
-          <p class="setting-desc" data-i18n="settings.perf.cacheDesc">Salva i riassunti in cache per evitare chiamate API duplicate</p>
-        </div>
+        <!-- Performance & Reliability Section -->
+        <section class="card">
+          <h2 data-i18n="settings.performance">🚀 Performance e Affidabilità</h2>
 
-        <div class="setting-group">
-          <label data-i18n="settings.perf.cacheTTL">Durata Cache (giorni)</label>
-          <select id="cacheTTL">
-            <option value="1" data-i18n="settings.perf.cacheTTL.1">1 giorno</option>
-            <option value="3" data-i18n="settings.perf.cacheTTL.3">3 giorni</option>
-            <option value="7" data-i18n="settings.perf.cacheTTL.7" selected>7 giorni</option>
-            <option value="14" data-i18n="settings.perf.cacheTTL.14">14 giorni</option>
-            <option value="30" data-i18n="settings.perf.cacheTTL.30">30 giorni</option>
-          </select>
-        </div>
+          <div class="setting-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="enableCache" checked />
+              <span data-i18n="settings.perf.enableCache"
+                >✅ Abilita Cache (riduce costi e velocizza)</span
+              >
+            </label>
+            <p class="setting-desc" data-i18n="settings.perf.cacheDesc">
+              Salva i riassunti in cache per evitare chiamate API duplicate
+            </p>
+          </div>
 
-        <div class="setting-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="enableFallback" />
-            <span data-i18n="settings.perf.enableFallback">🔄 Abilita Fallback Automatico tra Provider</span>
-          </label>
-          <p class="setting-desc" data-i18n="settings.perf.fallbackDesc">Se il provider selezionato fallisce, prova automaticamente con un altro provider configurato. Nota: Ogni provider usa il proprio prompt ottimizzato.</p>
-        </div>
+          <div class="setting-group">
+            <label data-i18n="settings.perf.cacheTTL">Durata Cache (giorni)</label>
+            <select id="cacheTTL">
+              <option value="1" data-i18n="settings.perf.cacheTTL.1">1 giorno</option>
+              <option value="3" data-i18n="settings.perf.cacheTTL.3">3 giorni</option>
+              <option value="7" data-i18n="settings.perf.cacheTTL.7" selected>7 giorni</option>
+              <option value="14" data-i18n="settings.perf.cacheTTL.14">14 giorni</option>
+              <option value="30" data-i18n="settings.perf.cacheTTL.30">30 giorni</option>
+            </select>
+          </div>
 
-        <div class="setting-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="enableCompression" checked />
-            <span data-i18n="settings.perf.enableCompression">📦 Abilita Compressione Dati</span>
-          </label>
-          <p class="setting-desc" data-i18n="settings.perf.compressionDesc">Comprimi automaticamente cronologia e cache vecchie per risparmiare spazio</p>
-        </div>
+          <div class="setting-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="enableFallback" />
+              <span data-i18n="settings.perf.enableFallback"
+                >🔄 Abilita Fallback Automatico tra Provider</span
+              >
+            </label>
+            <p class="setting-desc" data-i18n="settings.perf.fallbackDesc">
+              Se il provider selezionato fallisce, prova automaticamente con un altro provider
+              configurato. Nota: Ogni provider usa il proprio prompt ottimizzato.
+            </p>
+          </div>
 
-        <div class="setting-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="autoCleanup" checked />
-            <span data-i18n="settings.perf.autoCleanup">🧹 Cleanup Automatico</span>
-          </label>
-          <p class="setting-desc" data-i18n="settings.perf.cleanupDesc">Pulisci automaticamente cache scadute e cronologia molto vecchia</p>
-        </div>
+          <div class="setting-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="enableCompression" checked />
+              <span data-i18n="settings.perf.enableCompression">📦 Abilita Compressione Dati</span>
+            </label>
+            <p class="setting-desc" data-i18n="settings.perf.compressionDesc">
+              Comprimi automaticamente cronologia e cache vecchie per risparmiare spazio
+            </p>
+          </div>
 
-        <button id="savePerformanceBtn" class="btn btn-primary" data-i18n="settings.perf.save">💾 Salva Impostazioni Performance</button>
-      </section>
+          <div class="setting-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="autoCleanup" checked />
+              <span data-i18n="settings.perf.autoCleanup">🧹 Cleanup Automatico</span>
+            </label>
+            <p class="setting-desc" data-i18n="settings.perf.cleanupDesc">
+              Pulisci automaticamente cache scadute e cronologia molto vecchia
+            </p>
+          </div>
 
-      <!-- Performance Stats Section -->
-      <section class="card">
-        <h2 data-i18n="settings.perf.statsTitle">📊 Statistiche Performance</h2>
-        
-        <div class="stats-section">
-          <h3 data-i18n="settings.perf.cache">Cache</h3>
+          <button id="savePerformanceBtn" class="btn btn-primary" data-i18n="settings.perf.save">
+            💾 Salva Impostazioni Performance
+          </button>
+        </section>
+
+        <!-- Performance Stats Section -->
+        <section class="card">
+          <h2 data-i18n="settings.perf.statsTitle">📊 Statistiche Performance</h2>
+
+          <div class="stats-section">
+            <h3 data-i18n="settings.perf.cache">Cache</h3>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div class="stat-value" id="cacheEntries">-</div>
+                <div class="stat-label" data-i18n="settings.perf.cacheEntries">Entry in Cache</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="cacheHitRate">-</div>
+                <div class="stat-label" data-i18n="settings.perf.hitRate">Hit Rate</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="cacheSize">-</div>
+                <div class="stat-label" data-i18n="settings.perf.cacheSize">Dimensione Cache</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="cacheSaved">-</div>
+                <div class="stat-label" data-i18n="settings.perf.apiSaved">
+                  Chiamate API Risparmiate
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-section">
+            <h3 data-i18n="settings.perf.apiReliability">Affidabilità API</h3>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div class="stat-value" id="apiSuccessRate">-</div>
+                <div class="stat-label" data-i18n="settings.perf.successRate">Success Rate</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="apiRetries">-</div>
+                <div class="stat-label" data-i18n="settings.perf.retries">Retry Eseguiti</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="apiFallbacks">-</div>
+                <div class="stat-label" data-i18n="settings.perf.fallbacks">Fallback Usati</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="apiFailures">-</div>
+                <div class="stat-label" data-i18n="settings.perf.failures">Fallimenti</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-section">
+            <h3 data-i18n="settings.perf.compression">Compressione</h3>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div class="stat-value" id="compressedItems">-</div>
+                <div class="stat-label" data-i18n="settings.perf.compressedItems">
+                  Item Compressi
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="compressionRatio">-</div>
+                <div class="stat-label" data-i18n="settings.perf.compressionRatio">
+                  Ratio Compressione
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="spaceSaved">-</div>
+                <div class="stat-label" data-i18n="settings.perf.spaceSaved">
+                  Spazio Risparmiato
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="totalSize">-</div>
+                <div class="stat-label" data-i18n="settings.perf.totalSize">Dimensione Totale</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="button-group">
+            <button
+              id="runCleanupBtn"
+              class="btn btn-secondary"
+              data-i18n="settings.perf.runCleanup"
+            >
+              🧹 Esegui Cleanup Ora
+            </button>
+            <button
+              id="clearCacheBtn"
+              class="btn btn-secondary"
+              data-i18n="settings.perf.clearCache"
+            >
+              🗑️ Cancella Cache
+            </button>
+            <button id="clearLogsBtn" class="btn btn-secondary" data-i18n="settings.perf.clearLogs">
+              📝 Cancella Log
+            </button>
+          </div>
+        </section>
+
+        <!-- Statistics Section -->
+        <section class="card">
+          <h2 data-i18n="settings.statistics">📊 Statistiche</h2>
           <div class="stats-grid">
             <div class="stat-item">
-              <div class="stat-value" id="cacheEntries">-</div>
-              <div class="stat-label" data-i18n="settings.perf.cacheEntries">Entry in Cache</div>
+              <div class="stat-value" id="totalSummaries">0</div>
+              <div class="stat-label" data-i18n="settings.stats.summaries">Riassunti Generati</div>
             </div>
             <div class="stat-item">
-              <div class="stat-value" id="cacheHitRate">-</div>
-              <div class="stat-label" data-i18n="settings.perf.hitRate">Hit Rate</div>
+              <div class="stat-value" id="totalWords">0</div>
+              <div class="stat-label" data-i18n="settings.stats.words">Parole Elaborate</div>
             </div>
             <div class="stat-item">
-              <div class="stat-value" id="cacheSize">-</div>
-              <div class="stat-label" data-i18n="settings.perf.cacheSize">Dimensione Cache</div>
+              <div class="stat-value" id="mostUsedProvider">-</div>
+              <div class="stat-label" data-i18n="settings.stats.provider">Provider Più Usato</div>
             </div>
             <div class="stat-item">
-              <div class="stat-value" id="cacheSaved">-</div>
-              <div class="stat-label" data-i18n="settings.perf.apiSaved">Chiamate API Risparmiate</div>
+              <div class="stat-value" id="timeSaved">0h</div>
+              <div class="stat-label" data-i18n="settings.stats.timeSaved">Tempo Risparmiato</div>
             </div>
           </div>
-        </div>
+          <button
+            id="clearCacheBtn"
+            class="btn btn-secondary"
+            data-i18n="settings.stats.clearCache"
+          >
+            🗑️ Cancella Cache
+          </button>
+        </section>
 
-        <div class="stats-section">
-          <h3 data-i18n="settings.perf.apiReliability">Affidabilità API</h3>
-          <div class="stats-grid">
-            <div class="stat-item">
-              <div class="stat-value" id="apiSuccessRate">-</div>
-              <div class="stat-label" data-i18n="settings.perf.successRate">Success Rate</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="apiRetries">-</div>
-              <div class="stat-label" data-i18n="settings.perf.retries">Retry Eseguiti</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="apiFallbacks">-</div>
-              <div class="stat-label" data-i18n="settings.perf.fallbacks">Fallback Usati</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="apiFailures">-</div>
-              <div class="stat-label" data-i18n="settings.perf.failures">Fallimenti</div>
-            </div>
+        <!-- Help Section -->
+        <section class="card">
+          <h2 data-i18n="settings.help">❓ Come Ottenere le API Keys</h2>
+
+          <div class="help-item">
+            <h3>🟢 Groq</h3>
+            <ol>
+              <li>
+                <span data-i18n="settings.help.visit">Visita</span>
+                <a href="https://console.groq.com" target="_blank">console.groq.com</a>
+              </li>
+              <li data-i18n="settings.help.register">Registrati gratuitamente</li>
+              <li data-i18n="settings.help.createKey">Vai su "API Keys" e crea una nuova chiave</li>
+            </ol>
           </div>
-        </div>
 
-        <div class="stats-section">
-          <h3 data-i18n="settings.perf.compression">Compressione</h3>
-          <div class="stats-grid">
-            <div class="stat-item">
-              <div class="stat-value" id="compressedItems">-</div>
-              <div class="stat-label" data-i18n="settings.perf.compressedItems">Item Compressi</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="compressionRatio">-</div>
-              <div class="stat-label" data-i18n="settings.perf.compressionRatio">Ratio Compressione</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="spaceSaved">-</div>
-              <div class="stat-label" data-i18n="settings.perf.spaceSaved">Spazio Risparmiato</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="totalSize">-</div>
-              <div class="stat-label" data-i18n="settings.perf.totalSize">Dimensione Totale</div>
-            </div>
+          <div class="help-item">
+            <h3>🔵 OpenAI</h3>
+            <ol>
+              <li>
+                <span data-i18n="settings.help.visit">Visita</span>
+                <a href="https://platform.openai.com" target="_blank">platform.openai.com</a>
+              </li>
+              <li data-i18n="settings.help.registerCredit">Registrati e aggiungi credito</li>
+              <li data-i18n="settings.help.createKey">Vai su "API Keys" e crea una nuova chiave</li>
+            </ol>
           </div>
-        </div>
 
-        <div class="button-group">
-          <button id="runCleanupBtn" class="btn btn-secondary" data-i18n="settings.perf.runCleanup">🧹 Esegui Cleanup Ora</button>
-          <button id="clearCacheBtn" class="btn btn-secondary" data-i18n="settings.perf.clearCache">🗑️ Cancella Cache</button>
-          <button id="clearLogsBtn" class="btn btn-secondary" data-i18n="settings.perf.clearLogs">📝 Cancella Log</button>
-        </div>
-      </section>
-
-      <!-- Statistics Section -->
-      <section class="card">
-        <h2 data-i18n="settings.statistics">📊 Statistiche</h2>
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="stat-value" id="totalSummaries">0</div>
-            <div class="stat-label" data-i18n="settings.stats.summaries">Riassunti Generati</div>
+          <div class="help-item">
+            <h3>🟣 Anthropic</h3>
+            <ol>
+              <li>
+                <span data-i18n="settings.help.visit">Visita</span>
+                <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+              </li>
+              <li data-i18n="settings.help.registerOnly">Registrati</li>
+              <li data-i18n="settings.help.createKey">Vai su "API Keys" e crea una nuova chiave</li>
+            </ol>
           </div>
-          <div class="stat-item">
-            <div class="stat-value" id="totalWords">0</div>
-            <div class="stat-label" data-i18n="settings.stats.words">Parole Elaborate</div>
+
+          <div class="help-item">
+            <h3>🔷 Google Gemini</h3>
+            <ol>
+              <li>
+                <span data-i18n="settings.help.visit">Visita</span>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank"
+                  >aistudio.google.com/app/apikey</a
+                >
+              </li>
+              <li data-i18n="settings.help.registerGoogle">Accedi con il tuo account Google</li>
+              <li data-i18n="settings.help.createKeyGemini">
+                Clicca su "Create API Key" per generare una nuova chiave
+              </li>
+              <li data-i18n="settings.help.geminiNote">
+                Nota: Gemini offre un tier gratuito generoso per iniziare
+              </li>
+            </ol>
           </div>
-          <div class="stat-item">
-            <div class="stat-value" id="mostUsedProvider">-</div>
-            <div class="stat-label" data-i18n="settings.stats.provider">Provider Più Usato</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value" id="timeSaved">0h</div>
-            <div class="stat-label" data-i18n="settings.stats.timeSaved">Tempo Risparmiato</div>
-          </div>
-        </div>
-        <button id="clearCacheBtn" class="btn btn-secondary" data-i18n="settings.stats.clearCache">🗑️ Cancella Cache</button>
-      </section>
+        </section>
+      </main>
 
-      <!-- Help Section -->
-      <section class="card">
-        <h2 data-i18n="settings.help">❓ Come Ottenere le API Keys</h2>
-        
-        <div class="help-item">
-          <h3>🟢 Groq</h3>
-          <ol>
-            <li><span data-i18n="settings.help.visit">Visita</span> <a href="https://console.groq.com" target="_blank">console.groq.com</a></li>
-            <li data-i18n="settings.help.register">Registrati gratuitamente</li>
-            <li data-i18n="settings.help.createKey">Vai su "API Keys" e crea una nuova chiave</li>
-          </ol>
-        </div>
+      <footer>
+        <p>AI Article Summarizer v1.0.0</p>
+      </footer>
+    </div>
 
-        <div class="help-item">
-          <h3>🔵 OpenAI</h3>
-          <ol>
-            <li><span data-i18n="settings.help.visit">Visita</span> <a href="https://platform.openai.com" target="_blank">platform.openai.com</a></li>
-            <li data-i18n="settings.help.registerCredit">Registrati e aggiungi credito</li>
-            <li data-i18n="settings.help.createKey">Vai su "API Keys" e crea una nuova chiave</li>
-          </ol>
-        </div>
+    <div id="toast" class="toast hidden"></div>
 
-        <div class="help-item">
-          <h3>🟣 Anthropic</h3>
-          <ol>
-            <li><span data-i18n="settings.help.visit">Visita</span> <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></li>
-            <li data-i18n="settings.help.registerOnly">Registrati</li>
-            <li data-i18n="settings.help.createKey">Vai su "API Keys" e crea una nuova chiave</li>
-          </ol>
-        </div>
-
-        <div class="help-item">
-          <h3>🔷 Google Gemini</h3>
-          <ol>
-            <li><span data-i18n="settings.help.visit">Visita</span> <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a></li>
-            <li data-i18n="settings.help.registerGoogle">Accedi con il tuo account Google</li>
-            <li data-i18n="settings.help.createKeyGemini">Clicca su "Create API Key" per generare una nuova chiave</li>
-            <li data-i18n="settings.help.geminiNote">Nota: Gemini offre un tier gratuito generoso per iniziare</li>
-          </ol>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <p>AI Article Summarizer v1.0.0</p>
-    </footer>
-  </div>
-
-  <div id="toast" class="toast hidden"></div>
-
-  <script type="module" src="options.js"></script>
-</body>
+    <script type="module" src="options.js"></script>
+  </body>
 </html>

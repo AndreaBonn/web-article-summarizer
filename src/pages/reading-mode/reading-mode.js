@@ -277,20 +277,20 @@ function updateThemeIcon(theme) {
 function showNoDataMessage() {
   elements.articleContent.innerHTML = `
     <div class="loading-state">
-      <div style="text-align: center; max-width: 400px;">
-        <div style="font-size: 64px; margin-bottom: 20px;">📖</div>
-        <h2 style="color: var(--text-primary); margin-bottom: 16px;">Modalità Lettura</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 24px;">
+      <div class="no-data-inner">
+        <div class="no-data-emoji">📖</div>
+        <h2 class="no-data-title">Modalità Lettura</h2>
+        <p class="no-data-subtitle">
           Per usare questa funzionalità:
         </p>
-        <ol style="text-align: left; color: var(--text-secondary); line-height: 1.8;">
+        <ol class="no-data-list">
           <li>Apri un articolo web</li>
           <li>Clicca sull'icona dell'extension</li>
           <li>Analizza la pagina</li>
           <li>Genera il riassunto</li>
           <li>Clicca su "📖 Modalità Lettura"</li>
         </ol>
-        <p style="color: var(--text-secondary); margin-top: 24px; font-size: 14px;">
+        <p class="no-data-hint">
           Oppure apri <strong>test-reading-mode.html</strong> per vedere una demo
         </p>
       </div>
@@ -298,10 +298,10 @@ function showNoDataMessage() {
   `;
   elements.summaryContent.innerHTML = `
     <div class="loading-state">
-      <div style="text-align: center; max-width: 400px;">
-        <div style="font-size: 64px; margin-bottom: 20px;">✨</div>
-        <h2 style="color: var(--text-primary); margin-bottom: 16px;">Riassunto AI</h2>
-        <p style="color: var(--text-secondary);">
+      <div class="no-data-inner">
+        <div class="no-data-emoji">✨</div>
+        <h2 class="no-data-title">Riassunto AI</h2>
+        <p class="no-data-summary-subtitle">
           Il riassunto apparirà qui dopo aver analizzato un articolo
         </p>
       </div>

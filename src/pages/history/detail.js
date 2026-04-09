@@ -57,7 +57,7 @@ export async function openDetail(id) {
     `;
   } else {
     document.getElementById('modalTranslation').innerHTML = `
-      <p style="color: #636e72; text-align: center; padding: 40px;">
+      <p class="modal-empty-state">
         Nessuna traduzione disponibile per questo riassunto
       </p>
     `;
@@ -81,7 +81,7 @@ export async function openDetail(id) {
     document.getElementById('modalQA').innerHTML = qaHtml;
   } else {
     document.getElementById('modalQA').innerHTML = `
-      <p style="color: #636e72; text-align: center; padding: 40px;">
+      <p class="modal-empty-state">
         Nessuna domanda e risposta disponibile per questo riassunto
       </p>
     `;
@@ -94,18 +94,18 @@ export async function openDetail(id) {
     state.currentEntry.citations.citations.length > 0
   ) {
     let citationsHtml = `
-      <div class="citations-info" style="margin-bottom: 16px;">
+      <div class="citations-info">
         <strong>📚 ${state.currentEntry.citations.total_citations || state.currentEntry.citations.citations.length} citazioni trovate</strong>
       </div>
 
-      <div class="article-citation-box" style="background: #f0f3ff; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #667eea;">
-        <h4 style="font-size: 13px; margin-bottom: 10px;">📄 Citazione Articolo Principale (APA)</h4>
-        <div style="font-size: 12px; line-height: 1.6; font-family: 'Courier New', monospace;">
+      <div class="article-citation-box-detail">
+        <h4>📄 Citazione Articolo Principale (APA)</h4>
+        <div class="article-citation-monospace">
           ${CitationExtractor.formatCitation(state.currentEntry.article, 'apa')}
         </div>
       </div>
 
-      <div class="citations-list" style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="citations-list-detail">
     `;
 
     state.currentEntry.citations.citations.forEach((citation) => {
@@ -118,14 +118,14 @@ export async function openDetail(id) {
         }[citation.type] || '📌';
 
       citationsHtml += `
-        <div class="citation-item" style="background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 3px solid #667eea;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <span style="font-size: 16px;">${typeIcon}</span>
-            <span style="font-size: 11px; font-weight: 600; color: #667eea; background: rgba(102, 126, 234, 0.1); padding: 2px 6px; border-radius: 4px;">#${HtmlSanitizer.escape(String(citation.id))}</span>
-            ${citation.author ? `<span style="font-size: 12px; font-weight: 600;">${HtmlSanitizer.escape(citation.author)}</span>` : ''}
+        <div class="citation-item-detail">
+          <div class="citation-item-header">
+            <span class="citation-type-icon">${typeIcon}</span>
+            <span class="citation-id-badge">#${HtmlSanitizer.escape(String(citation.id))}</span>
+            ${citation.author ? `<span class="citation-author">${HtmlSanitizer.escape(citation.author)}</span>` : ''}
           </div>
-          ${citation.text ? `<div style="font-size: 11px; font-style: italic; margin-bottom: 8px; background: rgba(102, 126, 234, 0.05); padding: 8px; border-radius: 4px;">"${HtmlSanitizer.escape(citation.text)}"</div>` : ''}
-          <div style="font-size: 11px; color: #636e72; line-height: 1.5;">${HtmlSanitizer.escape(citation.context)}</div>
+          ${citation.text ? `<div class="citation-quote-text">"${HtmlSanitizer.escape(citation.text)}"</div>` : ''}
+          <div class="citation-context-text">${HtmlSanitizer.escape(citation.context)}</div>
         </div>
       `;
     });
@@ -134,7 +134,7 @@ export async function openDetail(id) {
     document.getElementById('modalCitations').innerHTML = citationsHtml;
   } else {
     document.getElementById('modalCitations').innerHTML = `
-      <p style="color: #636e72; text-align: center; padding: 40px;">
+      <p class="modal-empty-state">
         Nessuna citazione disponibile per questo riassunto
       </p>
     `;

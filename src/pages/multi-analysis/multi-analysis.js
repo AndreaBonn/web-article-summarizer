@@ -67,8 +67,7 @@ function displayArticles(articles) {
   const listEl = document.getElementById('articlesList');
 
   if (articles.length === 0) {
-    listEl.innerHTML =
-      '<p style="text-align: center; color: #636e72; padding: 40px;">Nessun articolo disponibile</p>';
+    listEl.innerHTML = '<p class="multi-empty-message">Nessun articolo disponibile</p>';
     return;
   }
 
@@ -346,7 +345,7 @@ function showAnalysisModal() {
     `;
   } else {
     document.getElementById('tabSummary').innerHTML =
-      '<p style="text-align: center; color: #636e72; padding: 40px;">Riassunto non generato</p>';
+      '<p class="multi-empty-message">Riassunto non generato</p>';
   }
 
   if (state.currentAnalysis.comparison) {
@@ -357,7 +356,7 @@ function showAnalysisModal() {
     `;
   } else {
     document.getElementById('tabComparison').innerHTML =
-      '<p style="text-align: center; color: #636e72; padding: 40px;">Confronto non generato</p>';
+      '<p class="multi-empty-message">Confronto non generato</p>';
   }
 
   Logger.debug('Verifica Q&A - qa:', state.currentAnalysis.qa);
@@ -405,7 +404,7 @@ function showAnalysisModal() {
     });
   } else {
     document.getElementById('tabQA').innerHTML =
-      '<p style="text-align: center; color: #636e72; padding: 40px;">Q&A non abilitato</p>';
+      '<p class="multi-empty-message">Q&A non abilitato</p>';
   }
 
   document.getElementById('analysisModal').classList.remove('hidden');
