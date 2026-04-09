@@ -1,124 +1,63 @@
-// History Voice Module - Estratto da history.js
+// History Voice Module
 // Gestisce: TTS controls nel modal dettaglio
 
 import { state } from './state.js';
 import { Modal } from '../../utils/core/modal.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
+import {
+  setupTTSEventListeners,
+  handleTTSPlay as helperTTSPlay,
+  handleTTSPause as helperTTSPause,
+  handleTTSStop as helperTTSStop,
+} from '../../shared/voice-page-helper.js';
 
 // ============================================
 // VOICE CONTROLS
 // ============================================
 
 /**
- * Setup voice event listeners
+ * Setup voice event listeners (solo TTS, nessun STT nella history)
  */
 export function setupVoiceEventListeners() {
-  // TTS events
-  window.addEventListener('tts:started', () => {
-    updateModalTTSButtons('playing');
+  // I pulsanti TTS sono nel modal e vengono risolti a runtime via getElementById
+  setupTTSEventListeners({
+    getButtons: () => ({
+      playBtn: document.getElementById('modalTtsPlayBtn'),
+      pauseBtn: document.getElementById('modalTtsPauseBtn'),
+      stopBtn: document.getElementById('modalTtsStopBtn'),
+    }),
+    onError: (errorDetail) => {
+      Modal.error('Errore nella lettura vocale: ' + errorDetail.error);
+    },
   });
-
-  window.addEventListener('tts:paused', () => {
-    updateModalTTSButtons('paused');
-  });
-
-  window.addEventListener('tts:resumed', () => {
-    updateModalTTSButtons('playing');
-  });
-
-  window.addEventListener('tts:stopped', () => {
-    updateModalTTSButtons('stopped');
-  });
-
-  window.addEventListener('tts:ended', () => {
-    updateModalTTSButtons('stopped');
-  });
-
-  window.addEventListener('tts:error', (event) => {
-    console.error('TTS Error:', event.detail);
-    updateModalTTSButtons('stopped');
-    Modal.error('Errore nella lettura vocale: ' + event.detail.error);
-  });
-}
-
-/**
- * Update TTS button states in modal
- */
-function updateModalTTSButtons(buttonState) {
-  const playBtn = document.getElementById('modalTtsPlayBtn');
-  const pauseBtn = document.getElementById('modalTtsPauseBtn');
-  const stopBtn = document.getElementById('modalTtsStopBtn');
-
-  if (!playBtn || !pauseBtn || !stopBtn) return;
-
-  switch (buttonState) {
-    case 'playing':
-      playBtn.style.display = 'none';
-      pauseBtn.style.display = 'inline-block';
-      stopBtn.style.display = 'inline-block';
-      pauseBtn.classList.add('active');
-      break;
-
-    case 'paused':
-      playBtn.style.display = 'inline-block';
-      pauseBtn.style.display = 'none';
-      stopBtn.style.display = 'inline-block';
-      playBtn.textContent = '▶️';
-      playBtn.title = 'Riprendi';
-      break;
-
-    case 'stopped':
-      playBtn.style.display = 'inline-block';
-      pauseBtn.style.display = 'none';
-      stopBtn.style.display = 'none';
-      playBtn.textContent = '🔊';
-      playBtn.title = 'Leggi ad alta voce';
-      pauseBtn.classList.remove('active');
-      break;
-  }
 }
 
 /**
  * Handle TTS play/resume in modal
  */
 export function handleModalTTSPlay() {
-  if (!state.voiceController || !state.currentEntry) return;
+  if (!state.currentEntry) return;
 
-  const ttsState = state.voiceController.getTTSState();
+  const lang = state.currentEntry.metadata?.language || 'it';
+  const voiceLang = VoiceController.mapLanguageCode(lang);
 
-  if (ttsState.isPaused) {
-    // Resume
-    state.voiceController.resumeSpeaking();
-  } else {
-    // Start new reading
-    const textToRead = getCurrentModalTabText();
-    if (!textToRead) {
-      Modal.alert('Nessun testo da leggere', 'Lettura Vocale', 'ℹ️');
-      return;
-    }
-
-    // Get language from metadata
-    const lang = state.currentEntry.metadata?.language || 'it';
-    const voiceLang = VoiceController.mapLanguageCode(lang);
-
-    state.voiceController.speak(textToRead, voiceLang);
-  }
+  helperTTSPlay(state.voiceController, getCurrentModalTabText, voiceLang, () => {
+    Modal.alert('Nessun testo da leggere', 'Lettura Vocale', 'ℹ️');
+  });
 }
 
 /**
  * Handle TTS pause in modal
  */
 export function handleModalTTSPause() {
-  if (!state.voiceController) return;
-  state.voiceController.pauseSpeaking();
+  helperTTSPause(state.voiceController);
 }
 
 /**
  * Handle TTS stop in modal
  */
 export function handleModalTTSStop() {
-  if (!state.voiceController) return;
-  state.voiceController.stopSpeaking();
+  helperTTSStop(state.voiceController);
 }
 
 /**
@@ -127,7 +66,6 @@ export function handleModalTTSStop() {
 function getCurrentModalTabText() {
   if (!state.currentEntry) return null;
 
-  // Find active tab
   const activeTab = document.querySelector('.modal-tab.active');
   if (!activeTab) return null;
 
@@ -161,7 +99,7 @@ function getCurrentModalTabText() {
     case 'qa':
       if (!state.currentEntry.qa || state.currentEntry.qa.length === 0) return null;
       return state.currentEntry.qa
-        .map(item => `Domanda: ${item.question}. Risposta: ${item.answer}`)
+        .map((item) => `Domanda: ${item.question}. Risposta: ${item.answer}`)
         .join('. ');
 
     case 'notes':
