@@ -10,6 +10,68 @@ import { EmailManager } from '../../utils/export/email-manager.js';
 import { Modal } from '../../utils/core/modal.js';
 import { Logger } from '../../utils/core/logger.js';
 
+// Shared helpers to avoid triplicating checkbox logic across PDF/Markdown/Email modals
+
+function configureExportCheckboxes(prefix) {
+  const hasTrans = !!translationState.value;
+  const hasQA = state.currentQA && state.currentQA.length > 0;
+  const hasCitations =
+    citationsState.value &&
+    citationsState.value.citations &&
+    citationsState.value.citations.length > 0;
+
+  const pairs = [
+    {
+      option: `${prefix}TranslationOption`,
+      checkbox: `${prefix}IncludeTranslation`,
+      available: hasTrans,
+    },
+    { option: `${prefix}QAOption`, checkbox: `${prefix}IncludeQA`, available: hasQA },
+    {
+      option: `${prefix}CitationsOption`,
+      checkbox: `${prefix}IncludeCitations`,
+      available: hasCitations,
+    },
+  ];
+
+  for (const { option, checkbox, available } of pairs) {
+    const optEl = document.getElementById(option);
+    const cbEl = document.getElementById(checkbox);
+    if (!optEl || !cbEl) continue;
+    optEl.classList.toggle('disabled', !available);
+    cbEl.disabled = !available;
+    cbEl.checked = available;
+  }
+}
+
+function collectExportOptions(prefix) {
+  return {
+    includeSummary: document.getElementById(`${prefix}IncludeSummary`).checked,
+    includeKeypoints: document.getElementById(`${prefix}IncludeKeypoints`).checked,
+    includeTranslation:
+      document.getElementById(`${prefix}IncludeTranslation`).checked && translationState.value,
+    includeQA:
+      document.getElementById(`${prefix}IncludeQA`).checked &&
+      state.currentQA &&
+      state.currentQA.length > 0,
+    includeCitations:
+      document.getElementById(`${prefix}IncludeCitations`).checked &&
+      citationsState.value &&
+      citationsState.value.citations &&
+      citationsState.value.citations.length > 0,
+  };
+}
+
+function hasAnyOptionSelected(options) {
+  return (
+    options.includeSummary ||
+    options.includeKeypoints ||
+    options.includeTranslation ||
+    options.includeQA ||
+    options.includeCitations
+  );
+}
+
 // Export to PDF
 export async function exportToPDF() {
   if (!state.currentArticle || !state.currentResults) {
@@ -23,79 +85,13 @@ export async function exportToPDF() {
 
 export async function showExportOptionsModal() {
   const modal = document.getElementById('exportOptionsModal');
-  const translationOption = document.getElementById('pdfTranslationOption');
-  const qaOption = document.getElementById('pdfQAOption');
-  const citationsOption = document.getElementById('pdfCitationsOption');
-  const translationCheckbox = document.getElementById('pdfIncludeTranslation');
-  const qaCheckbox = document.getElementById('pdfIncludeQA');
-  const citationsCheckbox = document.getElementById('pdfIncludeCitations');
-
-  // Gestisci disponibilità traduzione
-  if (translationState.value) {
-    translationOption.classList.remove('disabled');
-    translationCheckbox.disabled = false;
-    translationCheckbox.checked = true;
-  } else {
-    translationOption.classList.add('disabled');
-    translationCheckbox.disabled = true;
-    translationCheckbox.checked = false;
-  }
-
-  // Gestisci disponibilità Q&A
-  if (state.currentQA && state.currentQA.length > 0) {
-    qaOption.classList.remove('disabled');
-    qaCheckbox.disabled = false;
-    qaCheckbox.checked = true;
-  } else {
-    qaOption.classList.add('disabled');
-    qaCheckbox.disabled = true;
-    qaCheckbox.checked = false;
-  }
-
-  // Gestisci disponibilità Citazioni
-  if (
-    citationsState.value &&
-    citationsState.value.citations &&
-    citationsState.value.citations.length > 0
-  ) {
-    citationsOption.classList.remove('disabled');
-    citationsCheckbox.disabled = false;
-    citationsCheckbox.checked = true;
-  } else {
-    citationsOption.classList.add('disabled');
-    citationsCheckbox.disabled = true;
-    citationsCheckbox.checked = false;
-  }
-
-  // Mostra modal
+  configureExportCheckboxes('pdf');
   modal.classList.remove('hidden');
 
   // Handler per conferma
   const handleConfirm = async () => {
-    const options = {
-      includeSummary: document.getElementById('pdfIncludeSummary').checked,
-      includeKeypoints: document.getElementById('pdfIncludeKeypoints').checked,
-      includeTranslation:
-        document.getElementById('pdfIncludeTranslation').checked && translationState.value,
-      includeQA:
-        document.getElementById('pdfIncludeQA').checked &&
-        state.currentQA &&
-        state.currentQA.length > 0,
-      includeCitations:
-        document.getElementById('pdfIncludeCitations').checked &&
-        citationsState.value &&
-        citationsState.value.citations &&
-        citationsState.value.citations.length > 0,
-    };
-
-    // Verifica che almeno una opzione sia selezionata
-    if (
-      !options.includeSummary &&
-      !options.includeKeypoints &&
-      !options.includeTranslation &&
-      !options.includeQA &&
-      !options.includeCitations
-    ) {
+    const options = collectExportOptions('pdf');
+    if (!hasAnyOptionSelected(options)) {
       await Modal.warning('Seleziona almeno una sezione da esportare', 'Nessuna Selezione');
       return;
     }
@@ -172,83 +168,17 @@ export async function exportToMarkdown() {
 
 export async function showMarkdownExportModal() {
   const modal = document.getElementById('exportOptionsModal');
-  const translationOption = document.getElementById('pdfTranslationOption');
-  const qaOption = document.getElementById('pdfQAOption');
-  const citationsOption = document.getElementById('pdfCitationsOption');
-  const translationCheckbox = document.getElementById('pdfIncludeTranslation');
-  const qaCheckbox = document.getElementById('pdfIncludeQA');
-  const citationsCheckbox = document.getElementById('pdfIncludeCitations');
   const modalTitle = modal.querySelector('.custom-modal-title');
 
   // Cambia titolo per Markdown
   modalTitle.textContent = I18n.t('export.markdown');
-
-  // Gestisci disponibilità traduzione
-  if (translationState.value) {
-    translationOption.classList.remove('disabled');
-    translationCheckbox.disabled = false;
-    translationCheckbox.checked = true;
-  } else {
-    translationOption.classList.add('disabled');
-    translationCheckbox.disabled = true;
-    translationCheckbox.checked = false;
-  }
-
-  // Gestisci disponibilità Q&A
-  if (state.currentQA && state.currentQA.length > 0) {
-    qaOption.classList.remove('disabled');
-    qaCheckbox.disabled = false;
-    qaCheckbox.checked = true;
-  } else {
-    qaOption.classList.add('disabled');
-    qaCheckbox.disabled = true;
-    qaCheckbox.checked = false;
-  }
-
-  // Gestisci disponibilità Citazioni
-  if (
-    citationsState.value &&
-    citationsState.value.citations &&
-    citationsState.value.citations.length > 0
-  ) {
-    citationsOption.classList.remove('disabled');
-    citationsCheckbox.disabled = false;
-    citationsCheckbox.checked = true;
-  } else {
-    citationsOption.classList.add('disabled');
-    citationsCheckbox.disabled = true;
-    citationsCheckbox.checked = false;
-  }
-
-  // Mostra modal
+  configureExportCheckboxes('pdf');
   modal.classList.remove('hidden');
 
   // Handler per conferma
   const handleConfirm = async () => {
-    const options = {
-      includeSummary: document.getElementById('pdfIncludeSummary').checked,
-      includeKeypoints: document.getElementById('pdfIncludeKeypoints').checked,
-      includeTranslation:
-        document.getElementById('pdfIncludeTranslation').checked && translationState.value,
-      includeQA:
-        document.getElementById('pdfIncludeQA').checked &&
-        state.currentQA &&
-        state.currentQA.length > 0,
-      includeCitations:
-        document.getElementById('pdfIncludeCitations').checked &&
-        citationsState.value &&
-        citationsState.value.citations &&
-        citationsState.value.citations.length > 0,
-    };
-
-    // Verifica che almeno una opzione sia selezionata
-    if (
-      !options.includeSummary &&
-      !options.includeKeypoints &&
-      !options.includeTranslation &&
-      !options.includeQA &&
-      !options.includeCitations
-    ) {
+    const options = collectExportOptions('pdf');
+    if (!hasAnyOptionSelected(options)) {
       await Modal.warning('Seleziona almeno una sezione da esportare', 'Nessuna Selezione');
       return;
     }
@@ -402,50 +332,7 @@ export async function openEmailModal() {
     savedEmailsSection.classList.add('hidden');
   }
 
-  // Gestisci disponibilità opzioni
-  const translationOption = document.getElementById('emailTranslationOption');
-  const qaOption = document.getElementById('emailQAOption');
-  const citationsOption = document.getElementById('emailCitationsOption');
-  const translationCheckbox = document.getElementById('emailIncludeTranslation');
-  const qaCheckbox = document.getElementById('emailIncludeQA');
-  const citationsCheckbox = document.getElementById('emailIncludeCitations');
-
-  // Gestisci disponibilità traduzione
-  if (translationState.value) {
-    translationOption.classList.remove('disabled');
-    translationCheckbox.disabled = false;
-    translationCheckbox.checked = true;
-  } else {
-    translationOption.classList.add('disabled');
-    translationCheckbox.disabled = true;
-    translationCheckbox.checked = false;
-  }
-
-  // Gestisci disponibilità Q&A
-  if (state.currentQA && state.currentQA.length > 0) {
-    qaOption.classList.remove('disabled');
-    qaCheckbox.disabled = false;
-    qaCheckbox.checked = true;
-  } else {
-    qaOption.classList.add('disabled');
-    qaCheckbox.disabled = true;
-    qaCheckbox.checked = false;
-  }
-
-  // Gestisci disponibilità Citazioni
-  if (
-    citationsState.value &&
-    citationsState.value.citations &&
-    citationsState.value.citations.length > 0
-  ) {
-    citationsOption.classList.remove('disabled');
-    citationsCheckbox.disabled = false;
-    citationsCheckbox.checked = true;
-  } else {
-    citationsOption.classList.add('disabled');
-    citationsCheckbox.disabled = true;
-    citationsCheckbox.checked = false;
-  }
+  configureExportCheckboxes('email');
 
   // Reset input
   emailInput.value = '';
@@ -469,30 +356,8 @@ export async function openEmailModal() {
     }
 
     // Raccogli opzioni selezionate
-    const options = {
-      includeSummary: document.getElementById('emailIncludeSummary').checked,
-      includeKeypoints: document.getElementById('emailIncludeKeypoints').checked,
-      includeTranslation:
-        document.getElementById('emailIncludeTranslation').checked && translationState.value,
-      includeQA:
-        document.getElementById('emailIncludeQA').checked &&
-        state.currentQA &&
-        state.currentQA.length > 0,
-      includeCitations:
-        document.getElementById('emailIncludeCitations').checked &&
-        citationsState.value &&
-        citationsState.value.citations &&
-        citationsState.value.citations.length > 0,
-    };
-
-    // Verifica che almeno una opzione sia selezionata
-    if (
-      !options.includeSummary &&
-      !options.includeKeypoints &&
-      !options.includeTranslation &&
-      !options.includeQA &&
-      !options.includeCitations
-    ) {
+    const options = collectExportOptions('email');
+    if (!hasAnyOptionSelected(options)) {
       await Modal.warning('Seleziona almeno una sezione da includere', 'Nessuna Selezione');
       return;
     }

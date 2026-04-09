@@ -14,12 +14,9 @@ export class ErrorHandler {
 
     Logger.error('Errore:', error);
 
-    // Mostra notifica visiva all'utente
-    if (typeof Modal !== 'undefined') {
+    // Mostra notifica visiva all'utente (Modal richiede DOM — non disponibile nel service worker)
+    if (typeof document !== 'undefined' && document.getElementById('customModal')) {
       await Modal.error(fullMessage, 'Errore');
-    } else {
-      // Fallback se Modal non è disponibile
-      alert(fullMessage);
     }
 
     // Log per telemetria

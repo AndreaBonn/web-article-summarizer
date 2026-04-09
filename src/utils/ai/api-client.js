@@ -163,10 +163,6 @@ export class APIClient {
     });
   }
 
-  static sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
   /**
    * Chiama API con resilienza completa (retry, fallback, cache, rate limiting)
    * @param {Object} params - Parametri della chiamata
