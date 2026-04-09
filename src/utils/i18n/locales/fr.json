@@ -1,0 +1,22 @@
+{
+  "app.title": "Web Site Summarizer",
+  "modal.defaultTitle": "AI Article Summarizer",
+  "modal.cancel": "Annuler",
+  "modal.confirm": "OK",
+  "modal.confirmTitle": "Confirmer",
+  "modal.successTitle": "Succès",
+  "modal.errorTitle": "Erreur",
+  "modal.warningTitle": "Attention",
+  "feedback.copied": "✓ Copié!",
+  "feedback.exported": "✓ Exporté!",
+  "feedback.thinking": "Réflexion...",
+  "feedback.error": "Erreur:",
+  "feedback.translating": "⏳ Traduction...",
+  "feedback.checkmark": "✓",
+  "feedback.loading": "⏳",
+  "export.markdown": "Exporter Markdown",
+  "export.pdf": "Exporter PDF",
+  "export.button": "Exporter",
+  "action.cancel": "Annuler",
+  "action.confirm": "OK"
+}
