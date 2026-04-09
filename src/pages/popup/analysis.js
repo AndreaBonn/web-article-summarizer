@@ -52,6 +52,12 @@ export async function analyzeArticle() {
     state.currentArticle = response.article;
     state.currentArticle.url = tab.url;
 
+    // Limit article content size to prevent excessive resource usage
+    const MAX_CONTENT_LENGTH = 50000;
+    if (state.currentArticle.content && state.currentArticle.content.length > MAX_CONTENT_LENGTH) {
+      state.currentArticle.content = state.currentArticle.content.substring(0, MAX_CONTENT_LENGTH);
+    }
+
     // Display article info
     elements.articleTitle.textContent = state.currentArticle.title;
     elements.articleStats.textContent = `${state.currentArticle.wordCount} ${I18n.t('article.words')} • ${state.currentArticle.readingTimeMinutes} ${I18n.t('article.readingTime')}`;

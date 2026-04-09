@@ -357,12 +357,21 @@ export async function importHistory(event) {
   if (!file) return;
 
   try {
-    // Leggi file
+    // Leggi file con limite di dimensione (10 MB)
+    const MAX_IMPORT_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_IMPORT_SIZE) {
+      throw new Error('File troppo grande (max 10 MB)');
+    }
     const text = await file.text();
     const backup = JSON.parse(text);
 
     // Valida struttura
-    if (!backup.version || !backup.data) {
+    if (
+      !backup.version ||
+      !backup.data ||
+      typeof backup.version !== 'string' ||
+      !Array.isArray(backup.data)
+    ) {
       throw new Error('File di backup non valido');
     }
 

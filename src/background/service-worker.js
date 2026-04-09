@@ -7,6 +7,15 @@ import { CitationExtractor } from '../utils/ai/citation-extractor.js';
 import { ErrorHandler } from '../utils/core/error-handler.js';
 import { Logger } from '../utils/core/logger.js';
 
+const VALID_PROVIDERS = new Set(['groq', 'openai', 'anthropic', 'gemini']);
+
+function validateProvider(provider) {
+  if (!VALID_PROVIDERS.has(provider)) {
+    throw new Error(`Provider non valido: ${provider}`);
+  }
+  return provider;
+}
+
 // Initialize automatic cache maintenance
 const autoMaintenance = new AutoMaintenance();
 autoMaintenance.initialize().catch((err) => Logger.error('AutoMaintenance init failed:', err));
@@ -30,7 +39,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'generateSummary') {
-    handleGenerateSummary(request.article, request.provider, request.settings)
+    handleGenerateSummary(request.article, validateProvider(request.provider), request.settings)
       .then((result) => {
         sendResponse({ success: true, result });
       })
@@ -42,7 +51,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'extractCitations') {
-    handleExtractCitations(request.article, request.provider, request.settings)
+    handleExtractCitations(request.article, validateProvider(request.provider), request.settings)
       .then((result) => {
         sendResponse({ success: true, result });
       })
@@ -54,7 +63,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'testApiKey') {
-    testApiKey(request.provider, request.apiKey)
+    testApiKey(validateProvider(request.provider), request.apiKey)
       .then(() => {
         sendResponse({ success: true });
       })

@@ -3,6 +3,7 @@
 // traduzione, estrazione citazioni, Q&A
 
 import { APIClient } from '../../utils/ai/api-client.js';
+import { parseLLMJson } from '../../utils/ai/json-repair.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { Logger } from '../../utils/core/logger.js';
 
@@ -125,18 +126,11 @@ Rispondi in formato JSON come specificato.`;
       },
     );
 
-    // Parse JSON response
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return parsed;
+    try {
+      return parseLLMJson(response);
+    } catch {
+      return { citations: [], total_citations: 0 };
     }
-
-    // Fallback if no JSON
-    return {
-      citations: [],
-      total_citations: 0,
-    };
   } catch (error) {
     Logger.error('Error extracting PDF citations:', error);
     throw new Error('Errore estrazione citazioni: ' + error.message);

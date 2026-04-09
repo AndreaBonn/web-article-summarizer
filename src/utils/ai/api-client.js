@@ -1,6 +1,4 @@
 // API Client - Facade che orchestra content-detector, prompt-builder, provider-caller, response-parser
-import { APIResilience } from './api-resilience.js';
-import { CacheManager } from '../storage/cache-manager.js';
 import { ContentDetector } from './content-detector.js';
 import { PromptBuilder } from './prompt-builder.js';
 import { ProviderCaller } from './provider-caller.js';
@@ -161,85 +159,5 @@ export class APIClient {
       temperature: 0.3,
       maxTokens: provider === 'gemini' ? 8000 : 4096,
     });
-  }
-
-  /**
-   * Chiama API con resilienza completa (retry, fallback, cache, rate limiting)
-   * @param {Object} params - Parametri della chiamata
-   * @returns {Promise} Risultato con metadata
-   */
-  static async callAPIResilient(params) {
-    const {
-      provider,
-      apiKeys,
-      article,
-      settings,
-      enableCache = true,
-      enableFallback = false,
-      onProgress = null,
-    } = params;
-
-    // Inizializza manager
-    const resilience = new APIResilience();
-    const cacheManager = new CacheManager();
-
-    // 1. Controlla cache
-    if (enableCache) {
-      if (onProgress) onProgress({ stage: 'cache', message: 'Controllo cache...' });
-
-      const cached = await cacheManager.get(article.url, provider, settings);
-      if (cached) {
-        if (onProgress)
-          onProgress({
-            stage: 'cache',
-            message: 'Risultato trovato in cache!',
-          });
-        return {
-          result: cached,
-          fromCache: true,
-          provider: provider,
-        };
-      }
-    }
-
-    // 2. Chiama API con resilienza
-    if (onProgress) onProgress({ stage: 'api', message: 'Chiamata API in corso...' });
-
-    const result = await resilience.callWithFallback({
-      primaryProvider: provider,
-      apiKeys,
-      article,
-      settings,
-      enableFallback,
-      onRetry: (attempt, maxAttempts, delay) => {
-        if (onProgress) {
-          onProgress({
-            stage: 'retry',
-            message: `Tentativo ${attempt}/${maxAttempts}... (attesa ${Math.round(delay / 1000)}s)`,
-          });
-        }
-      },
-      onFallback: (fallbackProvider, _index) => {
-        if (onProgress) {
-          onProgress({
-            stage: 'fallback',
-            message: `Passaggio a provider alternativo: ${fallbackProvider}`,
-          });
-        }
-      },
-    });
-
-    // 3. Salva in cache
-    if (enableCache && result.result) {
-      await cacheManager.set(article.url, result.usedProvider, settings, result.result);
-    }
-
-    if (onProgress) onProgress({ stage: 'complete', message: 'Completato!' });
-
-    return {
-      result: result.result,
-      fromCache: false,
-      provider: result.usedProvider,
-    };
   }
 }

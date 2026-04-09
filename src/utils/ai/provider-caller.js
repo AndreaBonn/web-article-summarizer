@@ -25,6 +25,14 @@ export class ProviderCaller {
     }
   }
 
+  static async _parseJsonResponse(response, provider) {
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json') && !contentType.includes('text/json')) {
+      throw new Error(`${provider}: risposta non JSON (Content-Type: ${contentType})`);
+    }
+    return await response.json();
+  }
+
   static _validateChoicesResponse(data, provider) {
     if (!data.choices || data.choices.length === 0) {
       const reason = data.choices?.[0]?.finish_reason || data.error?.message;
@@ -81,7 +89,7 @@ export class ProviderCaller {
       throw new Error(errorMsg || `Errore API Groq (HTTP ${response.status})`);
     }
 
-    const data = await response.json();
+    const data = await this._parseJsonResponse(response, 'Groq');
     return this._validateChoicesResponse(data, 'Groq');
   }
 
@@ -123,7 +131,7 @@ export class ProviderCaller {
       throw new Error(errorMsg || `Errore API OpenAI (HTTP ${response.status})`);
     }
 
-    const data = await response.json();
+    const data = await this._parseJsonResponse(response, 'OpenAI');
     return this._validateChoicesResponse(data, 'OpenAI');
   }
 
@@ -157,7 +165,7 @@ export class ProviderCaller {
       throw new Error(errorMsg || `Errore API Claude (HTTP ${response.status})`);
     }
 
-    const data = await response.json();
+    const data = await this._parseJsonResponse(response, 'Anthropic');
     if (!data.content || data.content.length === 0 || !data.content[0].text) {
       throw new Error('Claude ha restituito una risposta vuota. Riprova o cambia provider.');
     }
@@ -273,7 +281,7 @@ export class ProviderCaller {
       throw new Error(errorMsg || `Errore API Gemini (HTTP ${response.status})`);
     }
 
-    const data = await response.json();
+    const data = await this._parseJsonResponse(response, 'Gemini');
     return this.extractGeminiText(data);
   }
 }

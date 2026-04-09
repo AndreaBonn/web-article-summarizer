@@ -1,6 +1,5 @@
 // Storage Manager - Gestione API keys e impostazioni
 // Le API key sono salvate in chrome.storage.local che è sandboxed per estensione.
-import { Logger } from '../core/logger.js';
 // Non viene usata cifratura custom perché in un'estensione Chrome il codice sorgente
 // è sempre leggibile — un segreto hardcoded non offre protezione reale.
 
@@ -21,61 +20,13 @@ export class StorageManager {
       return null;
     }
     const stored = result.apiKeys[provider];
-    // Migrazione: se la key è un oggetto cifrato (formato legacy), decripta e ri-salva in chiaro
+    // Legacy v1.x keys were encrypted objects — prompt user to re-enter
     if (typeof stored === 'object' && stored.encrypted) {
-      try {
-        const plainKey = await this._decryptLegacyKey(stored);
-        await this.saveApiKey(provider, plainKey);
-        return plainKey;
-      } catch (e) {
-        Logger.error(`Migrazione API key ${provider} fallita:`, e);
-        throw new Error(
-          `La API key di ${provider} è in un formato obsoleto e non può essere letta. Reinserisci la chiave nelle impostazioni.`,
-        );
-      }
+      throw new Error(
+        `La API key di ${provider} è in un formato obsoleto (v1.x). Reinserisci la chiave nelle impostazioni.`,
+      );
     }
     return stored;
-  }
-
-  // DEPRECATED: Legacy migration — remove after v3.0.0
-  // This secret was used in v1.x to encrypt API keys in storage.
-  // The encryption was security theater (key visible in source code).
-  // Kept only to auto-migrate existing users to plaintext storage.
-  static async _decryptLegacyKey(encryptedData) {
-    const LEGACY_SECRET = 'ai-summarizer-v1-secret-key-2024';
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(LEGACY_SECRET),
-      'PBKDF2',
-      false,
-      ['deriveKey'],
-    );
-    const salt = this._base64ToArrayBuffer(encryptedData.salt);
-    const key = await crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['decrypt'],
-    );
-    const iv = this._base64ToArrayBuffer(encryptedData.iv);
-    const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      this._base64ToArrayBuffer(encryptedData.encrypted),
-    );
-    return decoder.decode(decrypted);
-  }
-
-  static _base64ToArrayBuffer(base64) {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
   }
 
   // Settings management

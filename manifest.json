@@ -25,7 +25,12 @@
   "options_page": "src/pages/options/options.html",
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["http://*/*", "https://*/*"],
+      "exclude_matches": [
+        "https://accounts.google.com/*",
+        "https://*.banking.com/*",
+        "https://online.*.bank/*"
+      ],
       "js": ["src/content/content-script.js"],
       "run_at": "document_idle"
     }
@@ -36,7 +41,7 @@
     "128": "public/icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; object-src 'self'"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; object-src 'none'"
   },
   "web_accessible_resources": [
     {

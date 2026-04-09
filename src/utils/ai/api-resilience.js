@@ -126,10 +126,11 @@ export class APIResilience {
 
     // Se fallback non è abilitato, usa solo il provider primario
     if (!enableFallback) {
-      return await this.callWithRetry(
+      const result = await this.callWithRetry(
         () => APIClient.callAPI(primaryProvider, apiKeys[primaryProvider], article, settings),
         { onRetry: params.onRetry },
       );
+      return { result, usedProvider: primaryProvider };
     }
 
     // Ordine di fallback basato sul provider primario

@@ -10,29 +10,16 @@ export class ContentClassifier {
   static async classifyArticle(article, userSelection = 'auto') {
     // Se l'utente ha selezionato manualmente, usa quella
     if (userSelection !== 'auto') {
-      return {
-        category: userSelection,
-        confidence: 100,
-        method: 'manual',
-      };
+      return { category: userSelection, method: 'manual' };
     }
 
     // Classificazione AI
     try {
       const aiResult = await this.aiClassification(article);
-      return {
-        ...aiResult,
-        method: 'ai',
-      };
+      return { ...aiResult, method: 'ai' };
     } catch (error) {
       Logger.error('Errore classificazione AI:', error);
-      // Fallback a 'general' in caso di errore
-      return {
-        category: 'general',
-        confidence: 50,
-        method: 'fallback',
-        error: error.message,
-      };
+      return { category: 'general', method: 'fallback', error: error.message };
     }
   }
 
@@ -183,7 +170,7 @@ Rispondi SOLO con il nome della categoria in minuscolo, esattamente come elencat
       userPrompt,
       {
         temperature: 0.1, // Bassa temperatura per risposte più deterministiche
-        max_tokens: 20,
+        maxTokens: 20,
       },
     );
 
@@ -199,10 +186,7 @@ Rispondi SOLO con il nome della categoria in minuscolo, esattamente come elencat
     }
 
     Logger.info('Classificazione completata:', category);
-    return {
-      category: category,
-      confidence: 85, // Confidenza AI
-    };
+    return { category };
   }
 
   /**

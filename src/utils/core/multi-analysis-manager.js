@@ -1,6 +1,7 @@
 // Multi-Analysis Manager - Gestione analisi multi-articolo
 import { StorageManager } from '../storage/storage-manager.js';
 import { APIClient } from '../ai/api-client.js';
+import { parseLLMJson } from '../ai/json-repair.js';
 import { Logger } from './logger.js';
 
 export class MultiAnalysisManager {
@@ -93,11 +94,8 @@ Rispondi SOLO con il JSON nel formato specificato.`;
     );
 
     try {
-      // Estrai JSON dalla risposta
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const result = JSON.parse(jsonMatch[0]);
-
+      const result = parseLLMJson(response);
+      if (result) {
         // Log per debugging
         Logger.debug('Analisi correlazione articoli:', result);
 
@@ -505,9 +503,10 @@ IMPORTANTE: Rispondi SOLO con il JSON nel formato specificato, senza markup mark
         .replace(/```\n?/g, '')
         .trim();
 
-      const jsonMatch = cleanedResponse.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+      try {
+        return parseLLMJson(cleanedResponse);
+      } catch {
+        // Fall through to text parsing
       }
 
       return this.parseQAFromText(response);

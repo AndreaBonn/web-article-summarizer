@@ -3,6 +3,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { Logger } from '../core/logger.js';
 import { PDFCacheManager } from './pdf-cache-manager.js';
 import { StorageManager } from '../storage/storage-manager.js';
+import { parseLLMJson } from '../ai/json-repair.js';
 import { APIClient } from '../ai/api-client.js';
 
 export class PDFAnalyzer {
@@ -263,22 +264,11 @@ Rispondi in formato JSON come specificato.`;
    */
   parseAnalysisResponse(response) {
     try {
-      // Prova a parsare come JSON
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return {
-          summary: parsed.summary || '',
-          keyPoints: parsed.keyPoints || [],
-          quotes: parsed.quotes || [],
-        };
-      }
-
-      // Fallback: parsing manuale
+      const parsed = parseLLMJson(response);
       return {
-        summary: response,
-        keyPoints: [],
-        quotes: [],
+        summary: parsed.summary || '',
+        keyPoints: parsed.keyPoints || [],
+        quotes: parsed.quotes || [],
       };
     } catch (error) {
       Logger.error('Errore parsing risposta:', error);

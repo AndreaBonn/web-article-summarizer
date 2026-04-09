@@ -2,6 +2,71 @@
 import { PromptRegistry } from './prompt-registry.js';
 import { APIClient } from './api-client.js';
 import { Logger } from '../core/logger.js';
+import { HtmlSanitizer } from '../security/html-sanitizer.js';
+import { parseLLMJson } from './json-repair.js';
+
+const SIMILARITY_EXACT_THRESHOLD = 0.8;
+const SIMILARITY_MIN_THRESHOLD = 0.3;
+const MIN_KEYWORD_MATCHES = 2;
+
+// Italian + English stopwords for keyword extraction
+const STOPWORDS = new Set([
+  'il',
+  'lo',
+  'la',
+  'i',
+  'gli',
+  'le',
+  'un',
+  'uno',
+  'una',
+  'di',
+  'a',
+  'da',
+  'in',
+  'con',
+  'su',
+  'per',
+  'tra',
+  'fra',
+  'e',
+  'o',
+  'ma',
+  'se',
+  'che',
+  'chi',
+  'cui',
+  'non',
+  'più',
+  'anche',
+  'come',
+  'quando',
+  'è',
+  'sono',
+  'ha',
+  'hanno',
+  'essere',
+  'avere',
+  'fare',
+  'dire',
+  'questo',
+  'quello',
+  'sua',
+  'suo',
+  'the',
+  'an',
+  'and',
+  'or',
+  'but',
+  'on',
+  'at',
+  'to',
+  'for',
+  'of',
+  'with',
+  'by',
+  'from',
+]);
 
 export const CitationExtractor = {
   /**
@@ -207,13 +272,13 @@ Analizza ora e restituisci SOLO il JSON valido.`;
       }
 
       // Se troviamo una corrispondenza esatta o molto alta, fermiamoci
-      if (score > 0.8) {
+      if (score > SIMILARITY_EXACT_THRESHOLD) {
         break;
       }
     }
 
     // Se abbiamo trovato un match con score > 0.3, usalo
-    if (bestMatch && bestScore > 0.3) {
+    if (bestMatch && bestScore > SIMILARITY_MIN_THRESHOLD) {
       Logger.debug(
         `Citazione trovata nel paragrafo §${bestMatch} (score: ${bestScore.toFixed(2)})`,
       );
@@ -234,7 +299,7 @@ Analizza ora e restituisci SOLO il JSON valido.`;
       }
 
       // Se troviamo almeno 2 keyword match, probabilmente è il paragrafo giusto
-      if (keywordMatches >= Math.min(2, keywords.length)) {
+      if (keywordMatches >= Math.min(MIN_KEYWORD_MATCHES, keywords.length)) {
         Logger.debug(
           `Citazione trovata nel paragrafo §${para.id} (keyword match: ${keywordMatches}/${keywords.length})`,
         );
@@ -278,72 +343,11 @@ Analizza ora e restituisci SOLO il JSON valido.`;
    * Estrae parole chiave significative da un testo
    */
   extractKeywords(text) {
-    // Parole comuni da ignorare (stopwords italiane e inglesi)
-    const stopwords = new Set([
-      'il',
-      'lo',
-      'la',
-      'i',
-      'gli',
-      'le',
-      'un',
-      'uno',
-      'una',
-      'di',
-      'a',
-      'da',
-      'in',
-      'con',
-      'su',
-      'per',
-      'tra',
-      'fra',
-      'e',
-      'o',
-      'ma',
-      'se',
-      'che',
-      'chi',
-      'cui',
-      'non',
-      'più',
-      'anche',
-      'come',
-      'quando',
-      'the',
-      'a',
-      'an',
-      'and',
-      'or',
-      'but',
-      'in',
-      'on',
-      'at',
-      'to',
-      'for',
-      'of',
-      'with',
-      'by',
-      'from',
-      'è',
-      'sono',
-      'ha',
-      'hanno',
-      'essere',
-      'avere',
-      'fare',
-      'dire',
-      'questo',
-      'quello',
-      'sua',
-      'suo',
-    ]);
-
     const words = text
       .toLowerCase()
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
-      .filter((w) => w.length > 3 && !stopwords.has(w));
+      .filter((w) => w.length > 3 && !STOPWORDS.has(w));
 
     // Prendi le prime 5 parole più lunghe (probabilmente più significative)
     return words.sort((a, b) => b.length - a.length).slice(0, 5);
@@ -351,74 +355,10 @@ Analizza ora e restituisci SOLO il JSON valido.`;
 
   parseCitations(response, article) {
     try {
-      // Pulisci risposta da eventuali markdown
-      let jsonText = response.trim();
-
-      // Rimuovi markdown code blocks
-      if (jsonText.startsWith('```json')) {
-        jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
-      } else if (jsonText.startsWith('```')) {
-        jsonText = jsonText.replace(/```\n?/g, '').replace(/```\n?$/g, '');
-      }
-
-      // Trova il JSON valido (tra prima { e ultima })
-      const firstBrace = jsonText.indexOf('{');
-      const lastBrace = jsonText.lastIndexOf('}');
-
-      if (firstBrace === -1 || lastBrace === -1) {
-        throw new Error('Nessun JSON valido trovato nella risposta');
-      }
-
-      jsonText = jsonText.substring(firstBrace, lastBrace + 1);
-
-      // Tenta il parsing
-      let data;
-      try {
-        data = JSON.parse(jsonText);
-      } catch (parseError) {
-        // Se il JSON è troncato, prova a ripararlo
-        Logger.warn('JSON malformato, tentativo di riparazione...', parseError);
-
-        // Aggiungi chiusure mancanti
-        let repairedJson = jsonText;
-
-        // Conta parentesi graffe aperte/chiuse
-        const openBraces = (repairedJson.match(/\{/g) || []).length;
-        const closeBraces = (repairedJson.match(/\}/g) || []).length;
-
-        // Aggiungi } mancanti
-        if (openBraces > closeBraces) {
-          repairedJson += '}'.repeat(openBraces - closeBraces);
-        }
-
-        // Conta parentesi quadre aperte/chiuse
-        const openBrackets = (repairedJson.match(/\[/g) || []).length;
-        const closeBrackets = (repairedJson.match(/\]/g) || []).length;
-
-        // Aggiungi ] mancanti
-        if (openBrackets > closeBrackets) {
-          repairedJson += ']'.repeat(openBrackets - closeBrackets);
-        }
-
-        // Rimuovi virgole finali prima di } o ]
-        repairedJson = repairedJson.replace(/,(\s*[}\]])/g, '$1');
-
-        // Tenta nuovamente il parsing
-        try {
-          data = JSON.parse(repairedJson);
-          Logger.info('JSON riparato con successo');
-        } catch (repairError) {
-          Logger.error('Impossibile riparare il JSON:', repairError);
-          Logger.error('JSON originale:', jsonText.substring(0, 500));
-          throw new Error(
-            'JSON malformato e non riparabile. Riprova con un articolo più breve o contatta il supporto.',
-          );
-        }
-      }
+      const data = parseLLMJson(response);
 
       // Valida struttura dati
       if (!data.citations || !Array.isArray(data.citations)) {
-        // Se non ci sono citazioni, restituisci array vuoto
         Logger.warn('Nessuna citazione trovata nella risposta');
         data.citations = [];
       }
@@ -483,9 +423,10 @@ Analizza ora e restituisci SOLO il JSON valido.`;
       return 'Articolo non disponibile';
     }
 
-    const author = article.author || article.byline || 'Autore Sconosciuto';
-    const title = article.title || 'Titolo non disponibile';
-    const url = article.url || '';
+    // Escape all fields from external articles to prevent XSS when inserted in innerHTML
+    const author = HtmlSanitizer.escape(article.author || article.byline || 'Autore Sconosciuto');
+    const title = HtmlSanitizer.escape(article.title || 'Titolo non disponibile');
+    const url = HtmlSanitizer.escape(article.url || '');
     const date = article.publishedDate || article.date || new Date().toISOString().split('T')[0];
     const accessDate = article.accessDate || new Date().toISOString().split('T')[0];
 
@@ -632,30 +573,5 @@ Analizza ora e restituisci SOLO il JSON valido.`;
       web_source: 'Fonte Web',
     };
     return labels[type] || 'Altro';
-  },
-
-  /**
-   * Esporta citazioni in formato BibTeX
-   */
-  exportToBibTeX(article, _citations) {
-    let bibtex = '';
-
-    // Entry principale
-    const key = this.generateBibTeXKey(article.author, article.publishedDate);
-    bibtex += `@online{${key},\n`;
-    bibtex += `  author = {${article.author || 'Unknown'}},\n`;
-    bibtex += `  title = {${article.title}},\n`;
-    bibtex += `  year = {${article.publishedDate?.split('-')[0] || new Date().getFullYear()}},\n`;
-    bibtex += `  url = {${article.url}},\n`;
-    bibtex += `  urldate = {${article.accessDate}}\n`;
-    bibtex += `}\n\n`;
-
-    return bibtex;
-  },
-
-  generateBibTeXKey(author, date) {
-    const authorKey = (author || 'unknown').toLowerCase().replace(/\s+/g, '').substring(0, 10);
-    const year = date?.split('-')[0] || new Date().getFullYear();
-    return `${authorKey}${year}`;
   },
 };
