@@ -69,6 +69,9 @@ export class ProviderCaller {
     );
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('[RATE_LIMIT:Groq]');
+      }
       let errorMsg;
       try {
         errorMsg = (await response.json()).error?.message;
@@ -108,6 +111,9 @@ export class ProviderCaller {
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('[RATE_LIMIT:OpenAI]');
+      }
       let errorMsg;
       try {
         errorMsg = (await response.json()).error?.message;
@@ -139,6 +145,9 @@ export class ProviderCaller {
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('[RATE_LIMIT:Anthropic]');
+      }
       let errorMsg;
       try {
         errorMsg = (await response.json()).error?.message;
@@ -252,6 +261,9 @@ export class ProviderCaller {
     );
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('[RATE_LIMIT:Gemini]');
+      }
       let errorMsg;
       try {
         errorMsg = (await response.json()).error?.message;

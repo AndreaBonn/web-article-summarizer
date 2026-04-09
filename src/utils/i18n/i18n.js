@@ -115,7 +115,8 @@ export const I18n = {
       'error.tooShort': 'Articolo troppo breve per essere riassunto (minimo 200 parole).',
       'error.noApiKey': "API key non configurata. Clicca sull'icona ⚙️ per configurare.",
       'error.invalidKey': 'API key non valida. Verifica la configurazione nelle impostazioni.',
-      'error.tooManyRequests': 'Troppe richieste. Riprova tra qualche secondo.',
+      'error.tooManyRequests':
+        'Rate limit raggiunto per {provider}. Non è un problema del sistema: la tua chiave API ha esaurito le richieste. Cambia chiave o provider nelle impostazioni (⚙️).',
       'error.network': 'Errore di connessione. Verifica la tua connessione internet.',
 
       // Modal System
@@ -468,7 +469,8 @@ export const I18n = {
       'error.tooShort': 'Article too short to summarize (minimum 200 words).',
       'error.noApiKey': 'API key not configured. Click the ⚙️ icon to configure.',
       'error.invalidKey': 'Invalid API key. Check your settings.',
-      'error.tooManyRequests': 'Too many requests. Try again in a few seconds.',
+      'error.tooManyRequests':
+        'Rate limit reached for {provider}. This is not a system issue: your API key has exhausted available requests. Change API key or switch provider in settings (⚙️).',
       'error.network': 'Connection error. Check your internet connection.',
 
       // Modal System
