@@ -1,118 +1,341 @@
-# AI Article Summarizer
+<p align="center">
+  <img src="public/icons/icon128.png" alt="Web Article Summarizer" width="96" />
+</p>
 
-A Chrome Extension that summarizes web articles using large language models.
-Supports four AI providers, five output languages, and multiple export formats.
+<h1 align="center">Web Article Summarizer</h1>
 
-Version 2.2.0 — Manifest V3 — No build step required
+<p align="center">
+  A Chrome Extension that summarizes web articles and PDFs using AI.<br/>
+  Supports Groq, OpenAI, Anthropic (Claude), and Google Gemini.
+</p>
+
+<p align="center">
+  <a href="README.it.md">Italiano</a> · English
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/manifest-v3-blue" alt="Manifest V3" />
+  <img src="https://img.shields.io/badge/version-2.2.0-green" alt="Version" />
+  <img src="https://img.shields.io/badge/license-MIT-yellow" alt="License" />
+</p>
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Supported Providers](#supported-providers)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Export Formats](#export-formats)
+- [Languages](#languages)
+- [Tech Stack](#tech-stack)
+- [Development](#development)
+- [Project Structure](#project-structure)
+- [Permissions](#permissions)
+- [Contributing](#contributing)
+- [Author](#author)
 
 ---
 
 ## Features
 
-- **Article summarization** — generates a structured summary from any web page
-- **Key points extraction** — 7–12 bullet points with paragraph references
-- **Full article translation** — into Italian, English, Spanish, French, or German
-- **Interactive Q&A** — ask follow-up questions grounded in the article content
-- **Multi-article analysis** — compare and cross-reference up to N articles
-- **PDF and PDF-specific analysis** — summarize PDFs directly from the browser
-- **Export** — PDF and Markdown with per-section selection
-- **Email sharing** — send summaries with saved recipient management
-- **Voice I/O** — Text-to-Speech playback and Speech-to-Text input
-- **History** — searchable and filterable archive of past summaries
-- **Smart cache** — instant reload for previously analyzed articles
-- **Content-type detection** — auto-classifies articles as General, Scientific, News,
-  Tutorial, Business, or Opinion and applies specialized prompts accordingly
-- **Dark mode** — system-aware, with manual toggle
+**Article Analysis**
+
+- One-click article summarization from any web page
+- Key points extraction for quick reading
+- Content-type auto-detection (news, scientific, tutorial, business, opinion)
+- Adjustable summary length (short, medium, detailed)
+
+**Translation & Citations**
+
+- Full article translation across 5 languages
+- Bibliographic citation extraction with APA formatting
+- Source matching and paragraph-level referencing
+
+**Reading Mode**
+
+- Side-by-side view: original article + AI analysis
+- Resizable panels with draggable divider
+- Font size controls and dark/light theme
+
+**Multi-Article Analysis**
+
+- Compare and analyze multiple articles simultaneously
+- Cross-article Q&A
+- Consolidated summary generation
+
+**PDF Analysis**
+
+- Upload and analyze PDF documents
+- Text extraction with intelligent caching
+- Full analysis pipeline (summary, key points, translation, citations)
+
+**Voice Controls**
+
+- Text-to-Speech: listen to summaries and analysis
+- Speech-to-Text: ask questions using your voice
+
+**History & Export**
+
+- Automatic history with search, filters, and favorites
+- Export to PDF, Markdown, or Email
+- Import/export history as JSON backup
+
+**Smart Features**
+
+- Response caching for faster repeat access
+- Data compression for efficient storage
+- Automatic fallback between providers
+- Dark and light theme across all pages
 
 ---
 
-## Supported AI Providers
+## Supported Providers
 
-| Provider | Model | Notes |
-|---|---|---|
-| Groq | Llama 3.3 70B | Fast inference, free tier available |
-| OpenAI | GPT-4o mini | Balanced quality and cost |
-| Anthropic | Claude 3.5 Sonnet | Strong reasoning on long articles |
-| Google | Gemini 2.5 Pro | Multimodal, large context window |
+| Provider                                     | Model             | Free Tier |
+| -------------------------------------------- | ----------------- | --------- |
+| [Groq](https://console.groq.com)             | Llama 3.3 70B     | Yes       |
+| [OpenAI](https://platform.openai.com)        | GPT-4o            | No        |
+| [Anthropic](https://console.anthropic.com)   | Claude 3.5 Sonnet | No        |
+| [Google Gemini](https://aistudio.google.com) | Gemini 2.5 Pro    | Yes       |
 
-Each provider requires a separate API key, configured via the Options page.
-The extension calls provider APIs directly from the browser — no backend involved.
-
----
-
-## Quick Start
-
-1. Open `chrome://extensions/` and enable **Developer mode**
-2. Click **Load unpacked** and select this repository folder
-3. Open the extension Options and enter your API key for at least one provider
-4. Navigate to any article and click the extension icon
+Each provider requires its own API key. You can configure multiple providers and switch between them.
 
 ---
 
-## Architecture
+## Installation
 
-```
-ai-article-summarizer/
-├── manifest.json           # Extension manifest (V3)
-├── background.js           # Service worker — cache, storage, message routing
-├── content.js              # Content script — DOM extraction
-│
-├── popup.html/.css/.js     # Main summarizer UI
-├── reading-mode.html/.css/.js
-├── history.html/.css/.js
-├── options.html/.css/.js
-├── multi-analysis.html/.css/.js
-├── pdf-analysis.html/.css/.js
-│
-├── src/                    # Page-specific ES modules
-│   ├── popup/              # Popup UI modules (5 files)
-│   ├── reading-mode/       # Reading mode modules (5 files)
-│   └── history/            # History modules (4 files)
-│
-├── utils/                  # Shared utilities (36 files)
-│   ├── prompt-registry.js  # Centralized AI prompts for all providers and content types
-│   ├── api-client.js       # LLM API calls, provider abstraction
-│   ├── api-resilience.js   # Rate limiting and retry logic
-│   ├── storage-manager.js  # chrome.storage wrapper
-│   ├── cache-manager.js    # Article cache with LZ compression
-│   ├── html-sanitizer.js   # XSS prevention
-│   ├── input-sanitizer.js  # User input validation
-│   ├── i18n.js             # UI internationalization
-│   └── ...                 # Other shared utilities
-│
-├── lib/                    # Vendored libraries
-│   ├── Readability.js      # Mozilla article extraction
-│   ├── jsPDF               # PDF export
-│   ├── pdf.js              # PDF parsing (Mozilla)
-│   └── lz-string.min.js    # Cache compression
-│
-└── icons/
-```
+### From Source (Developer Mode)
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/AndreaBonn/WebArticleSummarizer.git
+   cd WebArticleSummarizer
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+3. **Build the extension**
+
+   ```bash
+   npm run build
+   ```
+
+4. **Load in Chrome**
+   - Open `chrome://extensions/`
+   - Enable **Developer mode** (toggle in the top right)
+   - Click **Load unpacked**
+   - Select the `dist/` folder
+
+5. **Configure API keys**
+   - Click the extension icon in the toolbar
+   - Go to Settings
+   - Enter at least one API key
+
+---
+
+## Usage
+
+### Summarize an Article
+
+1. Navigate to any article or blog post
+2. Click the extension icon in the Chrome toolbar
+3. Select your preferred provider and language
+4. Click **Analyze Page**
+5. View the summary, key points, and more in the popup
+
+### Reading Mode
+
+After generating a summary, click **Reading Mode** to open a full-page side-by-side view with the original article on the left and the AI analysis on the right.
+
+### Translate an Article
+
+1. Generate a summary first
+2. Switch to the **Translation** tab
+3. Click **Translate Article**
+
+### Extract Citations
+
+1. Generate a summary first
+2. Switch to the **Citations** tab
+3. Click **Extract Citations**
+4. Citations are formatted in APA style with source matching
+
+### Ask Questions (Q&A)
+
+Type a question in the Q&A section at the bottom of the popup or use the microphone button for voice input. The AI will answer based on the article content.
+
+### Analyze a PDF
+
+1. Click the extension icon
+2. Go to **PDF Analysis**
+3. Drag & drop or browse for a PDF file
+4. Select provider and language
+5. Click **Analyze**
+
+### Compare Multiple Articles
+
+1. Analyze several articles (they are saved in history)
+2. Click the extension icon
+3. Go to **Multi-Article Analysis**
+4. Select 2+ articles from the list
+5. Choose analysis type (summary, comparison, Q&A)
+6. Click **Start Analysis**
+
+---
+
+## Export Formats
+
+| Format       | Description                                        |
+| ------------ | -------------------------------------------------- |
+| **PDF**      | Formatted document with all analysis sections      |
+| **Markdown** | Structured text with headers and formatting        |
+| **Email**    | Opens default email client with pre-filled content |
+| **Copy**     | Copies analysis to clipboard                       |
+| **JSON**     | History import/export for backup                   |
+
+---
+
+## Languages
+
+The extension interface is available in:
+
+- English
+- Italian
+- Spanish
+- French
+- German
+
+Article analysis output can be generated in any of these languages regardless of the source article language.
 
 ---
 
 ## Tech Stack
 
-- JavaScript (ES6+), HTML5, CSS3
-- Chrome Extension Manifest V3 (service worker architecture)
-- Mozilla Readability — article text extraction
-- jsPDF — client-side PDF generation
-- Mozilla pdf.js — in-browser PDF parsing
-- lz-string — cache compression
-- No framework, no build system, no transpilation
+| Category           | Technology                     |
+| ------------------ | ------------------------------ |
+| Platform           | Chrome Extension (Manifest V3) |
+| Build              | Vite + @crxjs/vite-plugin      |
+| Content Extraction | @mozilla/readability           |
+| PDF Parsing        | pdfjs-dist                     |
+| PDF Export         | jspdf                          |
+| Compression        | lz-string                      |
+| Testing            | Vitest + jsdom                 |
+| Linting            | ESLint (flat config)           |
+| Formatting         | Prettier                       |
+| CI/CD              | GitHub Actions                 |
 
 ---
 
-## Security Notes
+## Development
 
-- API keys are stored exclusively in `chrome.storage.local` (sandboxed per-extension)
-- All user input is sanitized before being inserted into AI prompts (`input-sanitizer.js`)
-- All HTML rendered from AI responses is sanitized before DOM insertion (`html-sanitizer.js`)
-- Rate limiting is applied per provider to prevent accidental quota exhaustion
-- No telemetry, no analytics, no external calls except to the configured AI provider
+### Prerequisites
+
+- Node.js 22+
+- npm
+
+### Commands
+
+```bash
+# Install dependencies
+npm install
+
+# Development server with HMR
+npm run dev
+
+# Production build
+npm run build
+
+# Run tests
+npm run test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Lint
+npm run lint
+
+# Format code
+npm run format
+```
+
+### Development Workflow
+
+1. Run `npm run dev` to start the development server
+2. Load the `dist/` folder in Chrome as an unpacked extension
+3. Changes to source files will trigger hot module replacement
+4. Run `npm run test` before committing
+
+---
+
+## Project Structure
+
+```
+src/
+├── background/          Service worker (ES module)
+├── content/             Content script
+├── pages/
+│   ├── popup/           Main extension popup
+│   ├── reading-mode/    Full-page reading view
+│   ├── history/         Analysis history
+│   ├── multi-analysis/  Multi-article comparison
+│   ├── pdf-analysis/    PDF document analysis
+│   └── options/         Settings & API keys
+├── shared/styles/       Shared CSS (base.css, voice-controls.css)
+└── utils/
+    ├── ai/              LLM API client, prompts, citations
+    ├── storage/         Chrome storage, cache, compression
+    ├── export/          PDF, Markdown, email export
+    ├── pdf/             PDF parsing & caching
+    ├── i18n/            Internationalization (5 locales)
+    ├── voice/           TTS & STT controllers
+    ├── security/        HTML & input sanitization
+    └── core/            Theme, modal, logger, errors
+```
+
+---
+
+## Permissions
+
+The extension requests the following Chrome permissions:
+
+| Permission  | Reason                                            |
+| ----------- | ------------------------------------------------- |
+| `activeTab` | Access the current tab to extract article content |
+| `storage`   | Save settings, history, and cached data locally   |
+| `scripting` | Inject content scripts for article extraction     |
+| `tts`       | Text-to-Speech for reading summaries aloud        |
+
+API calls are made directly to provider endpoints. No data is sent to third-party servers beyond the selected AI provider.
+
+---
+
+## Contributing
+
+Contributions are welcome. Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'feat: add my feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
+
+Make sure all tests pass and linting is clean before submitting.
+
+---
+
+## Author
+
+**Andrea Bonacci** — [@AndreaBonn](https://github.com/AndreaBonn)
 
 ---
 
 ## License
 
-MIT License — Copyright (c) 2024–2025 Andrea Bonn
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
