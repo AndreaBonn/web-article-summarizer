@@ -3,7 +3,7 @@
 // Non viene usata cifratura custom perché in un'estensione Chrome il codice sorgente
 // è sempre leggibile — un segreto hardcoded non offre protezione reale.
 
-const MAX_TRANSLATION_CACHE = 50;
+import { TranslationCache } from './translation-cache.js';
 
 export class StorageManager {
   // API Keys management
@@ -77,65 +77,17 @@ export class StorageManager {
     return result.selectedContentType || 'auto'; // Default: Rilevamento automatico
   }
 
-  // Translation cache (la cache summary è gestita da CacheManager)
-  static async _hashString(str) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(str);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-    return 'tcache_' + hashHex.slice(0, 16);
-  }
-
+  // Translation cache — delegates to TranslationCache module
   static async getCachedTranslation(url, provider, targetLanguage) {
-    const str = JSON.stringify({ url, provider, targetLanguage });
-    const cacheKey = await this._hashString(str);
-    const result = await chrome.storage.local.get(['translationCache']);
-    const cache = result.translationCache || {};
-
-    if (cache[cacheKey]) {
-      const cached = cache[cacheKey];
-      const age = Date.now() - cached.timestamp;
-      const TTL = 24 * 60 * 60 * 1000; // 24 ore
-      if (age < TTL) {
-        return cached;
-      }
-    }
-    return null;
+    return TranslationCache.get(url, provider, targetLanguage);
   }
 
   static async saveCachedTranslation(url, provider, targetLanguage, translation, originalLanguage) {
-    const str = JSON.stringify({ url, provider, targetLanguage });
-    const cacheKey = await this._hashString(str);
-    const result = await chrome.storage.local.get(['translationCache']);
-    let cache = result.translationCache || {};
-
-    cache[cacheKey] = {
-      timestamp: Date.now(),
-      translation,
-      provider,
-      url,
-      targetLanguage,
-      originalLanguage,
-    };
-
-    // LRU eviction - mantieni max MAX_TRANSLATION_CACHE traduzioni
-    const entries = Object.entries(cache);
-    if (entries.length > MAX_TRANSLATION_CACHE) {
-      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-      cache = Object.fromEntries(entries.slice(-MAX_TRANSLATION_CACHE));
-    }
-
-    await chrome.storage.local.set({ translationCache: cache });
+    return TranslationCache.save(url, provider, targetLanguage, translation, originalLanguage);
   }
 
   static async clearTranslationCacheEntry(url, provider, targetLanguage) {
-    const str = JSON.stringify({ url, provider, targetLanguage });
-    const cacheKey = await this._hashString(str);
-    const result = await chrome.storage.local.get(['translationCache']);
-    const cache = result.translationCache || {};
-    delete cache[cacheKey];
-    await chrome.storage.local.set({ translationCache: cache });
+    return TranslationCache.clearEntry(url, provider, targetLanguage);
   }
 
   // Statistics
