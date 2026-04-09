@@ -85,7 +85,7 @@ export function updateTTSButtonState(buttonState, { elements = null, getButtons 
       playBtn.style.display = 'inline-block';
       pauseBtn.style.display = 'none';
       stopBtn.style.display = 'none';
-      playBtn.textContent = '🔊';
+      playBtn.textContent = 'Play';
       playBtn.title = 'Leggi ad alta voce';
       pauseBtn.classList.remove('active');
       break;
@@ -212,7 +212,7 @@ export function createTTSToggleButton(text, lang, label, voiceController, onVoic
 
   const button = document.createElement('button');
   button.className = 'tts-button';
-  button.innerHTML = `🔊 <span>${label}</span>`;
+  button.innerHTML = `<span>${label}</span>`;
   button.title = label;
 
   button.addEventListener('click', () => {
@@ -221,17 +221,17 @@ export function createTTSToggleButton(text, lang, label, voiceController, onVoic
     if (ttsState.isSpeaking) {
       voiceController.stopSpeaking();
       button.classList.remove('active');
-      button.innerHTML = `🔊 <span>${label}</span>`;
+      button.innerHTML = `<span>${label}</span>`;
     } else {
       voiceController.speak(text, lang);
       button.classList.add('active');
-      button.innerHTML = `⏹️ <span>Stop</span>`;
+      button.innerHTML = `<span>Stop</span>`;
     }
   });
 
   const handleTTSEnd = () => {
     button.classList.remove('active');
-    button.innerHTML = `🔊 <span>${label}</span>`;
+    button.innerHTML = `<span>${label}</span>`;
   };
   window.addEventListener('tts:ended', handleTTSEnd);
   window.addEventListener('tts:stopped', handleTTSEnd);

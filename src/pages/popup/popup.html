@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Article Summarizer</title>
+    <link rel="stylesheet" href="../../shared/styles/base.css" />
     <link rel="stylesheet" href="popup.css" />
     <link rel="stylesheet" href="../../shared/styles/voice-controls.css" />
   </head>
@@ -11,7 +12,7 @@
     <div class="container">
       <!-- Header -->
       <div class="header">
-        <h1 data-i18n="app.title">🤖 Web Site Summarizer</h1>
+        <h1 data-i18n="app.title">Web Site Summarizer</h1>
         <div class="header-buttons">
           <div class="header-row-1">
             <button
@@ -20,7 +21,7 @@
               data-i18n-title="theme.toggle"
               title="Cambia Tema"
             >
-              🌙
+              ◑
             </button>
             <select id="uiLanguageSelect" class="ui-language-select" title="Lingua Interfaccia">
               <option value="it">🇮🇹</option>
@@ -32,7 +33,7 @@
               data-i18n-title="settings.title"
               title="Impostazioni"
             >
-              ⚙️
+              ⚙
             </button>
           </div>
           <div class="header-row-2">
@@ -42,7 +43,19 @@
               data-i18n-title="history.title"
               title="Cronologia"
             >
-              📚
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
             </button>
             <button
               id="multiAnalysisBtn"
@@ -50,7 +63,21 @@
               data-i18n-title="multi.analysis"
               title="Analisi Multi Articolo"
             >
-              🔬
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="2" width="8" height="8" rx="1" />
+                <rect x="14" y="2" width="8" height="8" rx="1" />
+                <rect x="2" y="14" width="8" height="8" rx="1" />
+                <rect x="14" y="14" width="8" height="8" rx="1" />
+              </svg>
             </button>
             <button
               id="pdfAnalysisBtn"
@@ -58,7 +85,21 @@
               data-i18n-title="pdf.analysis"
               title="Analisi PDF"
             >
-              📄
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
             </button>
           </div>
         </div>
@@ -67,11 +108,11 @@
       <!-- Article Info -->
       <div id="articleInfo" class="article-info hidden">
         <div class="info-row">
-          <span class="label" data-i18n="article.title">📄 Titolo:</span>
+          <span class="label" data-i18n="article.title">Titolo:</span>
           <span id="articleTitle" class="value"></span>
         </div>
         <div class="info-row">
-          <span class="label" data-i18n="article.length">📊 Lunghezza:</span>
+          <span class="label" data-i18n="article.length">Lunghezza:</span>
           <span id="articleStats" class="value"></span>
         </div>
       </div>
@@ -89,7 +130,7 @@
         </div>
 
         <div class="control-row">
-          <label for="languageSelectReady" data-i18n="controls.language">🌍 Lingua:</label>
+          <label for="languageSelectReady" data-i18n="controls.language">Lingua:</label>
           <select id="languageSelectReady" class="compact-select">
             <option value="it" data-i18n="language.it">Italiano</option>
             <option value="en" data-i18n="language.en">Inglese</option>
@@ -100,33 +141,33 @@
         </div>
 
         <div class="control-row">
-          <label for="contentTypeSelectReady" data-i18n="controls.contentType">📝 Tipo:</label>
+          <label for="contentTypeSelectReady" data-i18n="controls.contentType">Tipo:</label>
           <select id="contentTypeSelectReady" class="compact-select">
-            <option value="auto" data-i18n="contentType.auto">🔍 Automatico</option>
-            <option value="general" data-i18n="contentType.general">📄 Generico</option>
-            <option value="scientific" data-i18n="contentType.scientific">🔬 Scientifico</option>
-            <option value="news" data-i18n="contentType.news">📰 News</option>
-            <option value="tutorial" data-i18n="contentType.tutorial">💻 Tutorial</option>
-            <option value="business" data-i18n="contentType.business">💼 Business</option>
-            <option value="opinion" data-i18n="contentType.opinion">💭 Opinione</option>
+            <option value="auto" data-i18n="contentType.auto">Automatico</option>
+            <option value="general" data-i18n="contentType.general">Generico</option>
+            <option value="scientific" data-i18n="contentType.scientific">Scientifico</option>
+            <option value="news" data-i18n="contentType.news">News</option>
+            <option value="tutorial" data-i18n="contentType.tutorial">Tutorial</option>
+            <option value="business" data-i18n="contentType.business">Business</option>
+            <option value="opinion" data-i18n="contentType.opinion">Opinione</option>
           </select>
         </div>
 
         <div class="control-row">
           <label for="summaryLengthSelect" data-i18n="controls.summaryLength"
-            >📏 Lunghezza Riassunto:</label
+            >Lunghezza Riassunto:</label
           >
           <select id="summaryLengthSelect" class="compact-select">
-            <option value="short" data-i18n="summaryLength.short">📝 Breve (40%)</option>
-            <option value="medium" data-i18n="summaryLength.medium">📄 Medio (60%)</option>
+            <option value="short" data-i18n="summaryLength.short">Breve (40%)</option>
+            <option value="medium" data-i18n="summaryLength.medium">Medio (60%)</option>
             <option value="detailed" data-i18n="summaryLength.detailed" selected>
-              📋 Dettagliato (75%)
+              Dettagliato (75%)
             </option>
           </select>
         </div>
 
         <button id="generateBtn" class="btn btn-primary" data-i18n="controls.generate">
-          ⚡ Genera Riassunto
+          Genera Riassunto
         </button>
       </div>
 
@@ -135,10 +176,10 @@
         <!-- Initial State -->
         <div id="initialState" class="state-view">
           <div class="empty-state">
-            <div class="icon">✋</div>
+            <div class="icon"></div>
 
             <div class="language-selector">
-              <label for="languageSelect" data-i18n="initial.language">🌍 Lingua Output:</label>
+              <label for="languageSelect" data-i18n="initial.language">Lingua Output:</label>
               <select id="languageSelect" class="language-select">
                 <option value="it" data-i18n="language.it">Italiano</option>
                 <option value="en" data-i18n="language.en">Inglese</option>
@@ -150,34 +191,30 @@
 
             <div class="content-type-selector">
               <label for="contentTypeSelect" data-i18n="initial.contentType"
-                >📝 Tipologia Articolo:</label
+                >Tipologia Articolo:</label
               >
               <select id="contentTypeSelect" class="content-type-select">
-                <option value="auto" data-i18n="contentType.auto">🔍 Rilevamento Automatico</option>
-                <option value="general" data-i18n="contentType.general">
-                  📄 Articolo Generico
-                </option>
+                <option value="auto" data-i18n="contentType.auto">Rilevamento Automatico</option>
+                <option value="general" data-i18n="contentType.general">Articolo Generico</option>
                 <option value="scientific" data-i18n="contentType.scientific">
-                  🔬 Articolo Scientifico
+                  Articolo Scientifico
                 </option>
-                <option value="news" data-i18n="contentType.news">📰 Notizia</option>
-                <option value="tutorial" data-i18n="contentType.tutorial">💻 Tutorial/Guida</option>
+                <option value="news" data-i18n="contentType.news">Notizia</option>
+                <option value="tutorial" data-i18n="contentType.tutorial">Tutorial/Guida</option>
                 <option value="business" data-i18n="contentType.business">
-                  💼 Business/Case Study
+                  Business/Case Study
                 </option>
-                <option value="opinion" data-i18n="contentType.opinion">
-                  💭 Opinione/Editoriale
-                </option>
+                <option value="opinion" data-i18n="contentType.opinion">Opinione/Editoriale</option>
               </select>
               <p class="hint" data-i18n="initial.contentType.hint">
                 Seleziona il tipo la tipologia di articolo per risparmiare token, altrimenti lascia
-                "🔍 Rilevamento Automatico" e LLM classificherà il contenuto autonomamente e
-                utilizzerà il prompt più indicato per le analisi.
+                "Rilevamento Automatico" e LLM classificherà il contenuto autonomamente e utilizzerà
+                il prompt più indicato per le analisi.
               </p>
             </div>
 
             <button id="analyzeBtn" class="btn btn-primary" data-i18n="initial.analyze">
-              🔍 Analizza Pagina
+              Analizza Pagina
             </button>
           </div>
         </div>
@@ -201,9 +238,9 @@
         <!-- Error State -->
         <div id="errorState" class="state-view hidden">
           <div class="error-box">
-            <div class="icon">❌</div>
+            <div class="icon">×</div>
             <p id="errorMessage"></p>
-            <button id="retryBtn" class="btn btn-secondary">🔄 Riprova</button>
+            <button id="retryBtn" class="btn btn-secondary">Riprova</button>
           </div>
         </div>
 
@@ -234,7 +271,7 @@
                     Clicca sul pulsante per tradurre l'articolo completo
                   </p>
                   <button id="translateBtn" class="btn btn-primary" data-i18n="translation.button">
-                    🌍 Traduci Articolo
+                    Traduci Articolo
                   </button>
                 </div>
               </div>
@@ -243,14 +280,14 @@
               <div id="citationsContent" class="content-box">
                 <div class="citations-empty">
                   <p data-i18n="citations.empty">
-                    📚 Estrai citazioni e riferimenti bibliografici dall'articolo
+                    Estrai citazioni e riferimenti bibliografici dall'articolo
                   </p>
                   <button
                     id="extractCitationsBtn"
                     class="btn btn-primary"
                     data-i18n="citations.button"
                   >
-                    📖 Estrai Citazioni
+                    Estrai Citazioni
                   </button>
                 </div>
               </div>
@@ -260,23 +297,21 @@
           <!-- Actions -->
           <div class="actions">
             <button id="readingModeBtn" class="btn btn-primary" data-i18n="action.readingMode">
-              📖 Modalità Lettura
+              Modalità Lettura
             </button>
-            <button id="exportPdfBtn" class="btn btn-secondary" data-i18n="action.pdf">
-              📄 PDF
-            </button>
-            <button id="exportMdBtn" class="btn btn-secondary" data-i18n="action.md">📝 MD</button>
+            <button id="exportPdfBtn" class="btn btn-secondary" data-i18n="action.pdf">PDF</button>
+            <button id="exportMdBtn" class="btn btn-secondary" data-i18n="action.md">MD</button>
             <button id="sendEmailBtn" class="btn btn-secondary" data-i18n="action.email">
-              📧 Email
+              Email
             </button>
-            <button id="copyBtn" class="btn btn-secondary" data-i18n="action.copy">📋 Copia</button>
-            <button id="newBtn" class="btn btn-secondary" data-i18n="action.new">🔄 Nuovo</button>
+            <button id="copyBtn" class="btn btn-secondary" data-i18n="action.copy">Copia</button>
+            <button id="newBtn" class="btn btn-secondary" data-i18n="action.new">Nuovo</button>
           </div>
 
           <!-- Q&A Section -->
           <div id="qaSection" class="qa-section">
             <div class="qa-header">
-              <h3 data-i18n="qa.title">💬 Fai una domanda sull'articolo</h3>
+              <h3 data-i18n="qa.title">Fai una domanda sull'articolo</h3>
             </div>
             <div class="qa-input-group">
               <input
@@ -289,7 +324,21 @@
                 Chiedi
               </button>
               <button id="voiceQuestionBtn" class="stt-button" title="Fai una domanda vocale">
-                🎤
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
               </button>
             </div>
             <div class="listening-indicator" id="listeningIndicator">
@@ -307,7 +356,7 @@
     <div id="customModal" class="custom-modal hidden">
       <div class="custom-modal-overlay"></div>
       <div class="custom-modal-content">
-        <div class="custom-modal-icon" id="modalIcon">ℹ️</div>
+        <div class="custom-modal-icon" id="modalIcon"></div>
         <h3 id="modalTitle" class="custom-modal-title">Titolo</h3>
         <p id="modalMessage" class="custom-modal-message">Messaggio</p>
         <div class="custom-modal-buttons">
@@ -321,7 +370,7 @@
     <div id="emailModal" class="custom-modal hidden">
       <div class="custom-modal-overlay"></div>
       <div class="custom-modal-content email-modal-content">
-        <div class="custom-modal-icon">📧</div>
+        <div class="custom-modal-icon"></div>
         <h3 class="custom-modal-title">Invia Tramite Email</h3>
 
         <div class="email-input-section">
@@ -339,19 +388,19 @@
           <div class="export-options-list">
             <label class="export-option">
               <input type="checkbox" id="emailIncludeSummary" checked />
-              <span>📝 Riassunto</span>
+              <span>Riassunto</span>
             </label>
             <label class="export-option">
               <input type="checkbox" id="emailIncludeKeypoints" checked />
-              <span>🔑 Punti Chiave</span>
+              <span>Punti Chiave</span>
             </label>
             <label class="export-option" id="emailTranslationOption">
               <input type="checkbox" id="emailIncludeTranslation" checked />
-              <span>🌍 Traduzione</span>
+              <span>Traduzione</span>
             </label>
             <label class="export-option" id="emailQAOption">
               <input type="checkbox" id="emailIncludeQA" checked />
-              <span>💬 Domande e Risposte</span>
+              <span>Domande e Risposte</span>
             </label>
           </div>
         </div>
@@ -367,7 +416,7 @@
     <div id="exportOptionsModal" class="custom-modal hidden">
       <div class="custom-modal-overlay"></div>
       <div class="custom-modal-content export-modal-content">
-        <div class="custom-modal-icon">📄</div>
+        <div class="custom-modal-icon"></div>
         <h3 class="custom-modal-title">Esporta PDF</h3>
 
         <div class="export-options-section">
@@ -375,23 +424,23 @@
           <div class="export-options-list">
             <label class="export-option">
               <input type="checkbox" id="pdfIncludeSummary" checked />
-              <span>📝 Riassunto</span>
+              <span>Riassunto</span>
             </label>
             <label class="export-option">
               <input type="checkbox" id="pdfIncludeKeypoints" checked />
-              <span>🔑 Punti Chiave</span>
+              <span>Punti Chiave</span>
             </label>
             <label class="export-option" id="pdfTranslationOption">
               <input type="checkbox" id="pdfIncludeTranslation" checked />
-              <span>🌍 Traduzione</span>
+              <span>Traduzione</span>
             </label>
             <label class="export-option" id="pdfQAOption">
               <input type="checkbox" id="pdfIncludeQA" checked />
-              <span>💬 Domande e Risposte</span>
+              <span>Domande e Risposte</span>
             </label>
             <label class="export-option" id="pdfCitationsOption">
               <input type="checkbox" id="pdfIncludeCitations" checked />
-              <span>📚 Citazioni</span>
+              <span>Citazioni</span>
             </label>
           </div>
         </div>

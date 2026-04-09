@@ -280,7 +280,7 @@ function showUnrelatedModal(reason = null) {
     const reasonEl = document.getElementById('unrelatedReason');
 
     if (reason) {
-      reasonEl.textContent = '💡 ' + reason;
+      reasonEl.textContent = reason;
       reasonEl.style.display = 'block';
     } else {
       reasonEl.style.display = 'none';
@@ -368,7 +368,7 @@ function showAnalysisModal() {
       <div class="qa-interactive">
         <div class="qa-chat-container" id="qaChatContainer">
           <div class="qa-welcome">
-            <p>💬 <strong>Q&A Interattivo</strong></p>
+            <p><strong>Q&A Interattivo</strong></p>
             <p>Fai domande sui ${state.currentAnalysis.qa.articles?.length || state.selectedArticles.length} articoli selezionati. Il sistema risponderà basandosi esclusivamente sui loro contenuti.</p>
           </div>
         </div>
@@ -474,7 +474,7 @@ async function reopenSavedAnalysis(data) {
 
   const header = document.querySelector('header');
   header.innerHTML = `
-    <h1>🔬 Analisi Multi Articolo</h1>
+    <h1>Analisi Multi Articolo</h1>
     <button id="backBtn" class="btn-back">← Cronologia</button>
   `;
 
@@ -508,11 +508,11 @@ async function toggleTheme() {
 
   if (newDarkMode) {
     document.body.classList.add('dark-mode');
-    document.getElementById('themeToggleBtn').textContent = '☀️';
+    document.getElementById('themeToggleBtn').textContent = '◐';
     document.getElementById('themeToggleBtn').title = 'Tema Chiaro';
   } else {
     document.body.classList.remove('dark-mode');
-    document.getElementById('themeToggleBtn').textContent = '🌙';
+    document.getElementById('themeToggleBtn').textContent = '◑';
     document.getElementById('themeToggleBtn').title = 'Tema Scuro';
   }
 }
@@ -524,7 +524,7 @@ async function toggleTheme() {
   if (themeBtn) {
     themeBtn.addEventListener('click', toggleTheme);
     if (settings.darkMode) {
-      themeBtn.textContent = '☀️';
+      themeBtn.textContent = '◐';
       themeBtn.title = 'Tema Chiaro';
     }
   }

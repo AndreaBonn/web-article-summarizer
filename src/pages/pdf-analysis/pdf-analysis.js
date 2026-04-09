@@ -244,17 +244,17 @@ async function openReadingMode(analysisData) {
 }
 
 function toggleTheme() {
-  const isDark = document.body.classList.toggle('dark-theme');
+  const isDark = document.body.classList.toggle('dark-mode');
   const btn = document.getElementById('themeToggleBtn');
-  btn.textContent = isDark ? '☀️' : '🌙';
+  btn.textContent = isDark ? '◐' : '◑';
   localStorage.setItem('theme', isDark ? 'dark' : 'light');
 }
 
 // Carica tema salvato
 const savedTheme = localStorage.getItem('theme');
 if (savedTheme === 'dark') {
-  document.body.classList.add('dark-theme');
-  document.getElementById('themeToggleBtn').textContent = '☀️';
+  document.body.classList.add('dark-mode');
+  document.getElementById('themeToggleBtn').textContent = '◐';
 }
 
 // Font Size Management

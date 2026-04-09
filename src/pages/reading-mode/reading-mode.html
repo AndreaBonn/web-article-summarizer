@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Modalità Lettura - AI Article Summarizer</title>
+    <link rel="stylesheet" href="../../shared/styles/base.css" />
     <link rel="stylesheet" href="reading-mode.css" />
   </head>
   <body>
@@ -11,7 +12,7 @@
     <header class="reading-header">
       <div class="header-left">
         <button id="backBtn" class="icon-btn" title="Torna al popup">← Indietro</button>
-        <h1>📖 Modalità Lettura</h1>
+        <h1>Modalità Lettura</h1>
       </div>
       <div class="header-right">
         <div class="font-size-controls">
@@ -19,9 +20,9 @@
           <span id="fontSizeLabel" class="font-size-label">M</span>
           <button id="fontIncreaseBtn" class="icon-btn" title="Aumenta dimensione testo">A+</button>
         </div>
-        <button id="themeToggleBtn" class="icon-btn" title="Cambia tema">🌙</button>
-        <button id="copyBtn" class="icon-btn" title="Copia tutto">📋</button>
-        <button id="exportBtn" class="icon-btn" title="Esporta PDF">📄 PDF</button>
+        <button id="themeToggleBtn" class="icon-btn" title="Cambia tema">◑</button>
+        <button id="copyBtn" class="icon-btn" title="Copia tutto">Copia</button>
+        <button id="exportBtn" class="icon-btn" title="Esporta PDF">PDF</button>
       </div>
     </header>
 
@@ -30,7 +31,7 @@
       <!-- Left Panel: Original Article -->
       <div class="panel article-panel">
         <div class="panel-header">
-          <h2>📄 Articolo Originale</h2>
+          <h2>Articolo Originale</h2>
           <div class="article-meta">
             <span id="articleWordCount">0 parole</span>
             <span>•</span>
@@ -38,9 +39,9 @@
           </div>
           <div class="view-toggle">
             <button id="viewIframeBtn" class="view-btn active" title="Vista pagina originale">
-              🌐 Originale
+              Originale
             </button>
-            <button id="viewTextBtn" class="view-btn" title="Vista testo pulito">📄 Testo</button>
+            <button id="viewTextBtn" class="view-btn" title="Vista testo pulito">Testo</button>
           </div>
         </div>
         <div class="panel-content" id="articleContent">
@@ -68,7 +69,7 @@
       <!-- Right Panel: Summary -->
       <div class="panel summary-panel">
         <div class="panel-header">
-          <h2>✨ Analisi Articolo</h2>
+          <h2>Analisi Articolo</h2>
           <div class="summary-meta">
             <span id="summaryProvider">-</span>
             <span>•</span>
@@ -76,19 +77,19 @@
           </div>
           <!-- Voice Controls -->
           <div class="voice-controls">
-            <button id="ttsPlayBtn" class="voice-btn" title="Leggi ad alta voce">🔊</button>
-            <button id="ttsPauseBtn" class="voice-btn hidden" title="Pausa">⏸️</button>
-            <button id="ttsStopBtn" class="voice-btn hidden" title="Stop">⏹️</button>
+            <button id="ttsPlayBtn" class="voice-btn" title="Leggi ad alta voce">Play</button>
+            <button id="ttsPauseBtn" class="voice-btn hidden" title="Pausa">Pausa</button>
+            <button id="ttsStopBtn" class="voice-btn hidden" title="Stop">Stop</button>
           </div>
         </div>
 
         <!-- Tabs for different views -->
         <div class="summary-tabs">
-          <button class="summary-tab active" data-tab="summary">📝 Riassunto</button>
-          <button class="summary-tab" data-tab="keypoints">🔑 Punti Chiave</button>
-          <button class="summary-tab" data-tab="translation">🌍 Traduzione</button>
-          <button class="summary-tab" data-tab="citations">📚 Citazioni</button>
-          <button class="summary-tab" data-tab="qa">💬 Q&A</button>
+          <button class="summary-tab active" data-tab="summary">Riassunto</button>
+          <button class="summary-tab" data-tab="keypoints">Punti Chiave</button>
+          <button class="summary-tab" data-tab="translation">Traduzione</button>
+          <button class="summary-tab" data-tab="citations">Citazioni</button>
+          <button class="summary-tab" data-tab="qa">Q&A</button>
         </div>
 
         <div class="panel-content" id="summaryContent">
@@ -112,7 +113,7 @@
           <div id="translationTabContent" class="summary-tab-content">
             <div class="empty-state">
               <p>Nessuna traduzione disponibile</p>
-              <button id="translateBtn" class="btn btn-primary">🌍 Traduci Articolo</button>
+              <button id="translateBtn" class="btn btn-primary">Traduci Articolo</button>
             </div>
           </div>
 
@@ -120,7 +121,7 @@
           <div id="citationsTabContent" class="summary-tab-content">
             <div class="empty-state">
               <p>Nessuna citazione disponibile</p>
-              <button id="extractCitationsBtn" class="btn btn-primary">📖 Estrai Citazioni</button>
+              <button id="extractCitationsBtn" class="btn btn-primary">Estrai Citazioni</button>
             </div>
           </div>
 
@@ -129,7 +130,7 @@
             <div class="qa-section">
               <div class="qa-input-group">
                 <input type="text" id="qaInput" placeholder="Fai una domanda sull'articolo..." />
-                <button id="qaVoiceBtn" class="btn btn-voice" title="Domanda vocale">🎤</button>
+                <button id="qaVoiceBtn" class="btn btn-voice" title="Domanda vocale">Voce</button>
                 <button id="qaAskBtn" class="btn btn-primary">Chiedi</button>
               </div>
               <div id="qaHistory" class="qa-history"></div>

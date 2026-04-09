@@ -204,7 +204,7 @@ export async function exportToPDF() {
   } catch (error) {
     Logger.error('Export error:', error);
     alert("Errore durante l'esportazione PDF: " + error.message);
-    elements.exportBtn.textContent = '📄 PDF';
+    elements.exportBtn.textContent = 'PDF';
     elements.exportBtn.disabled = false;
   }
 }

@@ -52,7 +52,7 @@ export async function openDetail(id) {
   if (state.currentEntry.translation) {
     document.getElementById('modalTranslation').innerHTML = `
       <div class="translation-info-modal">
-        📝 Tradotto da ${HtmlSanitizer.escape(state.currentEntry.translation.originalLanguage)} a ${HtmlSanitizer.escape(state.currentEntry.translation.targetLanguage)}
+        Tradotto da ${HtmlSanitizer.escape(state.currentEntry.translation.originalLanguage)} a ${HtmlSanitizer.escape(state.currentEntry.translation.targetLanguage)}
       </div>
       <div class="translation-text">${HtmlSanitizer.escape(state.currentEntry.translation.text)}</div>
     `;
@@ -96,11 +96,11 @@ export async function openDetail(id) {
   ) {
     let citationsHtml = `
       <div class="citations-info">
-        <strong>📚 ${state.currentEntry.citations.total_citations || state.currentEntry.citations.citations.length} citazioni trovate</strong>
+        <strong>${state.currentEntry.citations.total_citations || state.currentEntry.citations.citations.length} citazioni trovate</strong>
       </div>
 
       <div class="article-citation-box-detail">
-        <h4>📄 Citazione Articolo Principale (APA)</h4>
+        <h4>Citazione Articolo Principale (APA)</h4>
         <div class="article-citation-monospace">
           ${CitationExtractor.formatCitation(state.currentEntry.article, 'apa')}
         </div>
@@ -112,11 +112,11 @@ export async function openDetail(id) {
     state.currentEntry.citations.citations.forEach((citation) => {
       const typeIcon =
         {
-          direct_quote: '💬',
-          reference: '📖',
-          statistic: '📊',
-          source: '🔗',
-        }[citation.type] || '📌';
+          direct_quote: '›',
+          reference: '§',
+          statistic: '#',
+          source: '→',
+        }[citation.type] || '•';
 
       citationsHtml += `
         <div class="citation-item-detail">
@@ -145,7 +145,7 @@ export async function openDetail(id) {
   const notesHtml = `
     <div class="notes-container">
       <textarea id="notesTextarea" class="notes-textarea" placeholder="Aggiungi note personali su questo articolo...">${HtmlSanitizer.escape(state.currentEntry.notes || '')}</textarea>
-      <button id="saveNotesBtn" class="btn btn-primary save-notes-btn">💾 Salva Note</button>
+      <button id="saveNotesBtn" class="btn btn-primary save-notes-btn">Salva Note</button>
     </div>
   `;
   document.getElementById('modalNotes').innerHTML = notesHtml;
@@ -342,7 +342,7 @@ export async function deleteCurrentEntry() {
   const confirmed = await Modal.confirm(
     I18n.t('history.confirmDelete'),
     I18n.t('history.deleteTitle'),
-    '🗑️',
+    '×',
   );
 
   if (!confirmed) return;

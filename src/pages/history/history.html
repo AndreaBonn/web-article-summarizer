@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title data-i18n="history.title">Cronologia - AI Article Summarizer</title>
+    <link rel="stylesheet" href="../../shared/styles/base.css" />
     <link rel="stylesheet" href="history.css" />
   </head>
   <body>
@@ -21,7 +22,7 @@
             data-i18n-title="theme.toggle"
             title="Cambia Tema"
           >
-            🌙
+            ◑
           </button>
           <button id="backBtn" class="btn-back" data-i18n="history.back">← Indietro</button>
         </div>
@@ -35,7 +36,7 @@
           data-i18n="history.download"
           title="Scarica tutta la cronologia in formato JSON"
         >
-          💾 Download Cronologia
+          Download Cronologia
         </button>
         <button
           id="importHistoryBtn"
@@ -43,7 +44,7 @@
           data-i18n="history.import"
           title="Importa cronologia da file JSON"
         >
-          📥 Importa Cronologia
+          Importa Cronologia
         </button>
         <input type="file" id="importFileInput" accept=".json" class="hidden" />
         <button
@@ -51,17 +52,17 @@
           class="btn-danger btn-full-width"
           data-i18n="history.clearSingle"
         >
-          🗑️ Cancella Articoli Singoli
+          Cancella Articoli Singoli
         </button>
         <button id="clearPDFHistoryBtn" class="btn-danger btn-full-width hidden">
-          🗑️ Elimina Cronologia PDF
+          Elimina Cronologia PDF
         </button>
         <button
           id="clearMultiHistoryBtn"
           class="btn-danger btn-full-width"
           data-i18n="history.clearMulti"
         >
-          🗑️ Cancella Analisi Multiple
+          Cancella Analisi Multiple
         </button>
       </div>
 
@@ -71,7 +72,7 @@
           type="text"
           id="searchInput"
           data-i18n="history.search"
-          placeholder="🔍 Cerca..."
+          placeholder="Cerca..."
           class="search-input-main"
         />
         <div class="search-options-inline">
@@ -93,11 +94,11 @@
 
       <div class="history-tabs">
         <button class="history-tab active" data-tab="single" data-i18n="history.tabs.single">
-          📄 Articoli Singoli
+          Articoli Singoli
         </button>
-        <button class="history-tab" data-tab="pdf">📄 PDF</button>
+        <button class="history-tab" data-tab="pdf">PDF</button>
         <button class="history-tab" data-tab="multi" data-i18n="history.tabs.multi">
-          🔬 Analisi Multi Articolo
+          Analisi Multi Articolo
         </button>
       </div>
 
@@ -131,8 +132,8 @@
 
         <select id="favoriteFilter">
           <option value="" data-i18n="history.filter.all">Tutti gli articoli</option>
-          <option value="favorites" data-i18n="history.filter.favorites">⭐ Solo Preferiti</option>
-          <option value="withNotes" data-i18n="history.filter.withNotes">📝 Con Note</option>
+          <option value="favorites" data-i18n="history.filter.favorites">Solo Preferiti</option>
+          <option value="withNotes" data-i18n="history.filter.withNotes">Con Note</option>
         </select>
       </div>
 
@@ -149,7 +150,23 @@
       </div>
 
       <div id="emptyState" class="empty-state hidden">
-        <div class="icon">📭</div>
+        <div class="icon">
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M22 12h-6l-2 3H10l-2-3H2" />
+            <path
+              d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"
+            />
+          </svg>
+        </div>
         <p data-i18n="history.empty">Nessun riassunto nella cronologia</p>
         <small data-i18n="history.emptyDesc">I tuoi riassunti appariranno qui</small>
       </div>
@@ -164,10 +181,50 @@
             <!-- Voice Controls -->
             <div class="voice-controls-modal">
               <button id="modalTtsPlayBtn" class="voice-btn-modal" title="Leggi ad alta voce">
-                🔊
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                </svg>
               </button>
-              <button id="modalTtsPauseBtn" class="voice-btn-modal hidden" title="Pausa">⏸️</button>
-              <button id="modalTtsStopBtn" class="voice-btn-modal hidden" title="Stop">⏹️</button>
+              <button id="modalTtsPauseBtn" class="voice-btn-modal hidden" title="Pausa">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="6" y="4" width="4" height="16" />
+                  <rect x="14" y="4" width="4" height="16" />
+                </svg>
+              </button>
+              <button id="modalTtsStopBtn" class="voice-btn-modal hidden" title="Stop">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="4" y="4" width="16" height="16" rx="2" />
+                </svg>
+              </button>
             </div>
             <button id="closeModal" class="btn-close">×</button>
           </div>
@@ -184,8 +241,8 @@
             <button class="modal-tab" data-tab="keypoints">Punti Chiave</button>
             <button class="modal-tab" data-tab="translation">Traduzione</button>
             <button class="modal-tab" data-tab="qa">Q&A</button>
-            <button class="modal-tab" data-tab="citations">📚 Citazioni</button>
-            <button class="modal-tab" data-tab="notes">📌 Note</button>
+            <button class="modal-tab" data-tab="citations">Citazioni</button>
+            <button class="modal-tab" data-tab="notes">Note</button>
           </div>
           <div class="modal-tab-content">
             <div id="modalSummary" class="modal-pane active"></div>
@@ -198,13 +255,13 @@
         </div>
         <div class="modal-footer">
           <button id="readingModeBtn" class="btn btn-primary" data-i18n="action.readingMode">
-            📖 Modalità Lettura
+            Modalità Lettura
           </button>
-          <button id="exportPdfBtn" class="btn btn-primary">📄 PDF</button>
-          <button id="exportMdBtn" class="btn btn-primary">📝 MD</button>
-          <button id="sendEmailBtn" class="btn btn-primary">📧 Email</button>
-          <button id="copyModalBtn" class="btn btn-secondary">📋 Copia</button>
-          <button id="deleteModalBtn" class="btn btn-danger">🗑️ Elimina</button>
+          <button id="exportPdfBtn" class="btn btn-primary">PDF</button>
+          <button id="exportMdBtn" class="btn btn-primary">MD</button>
+          <button id="sendEmailBtn" class="btn btn-primary">Email</button>
+          <button id="copyModalBtn" class="btn btn-secondary">Copia</button>
+          <button id="deleteModalBtn" class="btn btn-danger">Elimina</button>
         </div>
       </div>
     </div>
@@ -213,7 +270,7 @@
     <div id="customModal" class="custom-modal hidden">
       <div class="custom-modal-overlay"></div>
       <div class="custom-modal-content">
-        <div class="custom-modal-icon" id="modalIcon">ℹ️</div>
+        <div class="custom-modal-icon" id="modalIcon"></div>
         <h3 id="modalTitle" class="custom-modal-title">Titolo</h3>
         <p id="modalMessage" class="custom-modal-message">Messaggio</p>
         <div class="custom-modal-buttons">
@@ -227,7 +284,7 @@
     <div id="emailModal" class="custom-modal hidden">
       <div class="custom-modal-overlay"></div>
       <div class="custom-modal-content email-modal-content">
-        <div class="custom-modal-icon">📧</div>
+        <div class="custom-modal-icon"></div>
         <h3 class="custom-modal-title">Invia Tramite Email</h3>
 
         <div class="email-input-section">
@@ -245,19 +302,19 @@
           <div class="export-options-list">
             <label class="export-option">
               <input type="checkbox" id="emailIncludeSummary" checked />
-              <span>📝 Riassunto</span>
+              <span>Riassunto</span>
             </label>
             <label class="export-option">
               <input type="checkbox" id="emailIncludeKeypoints" checked />
-              <span>🔑 Punti Chiave</span>
+              <span>Punti Chiave</span>
             </label>
             <label class="export-option" id="emailTranslationOption">
               <input type="checkbox" id="emailIncludeTranslation" checked />
-              <span>🌍 Traduzione</span>
+              <span>Traduzione</span>
             </label>
             <label class="export-option" id="emailQAOption">
               <input type="checkbox" id="emailIncludeQA" checked />
-              <span>💬 Domande e Risposte</span>
+              <span>Domande e Risposte</span>
             </label>
           </div>
         </div>
@@ -273,7 +330,7 @@
     <div id="exportOptionsModal" class="custom-modal hidden">
       <div class="custom-modal-overlay"></div>
       <div class="custom-modal-content export-modal-content">
-        <div class="custom-modal-icon">📄</div>
+        <div class="custom-modal-icon"></div>
         <h3 class="custom-modal-title">Esporta PDF</h3>
 
         <div class="export-options-section">
@@ -281,23 +338,23 @@
           <div class="export-options-list">
             <label class="export-option">
               <input type="checkbox" id="pdfIncludeSummary" checked />
-              <span>📝 Riassunto</span>
+              <span>Riassunto</span>
             </label>
             <label class="export-option">
               <input type="checkbox" id="pdfIncludeKeypoints" checked />
-              <span>🔑 Punti Chiave</span>
+              <span>Punti Chiave</span>
             </label>
             <label class="export-option" id="pdfTranslationOption">
               <input type="checkbox" id="pdfIncludeTranslation" checked />
-              <span>🌍 Traduzione</span>
+              <span>Traduzione</span>
             </label>
             <label class="export-option" id="pdfQAOption">
               <input type="checkbox" id="pdfIncludeQA" checked />
-              <span>💬 Domande e Risposte</span>
+              <span>Domande e Risposte</span>
             </label>
             <label class="export-option" id="pdfCitationsOption">
               <input type="checkbox" id="pdfIncludeCitations" checked />
-              <span>📚 Citazioni</span>
+              <span>Citazioni</span>
             </label>
           </div>
         </div>
