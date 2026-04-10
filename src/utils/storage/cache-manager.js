@@ -90,12 +90,12 @@ export class CacheManager {
       await chrome.storage.local.set({ summaryCache: cache });
 
       // Log cache write
-      await this.logCacheOperation('write', cacheKey, true);
+      this.logCacheOperation('write', cacheKey, true);
 
       return true;
     } catch (error) {
       Logger.error('Errore nel salvare cache:', error);
-      await this.logCacheOperation('write', cacheKey, false, error.message);
+      this.logCacheOperation('write', cacheKey, false, error.message);
       return false;
     }
   }
@@ -114,21 +114,21 @@ export class CacheManager {
 
       // Cache miss
       if (!entry) {
-        await this.logCacheOperation('read', cacheKey, false, 'miss');
+        this.logCacheOperation('read', cacheKey, false, 'miss');
         return null;
       }
 
       // Cache expired
       if (Date.now() > entry.expiresAt) {
         await this.invalidate(cacheKey);
-        await this.logCacheOperation('read', cacheKey, false, 'expired');
+        this.logCacheOperation('read', cacheKey, false, 'expired');
         return null;
       }
 
       // Validazione contenuto: se fornito un hash, verifica che corrisponda
       if (contentHash && entry.contentHash && entry.contentHash !== contentHash) {
         await this.invalidate(cacheKey);
-        await this.logCacheOperation('read', cacheKey, false, 'content_changed');
+        this.logCacheOperation('read', cacheKey, false, 'content_changed');
         return null;
       }
 
@@ -137,14 +137,14 @@ export class CacheManager {
       const maxAge = 24 * 60 * 60 * 1000; // 24 ore
 
       if (cacheAge > maxAge) {
-        await this.logCacheOperation('read', cacheKey, true, 'old_cache');
+        this.logCacheOperation('read', cacheKey, true, 'old_cache');
       }
 
       // Cache hit — NON scrivere su disco per una lettura (performance)
       return entry.data;
     } catch (error) {
       Logger.error('Errore nel leggere cache:', error);
-      await this.logCacheOperation('read', cacheKey, false, error.message);
+      this.logCacheOperation('read', cacheKey, false, error.message);
       return null;
     }
   }
@@ -160,14 +160,14 @@ export class CacheManager {
       if (cache[cacheKey]) {
         delete cache[cacheKey];
         await chrome.storage.local.set({ summaryCache: cache });
-        await this.logCacheOperation('invalidate', cacheKey, true);
+        this.logCacheOperation('invalidate', cacheKey, true);
         return true;
       }
 
       return false;
     } catch (error) {
       Logger.error("Errore nell'invalidare cache:", error);
-      await this.logCacheOperation('invalidate', cacheKey, false, error.message);
+      this.logCacheOperation('invalidate', cacheKey, false, error.message);
       return false;
     }
   }
@@ -397,8 +397,17 @@ export class CacheManager {
   static hashContent(content) {
     if (!content) return null;
 
-    // Usa i primi 500 caratteri per l'hash (più veloce)
-    const sample = content.substring(0, 500);
+    // Sample from start, middle, and end for better collision resistance
+    const len = content.length;
+    const chunkSize = 700;
+    let sample = content.substring(0, chunkSize);
+    if (len > chunkSize * 2) {
+      const mid = Math.floor(len / 2) - Math.floor(chunkSize / 2);
+      sample += content.substring(mid, mid + chunkSize);
+    }
+    if (len > chunkSize * 3) {
+      sample += content.substring(len - chunkSize);
+    }
 
     let hash = 0;
     for (let i = 0; i < sample.length; i++) {

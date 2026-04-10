@@ -1,5 +1,6 @@
 // PDF Exporter - Genera PDF ben formattati per riassunti e punti chiave
 import { CitationExtractor } from '../ai/citation-extractor.js';
+import { CitationFormatter } from '../ai/citation-formatter.js';
 import { PDFBuilder } from './pdf-builder.js';
 
 export class PDFExporter {
@@ -210,18 +211,6 @@ export class PDFExporter {
   }
 
   static getCitationTypeLabel(type) {
-    const labels = {
-      direct_quote: 'Citazione Diretta',
-      indirect_quote: 'Citazione Indiretta',
-      study_reference: 'Studio/Ricerca',
-      statistic: 'Statistica',
-      expert_opinion: 'Opinione Esperto',
-      book_reference: 'Libro',
-      article_reference: 'Articolo',
-      report_reference: 'Report',
-      organization_data: 'Dati Organizzazione',
-      web_source: 'Fonte Web',
-    };
-    return labels[type] || 'Altro';
+    return CitationFormatter.getCitationTypeLabel(type);
   }
 }

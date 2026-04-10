@@ -7,13 +7,12 @@ import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { InputSanitizer } from '../../utils/security/input-sanitizer.js';
-import { AdvancedAnalysis } from '../../utils/ai/advanced-analysis.js';
 import { ContentDetector } from '../../utils/ai/content-detector.js';
-import { Translator } from '../../utils/core/translator.js';
 import { Modal } from '../../utils/core/modal.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { createTTSButton } from './voice.js';
 import { Logger } from '../../utils/core/logger.js';
+import { getLanguageNameIT } from '../../utils/i18n/language-names.js';
 
 // Translation System — usa un oggetto wrapper per permettere la mutazione cross-modulo
 export const translationState = { value: null };
@@ -69,22 +68,23 @@ export async function askQuestion() {
   try {
     const settings = await StorageManager.getSettings();
     const provider = elements.providerSelect.value;
-    const apiKey = await StorageManager.getApiKey(provider);
-
-    if (!apiKey) {
-      throw new Error('API key non configurata per ' + provider);
-    }
-
     settings.outputLanguage = state.selectedLanguage;
 
-    const answer = await AdvancedAnalysis.askQuestion(
-      cleanQuestion, // ← Usa versione sanitizzata
-      state.currentArticle,
-      state.currentResults.summary,
+    // Delegate to service worker (API key stays in background)
+    const response = await chrome.runtime.sendMessage({
+      action: 'askQuestion',
+      question: cleanQuestion,
+      article: state.currentArticle,
+      summary: state.currentResults.summary,
       provider,
-      apiKey,
       settings,
-    );
+    });
+
+    if (!response.success) {
+      throw new Error(response.error);
+    }
+
+    const answer = response.result.answer;
 
     elements.qaAnswer.classList.remove('loading');
 
@@ -144,12 +144,6 @@ export async function translateArticle() {
 
   try {
     const provider = elements.providerSelect.value;
-    const apiKey = await StorageManager.getApiKey(provider);
-
-    if (!apiKey) {
-      throw new Error('API key non configurata per ' + provider);
-    }
-
     const targetLanguage = state.selectedLanguage;
 
     // Rileva lingua originale (semplice detection)
@@ -191,12 +185,19 @@ export async function translateArticle() {
         }
       }
 
-      translation = await Translator.translateArticle(
-        state.currentArticle,
+      // Delegate to service worker (API key stays in background)
+      const translateResponse = await chrome.runtime.sendMessage({
+        action: 'translateArticle',
+        article: state.currentArticle,
         targetLanguage,
         provider,
-        apiKey,
-      );
+      });
+
+      if (!translateResponse.success) {
+        throw new Error(translateResponse.error);
+      }
+
+      translation = translateResponse.result.translation;
 
       // Salva in cache
       await StorageManager.saveCachedTranslation(
@@ -234,16 +235,8 @@ export async function translateArticle() {
 }
 
 function displayTranslation(translation, targetLang, originalLang, fromCache = false) {
-  const languageNames = {
-    it: 'Italiano',
-    en: 'Inglese',
-    es: 'Spagnolo',
-    fr: 'Francese',
-    de: 'Tedesco',
-  };
-
-  const targetName = languageNames[targetLang] || targetLang;
-  const originalName = languageNames[originalLang] || originalLang;
+  const targetName = getLanguageNameIT(targetLang);
+  const originalName = getLanguageNameIT(originalLang);
 
   const cacheBadge = fromCache ? '<span class="cache-badge">Da cache</span>' : '';
 

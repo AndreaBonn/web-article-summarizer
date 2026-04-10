@@ -1,19 +1,11 @@
-// Theme Manager - Gestione Dark Mode
+// Theme Manager - Gestione Dark Mode centralizzata per tutte le pagine
 import { StorageManager } from '../storage/storage-manager.js';
 import { Logger } from './logger.js';
 
 export const ThemeManager = {
   async init() {
     try {
-      // Attendi che StorageManager sia disponibile
-      if (typeof StorageManager === 'undefined') {
-        Logger.warn('StorageManager non ancora caricato, riprovo...');
-        setTimeout(() => this.init(), 100);
-        return;
-      }
-
       const settings = await StorageManager.getSettings();
-      Logger.info('Theme settings loaded:', settings.darkMode);
       this.applyTheme(settings.darkMode || false);
     } catch (error) {
       Logger.error('Errore caricamento tema:', error);
@@ -21,14 +13,31 @@ export const ThemeManager = {
   },
 
   applyTheme(isDark) {
-    Logger.debug('Applying theme, dark mode:', isDark);
     if (isDark) {
       document.body.classList.add('dark-mode');
-      Logger.debug('Dark mode class added');
     } else {
       document.body.classList.remove('dark-mode');
-      Logger.debug('Dark mode class removed');
     }
+    this._updateIcon(isDark);
+  },
+
+  async toggle() {
+    const settings = await StorageManager.getSettings();
+    const newDarkMode = !settings.darkMode;
+
+    settings.darkMode = newDarkMode;
+    await StorageManager.saveSettings(settings);
+
+    this.applyTheme(newDarkMode);
+    return newDarkMode;
+  },
+
+  _updateIcon(isDark) {
+    const btn =
+      document.getElementById('themeToggleBtn') || document.querySelector('[data-theme-toggle]');
+    if (!btn) return;
+    btn.textContent = isDark ? '◐' : '◑';
+    btn.title = isDark ? 'Tema Chiaro' : 'Tema Scuro';
   },
 };
 

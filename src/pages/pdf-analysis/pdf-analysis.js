@@ -6,6 +6,7 @@ import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { PDFAnalyzer } from '../../utils/pdf/pdf-analyzer.js';
 import { Modal } from '../../utils/core/modal.js';
+import { ThemeManager } from '../../utils/core/theme-manager.js';
 
 let selectedFile = null;
 let pdfAnalyzer = null;
@@ -43,7 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.close();
   });
 
-  document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+  document.getElementById('themeToggleBtn').addEventListener('click', () => ThemeManager.toggle());
 
   // Provider change
   document.getElementById('providerSelect').addEventListener('change', async (e) => {
@@ -243,19 +244,7 @@ async function openReadingMode(analysisData) {
   chrome.tabs.create({ url: 'src/pages/reading-mode/reading-mode.html?source=pdf' });
 }
 
-function toggleTheme() {
-  const isDark = document.body.classList.toggle('dark-mode');
-  const btn = document.getElementById('themeToggleBtn');
-  btn.textContent = isDark ? '◐' : '◑';
-  localStorage.setItem('theme', isDark ? 'dark' : 'light');
-}
-
-// Carica tema salvato
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-  document.body.classList.add('dark-mode');
-  document.getElementById('themeToggleBtn').textContent = '◐';
-}
+// Theme managed by ThemeManager (auto-init on import)
 
 // Font Size Management
 const FONT_SIZES = ['S', 'M', 'L', 'XL'];

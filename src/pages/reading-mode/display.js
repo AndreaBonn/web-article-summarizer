@@ -4,6 +4,8 @@
 import { state, elements } from './state.js';
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { Logger } from '../../utils/core/logger.js';
+import { getLanguageName } from '../../utils/i18n/language-names.js';
+import { CitationFormatter } from '../../utils/ai/citation-formatter.js';
 
 // Display content
 export function displayContent() {
@@ -96,20 +98,8 @@ export function displayContent() {
             web_source: '🌐',
           }[citation.type] || '📌';
 
-        // Type label
-        const typeLabels = {
-          direct_quote: 'Citazione Diretta',
-          indirect_quote: 'Citazione Indiretta',
-          study_reference: 'Riferimento Studio',
-          statistic: 'Statistica',
-          expert_opinion: 'Opinione Esperto',
-          book_reference: 'Riferimento Libro',
-          article_reference: 'Riferimento Articolo',
-          report_reference: 'Riferimento Report',
-          organization_data: 'Dati Organizzazione',
-          web_source: 'Fonte Web',
-        };
-        const typeLabel = typeLabels[citation.type] || 'Citazione';
+        // Type label (delegated to CitationFormatter)
+        const typeLabel = CitationFormatter.getCitationTypeLabel(citation.type);
 
         html += `
           <div class="citation-item">
@@ -174,8 +164,19 @@ function displayArticle(article) {
   html += `</div>`;
   elements.articleText.innerHTML = html;
 
-  // Try iframe FIRST (default)
+  // Try iframe FIRST (default) — validate protocol to prevent javascript:/data: injection
+  const SAFE_PROTOCOLS = ['https:', 'http:'];
+  let iframeSafe = false;
   if (article.url && elements.articleIframe) {
+    try {
+      const parsedUrl = new URL(article.url);
+      iframeSafe = SAFE_PROTOCOLS.includes(parsedUrl.protocol);
+    } catch {
+      iframeSafe = false;
+    }
+  }
+
+  if (iframeSafe) {
     elements.articleIframe.src = article.url;
 
     // Start with iframe view
@@ -464,18 +465,6 @@ function displayQuotesInTab(quotes) {
   if (citationsTab) {
     citationsTab.innerHTML = html;
   }
-}
-
-// Helper — get language name
-function getLanguageName(code) {
-  const languages = {
-    it: 'Italiano',
-    en: 'English',
-    es: 'Español',
-    fr: 'Français',
-    de: 'Deutsch',
-  };
-  return languages[code] || code;
 }
 
 // Show error in both panels

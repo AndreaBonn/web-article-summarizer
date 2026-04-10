@@ -1,7 +1,7 @@
 // Multi-Analysis Page Script
 import { Logger } from '../../utils/core/logger.js';
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
-import { StorageManager } from '../../utils/storage/storage-manager.js';
+import { ThemeManager } from '../../utils/core/theme-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { MultiAnalysisManager } from '../../utils/core/multi-analysis-manager.js';
@@ -492,34 +492,10 @@ async function reopenSavedAnalysis(data) {
   showAnalysisModal();
 }
 
-// Theme Toggle
-async function toggleTheme() {
-  const settings = await StorageManager.getSettings();
-  const newDarkMode = !settings.darkMode;
-
-  settings.darkMode = newDarkMode;
-  await StorageManager.saveSettings(settings);
-
-  if (newDarkMode) {
-    document.body.classList.add('dark-mode');
-    document.getElementById('themeToggleBtn').textContent = '◐';
-    document.getElementById('themeToggleBtn').title = 'Tema Chiaro';
-  } else {
-    document.body.classList.remove('dark-mode');
-    document.getElementById('themeToggleBtn').textContent = '◑';
-    document.getElementById('themeToggleBtn').title = 'Tema Scuro';
-  }
-}
-
-// Inizializza tema
-(async function initTheme() {
-  const settings = await StorageManager.getSettings();
+// Theme managed by ThemeManager (auto-init on import)
+(() => {
   const themeBtn = document.getElementById('themeToggleBtn');
   if (themeBtn) {
-    themeBtn.addEventListener('click', toggleTheme);
-    if (settings.darkMode) {
-      themeBtn.textContent = '◐';
-      themeBtn.title = 'Tema Chiaro';
-    }
+    themeBtn.addEventListener('click', () => ThemeManager.toggle());
   }
 })();

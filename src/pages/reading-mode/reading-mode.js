@@ -4,6 +4,7 @@
 import { state, elements, initElements } from './state.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { Logger } from '../../utils/core/logger.js';
+import { ThemeManager } from '../../utils/core/theme-manager.js';
 
 import {
   displayContent,
@@ -47,8 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup voice event listeners
     setupVoiceEventListeners();
 
-    // Load theme
-    loadTheme();
+    // Theme auto-initialized by ThemeManager import
 
     // Load font size
     loadFontSize();
@@ -135,7 +135,7 @@ function setupEventListeners() {
   });
 
   // Theme toggle
-  elements.themeToggleBtn.addEventListener('click', toggleTheme);
+  elements.themeToggleBtn.addEventListener('click', () => ThemeManager.toggle());
 
   // Copy button
   elements.copyBtn.addEventListener('click', copyAll);
@@ -254,25 +254,7 @@ function startResize(e) {
   document.addEventListener('mouseup', onMouseUp);
 }
 
-// Theme management
-function loadTheme() {
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  if (savedTheme === 'dark') {
-    document.body.classList.add('dark-mode');
-  }
-  updateThemeIcon(savedTheme);
-}
-
-function toggleTheme() {
-  const isDark = document.body.classList.toggle('dark-mode');
-  const newTheme = isDark ? 'dark' : 'light';
-  localStorage.setItem('theme', newTheme);
-  updateThemeIcon(newTheme);
-}
-
-function updateThemeIcon(theme) {
-  elements.themeToggleBtn.textContent = theme === 'dark' ? '◐' : '◑';
-}
+// Theme managed by ThemeManager (auto-init on import)
 
 function showNoDataMessage() {
   elements.articleContent.innerHTML = `

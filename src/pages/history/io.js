@@ -427,6 +427,34 @@ export async function importHistory(event) {
       };
     };
 
+    // Sanitize text fields to prevent stored XSS via malicious backup
+    const sanitizeTextField = (val, maxLen = 50000) => {
+      if (typeof val !== 'string') return typeof val === 'undefined' ? undefined : '';
+      return val.substring(0, maxLen);
+    };
+
+    const sanitizeArticleEntry = (entry) => {
+      if (entry.article && typeof entry.article === 'object') {
+        entry.article.title = sanitizeTextField(entry.article.title, 500);
+        entry.article.content = sanitizeTextField(entry.article.content, 100000);
+        entry.article.excerpt = sanitizeTextField(entry.article.excerpt, 1000);
+      }
+      entry.summary = sanitizeTextField(entry.summary, 50000);
+      if (entry.translation && typeof entry.translation === 'object') {
+        entry.translation.text = sanitizeTextField(entry.translation.text, 100000);
+      } else if (typeof entry.translation === 'string') {
+        entry.translation = sanitizeTextField(entry.translation, 100000);
+      }
+      entry.notes = sanitizeTextField(entry.notes, 10000);
+    };
+
+    const sanitizeMultiAnalysisEntry = (entry) => {
+      if (entry.analysis && typeof entry.analysis === 'object') {
+        entry.analysis.globalSummary = sanitizeTextField(entry.analysis.globalSummary, 100000);
+        entry.analysis.comparison = sanitizeTextField(entry.analysis.comparison, 100000);
+      }
+    };
+
     // Importa articoli singoli
     let importedSingle = 0;
     if (backup.data.singleArticles && Array.isArray(backup.data.singleArticles)) {
@@ -438,6 +466,7 @@ export async function importHistory(event) {
         if (!currentIds.has(article.id)) {
           article.id = crypto.randomUUID();
           article.metadata = sanitizeMetadata(article.metadata);
+          sanitizeArticleEntry(article);
           await HistoryManager.saveSummary(
             article.article,
             article.summary,
@@ -463,6 +492,7 @@ export async function importHistory(event) {
         // Evita duplicati basati su ID
         if (!currentIds.has(analysis.id)) {
           analysis.id = crypto.randomUUID();
+          sanitizeMultiAnalysisEntry(analysis);
           await HistoryManager.saveMultiAnalysis(analysis.analysis, analysis.articles);
           importedMulti++;
         }

@@ -8,9 +8,8 @@ import { InputSanitizer } from '../../utils/security/input-sanitizer.js';
 import { Logger } from '../../utils/core/logger.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
-import { Translator } from '../../utils/core/translator.js';
-import { AdvancedAnalysis } from '../../utils/ai/advanced-analysis.js';
 import { Modal } from '../../utils/core/modal.js';
+import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { translatePDFText, extractPDFCitations, askQuestionPDF } from './pdf.js';
 
 // Translate article
@@ -39,62 +38,65 @@ export async function translateArticle() {
     // Get settings
     const settings = await StorageManager.getSettings();
     const provider = settings.selectedProvider || 'groq';
-    const apiKey = await StorageManager.getApiKey(provider);
-
-    if (!apiKey) {
-      throw new Error('API key non configurata per ' + provider);
-    }
-
     const targetLanguage = state.currentData.metadata?.language || 'it';
 
     let translationResult;
 
     if (state.currentData.isPDF) {
-      // For PDFs, translate the extracted text directly - usa la variabile già estratta
+      // For PDFs, translate directly (needs API key for specialized PDF prompt)
+      const apiKey = await StorageManager.getApiKey(provider);
+      if (!apiKey) {
+        throw new Error('API key non configurata per ' + provider);
+      }
+
       translationResult = await translatePDFText(
         extractedText,
         targetLanguage,
         provider,
         apiKey,
-        false, // Non forzare traduzione
+        false,
       );
 
       // Check if same language detected
       if (translationResult.sameLanguage) {
-        // Show popup with choice
         const choice = await showSameLanguageModal(targetLanguage);
 
         if (choice === 'translate') {
-          // Force translate (reformat)
           translationResult = await translatePDFText(
             state.currentData.extractedText,
             targetLanguage,
             provider,
             apiKey,
-            true, // Forza traduzione/riformattazione
+            true,
           );
         } else if (choice === 'ignore') {
-          // Use original text - usa la variabile già estratta
           translationResult = {
             sameLanguage: false,
             translation: extractedText,
           };
         } else {
-          // User cancelled
           elements.translateBtn.disabled = false;
           elements.translateBtn.textContent = 'Traduci Articolo';
           return;
         }
       }
     } else {
-      // For articles, use Translator
-      const translation = await Translator.translateArticle(
-        state.currentData.article,
+      // For articles, delegate to service worker (API key stays in background)
+      const translateResponse = await chrome.runtime.sendMessage({
+        action: 'translateArticle',
+        article: state.currentData.article,
         targetLanguage,
         provider,
-        apiKey,
-      );
-      translationResult = { sameLanguage: false, translation };
+      });
+
+      if (!translateResponse.success) {
+        throw new Error(translateResponse.error);
+      }
+
+      translationResult = {
+        sameLanguage: false,
+        translation: translateResponse.result.translation,
+      };
     }
 
     // Display translation
@@ -326,16 +328,15 @@ export async function askQuestion() {
     // Get settings
     const settings = await StorageManager.getSettings();
     const provider = settings.selectedProvider || 'groq';
-    const apiKey = await StorageManager.getApiKey(provider);
-
-    if (!apiKey) {
-      throw new Error('API key non configurata per ' + provider);
-    }
 
     let answer;
 
     if (state.currentData.isPDF) {
-      // For PDFs, use extracted text directly
+      // For PDFs, use extracted text directly (needs API key for specialized PDF prompt)
+      const apiKey = await StorageManager.getApiKey(provider);
+      if (!apiKey) {
+        throw new Error('API key non configurata per ' + provider);
+      }
       answer = await askQuestionPDF(
         question,
         state.currentData.extractedText,
@@ -350,7 +351,6 @@ export async function askQuestion() {
         paragraphs: [],
       };
 
-      // Convert content to paragraphs if needed
       if (state.currentData.article.content && !state.currentData.article.paragraphs) {
         const paragraphs = state.currentData.article.content.split('\n\n');
         articleWithParagraphs.paragraphs = paragraphs
@@ -363,15 +363,21 @@ export async function askQuestion() {
         articleWithParagraphs.paragraphs = state.currentData.article.paragraphs;
       }
 
-      // Use AdvancedAnalysis directly (like popup does)
-      answer = await AdvancedAnalysis.askQuestion(
+      // Delegate to service worker (API key stays in background)
+      const qaResponse = await chrome.runtime.sendMessage({
+        action: 'askQuestion',
         question,
-        articleWithParagraphs,
-        state.currentData.summary,
+        article: articleWithParagraphs,
+        summary: state.currentData.summary,
         provider,
-        apiKey,
         settings,
-      );
+      });
+
+      if (!qaResponse.success) {
+        throw new Error(qaResponse.error);
+      }
+
+      answer = qaResponse.result.answer;
     }
 
     // Update answer
@@ -397,32 +403,28 @@ export async function askQuestion() {
 export async function updateDataInStorage() {
   try {
     if (state.currentData.isPDF) {
-      // For PDFs, update in PDF history
-      const result = await chrome.storage.local.get(['pdf_analysis_history']);
-      const pdfHistory = result.pdf_analysis_history || [];
-
-      // Find existing entry by fileHash
-      const existingIndex = pdfHistory.findIndex(
-        (item) => item.fileHash === state.currentData.fileHash,
-      );
-
-      if (existingIndex >= 0) {
-        // Update existing PDF entry
-        pdfHistory[existingIndex] = {
-          ...pdfHistory[existingIndex],
-          analysis: {
-            ...pdfHistory[existingIndex].analysis,
-            translation:
-              state.currentData.translation || pdfHistory[existingIndex].analysis.translation,
-            citations: state.currentData.citations || pdfHistory[existingIndex].analysis.citations,
-            qa: state.currentData.qa || pdfHistory[existingIndex].analysis.qa,
-          },
-          timestamp: Date.now(),
-        };
-
-        await chrome.storage.local.set({ pdf_analysis_history: pdfHistory });
-        Logger.info('Dati PDF aggiornati nella cronologia');
+      // Delegate to HistoryManager (uses correct key 'pdfHistory' and flat structure)
+      const pdfId = state.currentData.id;
+      if (!pdfId) {
+        Logger.warn('PDF senza ID cronologia, aggiornamento saltato');
+        return;
       }
+      if (state.currentData.translation) {
+        const targetLang = state.currentData.metadata?.language || 'it';
+        await HistoryManager.updatePDFWithTranslation(
+          pdfId,
+          state.currentData.translation,
+          targetLang,
+          null,
+        );
+      }
+      if (state.currentData.qa) {
+        await HistoryManager.updatePDFWithQA(pdfId, state.currentData.qa);
+      }
+      if (state.currentData.citations) {
+        await HistoryManager.updatePDFWithCitations(pdfId, state.currentData.citations);
+      }
+      Logger.info('Dati PDF aggiornati nella cronologia');
     } else {
       // For articles, update in article history
       const result = await chrome.storage.local.get(['summaryHistory']);
