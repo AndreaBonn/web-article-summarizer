@@ -17,9 +17,13 @@ vi.mock('@utils/security/input-sanitizer.js', () => ({
 }));
 
 // Mock delle dipendenze non sotto test
-vi.mock('@utils/ai/api-client.js', () => ({
-  APIClient: {
+vi.mock('@utils/ai/api-orchestrator.js', () => ({
+  APIOrchestrator: {
     generateCompletion: vi.fn(),
+  },
+}));
+vi.mock('@utils/ai/content-detector.js', () => ({
+  ContentDetector: {
     detectContentType: vi.fn(() => 'general'),
   },
 }));
@@ -209,9 +213,7 @@ describe('Translator.buildUserPrompt()', () => {
     });
 
     it('test_buildUserPrompt_titolo_sanitizzeraHtmlTag', () => {
-      InputSanitizer.sanitizeForAI.mockImplementation((text) =>
-        text.replace(/<[^>]*>/g, ''),
-      );
+      InputSanitizer.sanitizeForAI.mockImplementation((text) => text.replace(/<[^>]*>/g, ''));
       const article = makeArticle({ title: '<b>Titolo</b> con tag HTML' });
       const prompt = Translator.buildUserPrompt(article, 'en', 'general');
 

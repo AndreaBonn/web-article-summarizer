@@ -1,7 +1,7 @@
 // Multi-Analysis Generators — AI generation functions for multi-article analysis
 // Pure static functions: receive data, return results (no internal state)
 
-import { APIClient } from '../ai/api-client.js';
+import { APIOrchestrator as APIClient } from '../ai/api-orchestrator.js';
 import { parseLLMJson } from '../ai/json-repair.js';
 import { Logger } from './logger.js';
 import {

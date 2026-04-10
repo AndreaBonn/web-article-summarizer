@@ -3,7 +3,7 @@
 // Generazione AI delegata a multi-analysis-generators.js.
 
 import { StorageManager } from '../storage/storage-manager.js';
-import { APIClient } from '../ai/api-client.js';
+import { APIOrchestrator as APIClient } from '../ai/api-orchestrator.js';
 import { Logger } from './logger.js';
 import {
   generateGlobalSummary,

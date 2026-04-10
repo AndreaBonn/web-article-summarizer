@@ -27,8 +27,8 @@ vi.mock('@utils/ai/prompt-registry.js', () => ({
   },
 }));
 
-vi.mock('@utils/ai/api-client.js', () => ({
-  APIClient: {
+vi.mock('@utils/ai/api-orchestrator.js', () => ({
+  APIOrchestrator: {
     generateCompletion: vi.fn(),
   },
 }));
@@ -54,16 +54,14 @@ const ARTICLE_COMPLETO = {
   author: 'Mario Rossi',
   siteName: 'TechNews',
   publishedDate: '2024-01-15',
-  content: 'Primo paragrafo sul tema.\n\nSecondo paragrafo con dati.\n\nTerzo paragrafo conclusivo.',
+  content:
+    'Primo paragrafo sul tema.\n\nSecondo paragrafo con dati.\n\nTerzo paragrafo conclusivo.',
 };
 
 const ARTICLE_CON_PARAGRAPHS = {
   title: 'Studio sui Modelli LLM',
   author: 'Giulia Bianchi',
-  paragraphs: [
-    { text: 'Introduzione allo studio.' },
-    { text: 'Metodologia della ricerca.' },
-  ],
+  paragraphs: [{ text: 'Introduzione allo studio.' }, { text: 'Metodologia della ricerca.' }],
 };
 
 // ---------------------------------------------------------------------------
@@ -184,9 +182,7 @@ describe('CitationExtractor.parseCitations()', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default: findParagraphForCitation restituisce il paragrafo originale
-    CitationMatcher.findParagraphForCitation.mockImplementation(
-      (citation) => citation.paragraph,
-    );
+    CitationMatcher.findParagraphForCitation.mockImplementation((citation) => citation.paragraph);
   });
 
   describe('risposta JSON valida', () => {
@@ -341,9 +337,9 @@ describe('CitationExtractor.parseCitations()', () => {
         throw new Error('No valid JSON found');
       });
 
-      expect(() =>
-        CitationExtractor.parseCitations('testo non json', ARTICLE_COMPLETO),
-      ).toThrow('Errore nel parsing delle citazioni');
+      expect(() => CitationExtractor.parseCitations('testo non json', ARTICLE_COMPLETO)).toThrow(
+        'Errore nel parsing delle citazioni',
+      );
     });
 
     it('test_parseCitations_erroreParseLLMJson_messaggioErroreIncludeOriginale', () => {
@@ -351,9 +347,9 @@ describe('CitationExtractor.parseCitations()', () => {
         throw new Error('Unbalanced brackets');
       });
 
-      expect(() =>
-        CitationExtractor.parseCitations('{{malformed', ARTICLE_COMPLETO),
-      ).toThrow('Unbalanced brackets');
+      expect(() => CitationExtractor.parseCitations('{{malformed', ARTICLE_COMPLETO)).toThrow(
+        'Unbalanced brackets',
+      );
     });
   });
 });

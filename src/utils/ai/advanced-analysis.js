@@ -1,5 +1,5 @@
 // Advanced Analysis - Q&A e Bias Detection
-import { APIClient } from './api-client.js';
+import { APIOrchestrator as APIClient } from './api-orchestrator.js';
 
 export class AdvancedAnalysis {
   // Q&A System — delegates to APIClient.generateCompletion() for all providers

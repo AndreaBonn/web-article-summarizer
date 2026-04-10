@@ -5,7 +5,7 @@ import { PDFCacheManager } from './pdf-cache-manager.js';
 import { StorageManager } from '../storage/storage-manager.js';
 import { getLanguageNameForPrompt } from '../i18n/language-names.js';
 import { parseLLMJson } from '../ai/json-repair.js';
-import { APIClient } from '../ai/api-client.js';
+import { APIOrchestrator as APIClient } from '../ai/api-orchestrator.js';
 
 export class PDFAnalyzer {
   constructor() {

@@ -2,7 +2,7 @@
 // Funzioni helper per operazioni AI su documenti PDF:
 // traduzione, estrazione citazioni, Q&A
 
-import { APIClient } from '../../utils/ai/api-client.js';
+import { APIOrchestrator as APIClient } from '../../utils/ai/api-orchestrator.js';
 import { parseLLMJson } from '../../utils/ai/json-repair.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { Logger } from '../../utils/core/logger.js';

@@ -18,8 +18,8 @@ global.chrome = {
   },
 };
 
-vi.mock('@utils/ai/api-client.js', () => ({
-  APIClient: { callAPI: vi.fn() },
+vi.mock('@utils/ai/api-orchestrator.js', () => ({
+  APIOrchestrator: { callAPI: vi.fn() },
 }));
 vi.mock('@utils/core/logger.js', () => ({
   Logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },

@@ -5,6 +5,7 @@ import { state, elements, initElements } from './state.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { Logger } from '../../utils/core/logger.js';
 import { ThemeManager } from '../../utils/core/theme-manager.js';
+import { eventCleanup } from '../../utils/core/event-cleanup.js';
 
 import {
   displayContent,
@@ -136,55 +137,57 @@ async function loadData() {
 // Setup event listeners
 function setupEventListeners() {
   // Back button
-  elements.backBtn.addEventListener('click', () => {
+  eventCleanup.addEventListener(elements.backBtn, 'click', () => {
     window.close();
   });
 
   // Theme toggle
-  elements.themeToggleBtn.addEventListener('click', () => ThemeManager.toggle());
+  eventCleanup.addEventListener(elements.themeToggleBtn, 'click', () => ThemeManager.toggle());
 
   // Copy button
-  elements.copyBtn.addEventListener('click', copyAll);
+  eventCleanup.addEventListener(elements.copyBtn, 'click', copyAll);
 
   // Export button
-  elements.exportBtn.addEventListener('click', exportToPDF);
+  eventCleanup.addEventListener(elements.exportBtn, 'click', exportToPDF);
 
   // View toggle buttons
   if (elements.viewIframeBtn) {
-    elements.viewIframeBtn.addEventListener('click', () => switchArticleView('iframe'));
+    eventCleanup.addEventListener(elements.viewIframeBtn, 'click', () =>
+      switchArticleView('iframe'),
+    );
   }
   if (elements.viewTextBtn) {
-    elements.viewTextBtn.addEventListener('click', () => switchArticleView('text'));
+    eventCleanup.addEventListener(elements.viewTextBtn, 'click', () => switchArticleView('text'));
   }
 
   // Summary tabs
   document.querySelectorAll('.summary-tab').forEach((tab) => {
-    tab.addEventListener('click', () => switchSummaryTab(tab.dataset.tab));
+    eventCleanup.addEventListener(tab, 'click', () => switchSummaryTab(tab.dataset.tab));
   });
 
   // Translation button
   if (elements.translateBtn) {
-    elements.translateBtn.addEventListener('click', translateArticle);
+    eventCleanup.addEventListener(elements.translateBtn, 'click', translateArticle);
   }
 
   // Citations button
   if (elements.extractCitationsBtn) {
-    elements.extractCitationsBtn.addEventListener('click', extractCitations);
+    eventCleanup.addEventListener(elements.extractCitationsBtn, 'click', extractCitations);
   }
 
   // Q&A
   if (elements.qaAskBtn) {
-    elements.qaAskBtn.addEventListener('click', askQuestion);
+    eventCleanup.addEventListener(elements.qaAskBtn, 'click', askQuestion);
   }
   if (elements.qaInput) {
-    elements.qaInput.addEventListener('keypress', (e) => {
+    eventCleanup.addEventListener(elements.qaInput, 'keypress', (e) => {
       if (e.key === 'Enter') askQuestion();
     });
   }
 
   // Scroll sync
   let scrollTimeout;
-  elements.articleContent.addEventListener('scroll', () => {
+  eventCleanup.addEventListener(elements.articleContent, 'scroll', () => {
     if (!state.syncScroll) return;
 
     clearTimeout(scrollTimeout);
@@ -193,7 +196,7 @@ function setupEventListeners() {
     }, 50);
   });
 
-  elements.summaryContent.addEventListener('scroll', () => {
+  eventCleanup.addEventListener(elements.summaryContent, 'scroll', () => {
     if (!state.syncScroll) return;
 
     clearTimeout(scrollTimeout);
@@ -203,28 +206,28 @@ function setupEventListeners() {
   });
 
   // Resizable divider
-  elements.divider.addEventListener('mousedown', startResize);
+  eventCleanup.addEventListener(elements.divider, 'mousedown', startResize);
 
   // Voice controls
   if (elements.ttsPlayBtn) {
-    elements.ttsPlayBtn.addEventListener('click', handleTTSPlay);
+    eventCleanup.addEventListener(elements.ttsPlayBtn, 'click', handleTTSPlay);
   }
   if (elements.ttsPauseBtn) {
-    elements.ttsPauseBtn.addEventListener('click', handleTTSPause);
+    eventCleanup.addEventListener(elements.ttsPauseBtn, 'click', handleTTSPause);
   }
   if (elements.ttsStopBtn) {
-    elements.ttsStopBtn.addEventListener('click', handleTTSStop);
+    eventCleanup.addEventListener(elements.ttsStopBtn, 'click', handleTTSStop);
   }
   if (elements.qaVoiceBtn) {
-    elements.qaVoiceBtn.addEventListener('click', handleVoiceInput);
+    eventCleanup.addEventListener(elements.qaVoiceBtn, 'click', handleVoiceInput);
   }
 
   // Font size controls
   if (elements.fontIncreaseBtn) {
-    elements.fontIncreaseBtn.addEventListener('click', increaseFontSize);
+    eventCleanup.addEventListener(elements.fontIncreaseBtn, 'click', increaseFontSize);
   }
   if (elements.fontDecreaseBtn) {
-    elements.fontDecreaseBtn.addEventListener('click', decreaseFontSize);
+    eventCleanup.addEventListener(elements.fontDecreaseBtn, 'click', decreaseFontSize);
   }
 }
 

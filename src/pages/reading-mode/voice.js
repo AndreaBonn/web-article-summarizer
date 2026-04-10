@@ -11,6 +11,7 @@ import {
   handleTTSPause as helperTTSPause,
   handleTTSStop as helperTTSStop,
 } from '../../shared/voice-page-helper.js';
+import { eventCleanup } from '../../utils/core/event-cleanup.js';
 
 // ============================================
 // VOICE CONTROLS
@@ -29,7 +30,7 @@ export function setupVoiceEventListeners() {
   });
 
   // STT events
-  window.addEventListener('stt:started', () => {
+  eventCleanup.addEventListener(window, 'stt:started', () => {
     if (elements.qaVoiceBtn) {
       elements.qaVoiceBtn.classList.add('listening');
       elements.qaVoiceBtn.textContent = 'Voce';
@@ -37,7 +38,7 @@ export function setupVoiceEventListeners() {
     }
   });
 
-  window.addEventListener('stt:interim', (event) => {
+  eventCleanup.addEventListener(window, 'stt:interim', (event) => {
     if (elements.qaInput) {
       elements.qaInput.value = event.detail.transcript;
       elements.qaInput.style.fontStyle = 'italic';
@@ -45,7 +46,7 @@ export function setupVoiceEventListeners() {
     }
   });
 
-  window.addEventListener('stt:result', (event) => {
+  eventCleanup.addEventListener(window, 'stt:result', (event) => {
     if (elements.qaInput) {
       elements.qaInput.value = event.detail.transcript;
       elements.qaInput.style.fontStyle = 'normal';
@@ -58,7 +59,7 @@ export function setupVoiceEventListeners() {
     }
   });
 
-  window.addEventListener('stt:ended', () => {
+  eventCleanup.addEventListener(window, 'stt:ended', () => {
     if (elements.qaVoiceBtn) {
       elements.qaVoiceBtn.classList.remove('listening');
       elements.qaVoiceBtn.textContent = 'Voce';
@@ -66,7 +67,7 @@ export function setupVoiceEventListeners() {
     }
   });
 
-  window.addEventListener('stt:error', (event) => {
+  eventCleanup.addEventListener(window, 'stt:error', (event) => {
     Logger.error('STT Error:', event.detail);
     if (elements.qaVoiceBtn) {
       elements.qaVoiceBtn.classList.remove('listening');

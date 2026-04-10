@@ -1,6 +1,6 @@
 // Background Service Worker - Handles API calls
 import { StorageManager } from '../utils/storage/storage-manager.js';
-import { APIClient } from '../utils/ai/api-client.js';
+import { APIOrchestrator as APIClient } from '../utils/ai/api-orchestrator.js';
 import { CacheManager } from '../utils/storage/cache-manager.js';
 import { AutoMaintenance } from '../utils/core/auto-maintenance.js';
 import { CitationExtractor } from '../utils/ai/citation-extractor.js';
