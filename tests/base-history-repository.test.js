@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock chrome.storage.local
+// Mock chrome.storage.local — simula serializzazione reale (JSON round-trip)
 const store = {};
 global.chrome = {
   storage: {
@@ -8,12 +8,14 @@ global.chrome = {
       get: vi.fn((keys) => {
         const result = {};
         for (const key of keys) {
-          if (store[key] !== undefined) result[key] = store[key];
+          if (store[key] !== undefined) result[key] = JSON.parse(JSON.stringify(store[key]));
         }
         return Promise.resolve(result);
       }),
       set: vi.fn((data) => {
-        Object.assign(store, data);
+        for (const [key, value] of Object.entries(data)) {
+          store[key] = JSON.parse(JSON.stringify(value));
+        }
         return Promise.resolve();
       }),
     },
@@ -65,17 +67,27 @@ describe('BaseHistoryRepository', () => {
 
       const items = await repo.getAll();
       expect(items).toHaveLength(5);
+      // Most recent 5 entries kept (Article 6 down to Article 2)
       expect(items[0].title).toBe('Article 6');
       expect(items[4].title).toBe('Article 2');
     });
 
     it('throws on QUOTA_BYTES error', async () => {
-      chrome.storage.local.set.mockRejectedValueOnce(
-        new Error('QUOTA_BYTES quota exceeded'),
-      );
+      chrome.storage.local.set.mockRejectedValueOnce(new Error('QUOTA_BYTES quota exceeded'));
 
-      await expect(repo.save({ title: 'Big' })).rejects.toThrow(
-        'Spazio di archiviazione esaurito',
+      await expect(repo.save({ title: 'Big' })).rejects.toThrow('Spazio di archiviazione esaurito');
+    });
+
+    it('actually persists data (not just in-memory mutation)', async () => {
+      await repo.save({ title: 'Persisted' });
+
+      // Verify chrome.storage.local.set was called with the data
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          testHistory: expect.arrayContaining([
+            expect.objectContaining({ title: 'Persisted', id: 'uuid-1' }),
+          ]),
+        }),
       );
     });
   });
@@ -92,6 +104,16 @@ describe('BaseHistoryRepository', () => {
 
       const items = await repo.getAll();
       expect(items).toHaveLength(2);
+    });
+
+    it('returns a copy, not a reference to the store', async () => {
+      await repo.save({ title: 'Original' });
+
+      const items1 = await repo.getAll();
+      items1[0].title = 'Mutated';
+
+      const items2 = await repo.getAll();
+      expect(items2[0].title).toBe('Original');
     });
   });
 
@@ -135,7 +157,7 @@ describe('BaseHistoryRepository', () => {
   });
 
   describe('toggleFavorite', () => {
-    it('toggles favorite from false to true', async () => {
+    it('toggles favorite from undefined to true', async () => {
       const id = await repo.save({ title: 'Article' });
 
       const result = await repo.toggleFavorite(id);
@@ -148,8 +170,8 @@ describe('BaseHistoryRepository', () => {
     it('toggles favorite from true to false', async () => {
       const id = await repo.save({ title: 'Article' });
 
-      await repo.toggleFavorite(id);
-      const result = await repo.toggleFavorite(id);
+      await repo.toggleFavorite(id); // false -> true
+      const result = await repo.toggleFavorite(id); // true -> false
 
       expect(result).toBe(false);
       const entry = await repo.getById(id);
@@ -159,6 +181,15 @@ describe('BaseHistoryRepository', () => {
     it('returns false for non-existent id', async () => {
       const result = await repo.toggleFavorite('non-existent');
       expect(result).toBe(false);
+    });
+
+    it('persists the toggle (survives re-read)', async () => {
+      const id = await repo.save({ title: 'Article' });
+      await repo.toggleFavorite(id);
+
+      // Re-read from storage (simulates new session)
+      const freshEntry = await repo.getById(id);
+      expect(freshEntry.favorite).toBe(true);
     });
   });
 
@@ -173,6 +204,7 @@ describe('BaseHistoryRepository', () => {
       const items = await repo.getAll();
       expect(items).toHaveLength(1);
       expect(items[0].title).toBe('Keep');
+      expect(items[0].favorite).toBe(true);
     });
 
     it('removes all entries when none are favorited', async () => {
@@ -187,11 +219,12 @@ describe('BaseHistoryRepository', () => {
   });
 
   describe('updateField', () => {
-    it('updates a field by entry id', async () => {
+    it('updates a field by entry id and persists it', async () => {
       const id = await repo.save({ title: 'Article', notes: null });
 
       await repo.updateField(id, 'notes', 'My notes');
 
+      // Re-read from storage to verify persistence
       const entry = await repo.getById(id);
       expect(entry.notes).toBe('My notes');
     });
@@ -221,16 +254,24 @@ describe('BaseHistoryRepository', () => {
       const found = await repo.findByField('article.url', 'https://missing.com');
       expect(found).toBeUndefined();
     });
+
+    it('handles null in nested path gracefully', async () => {
+      await repo.save({ article: null, title: 'Null article' });
+
+      const found = await repo.findByField('article.url', 'https://any.com');
+      expect(found).toBeUndefined();
+    });
   });
 
   describe('updateByField', () => {
-    it('updates entry found by nested field path', async () => {
+    it('updates entry found by nested field path and persists', async () => {
       await repo.save({ article: { url: 'https://example.com' }, translation: null });
 
       await repo.updateByField('article.url', 'https://example.com', 'translation', {
         text: 'Tradotto',
       });
 
+      // Re-read from storage
       const items = await repo.getAll();
       expect(items[0].translation.text).toBe('Tradotto');
     });

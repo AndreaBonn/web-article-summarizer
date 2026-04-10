@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock chrome.storage.local
+// Mock chrome.storage.local — simula serializzazione reale (JSON round-trip)
 const store = {};
 global.chrome = {
   storage: {
@@ -8,12 +8,14 @@ global.chrome = {
       get: vi.fn((keys) => {
         const result = {};
         for (const key of keys) {
-          if (store[key] !== undefined) result[key] = store[key];
+          if (store[key] !== undefined) result[key] = JSON.parse(JSON.stringify(store[key]));
         }
         return Promise.resolve(result);
       }),
       set: vi.fn((data) => {
-        Object.assign(store, data);
+        for (const [key, value] of Object.entries(data)) {
+          store[key] = JSON.parse(JSON.stringify(value));
+        }
         return Promise.resolve();
       }),
     },
@@ -270,18 +272,8 @@ describe('HistoryManager', () => {
     });
 
     it('searchPDFHistory finds by filename', async () => {
-      await HistoryManager.savePDFAnalysis(
-        { ...mockPdf, name: 'research.pdf' },
-        'S1',
-        [],
-        pdfMeta,
-      );
-      await HistoryManager.savePDFAnalysis(
-        { ...mockPdf, name: 'recipe.pdf' },
-        'S2',
-        [],
-        pdfMeta,
-      );
+      await HistoryManager.savePDFAnalysis({ ...mockPdf, name: 'research.pdf' }, 'S1', [], pdfMeta);
+      await HistoryManager.savePDFAnalysis({ ...mockPdf, name: 'recipe.pdf' }, 'S2', [], pdfMeta);
 
       const results = await HistoryManager.searchPDFHistory('research');
       expect(results).toHaveLength(1);

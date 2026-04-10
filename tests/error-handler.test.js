@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock chrome.storage.local
+// Mock chrome.storage.local — simula serializzazione reale (JSON round-trip)
 const store = {};
 global.chrome = {
   storage: {
@@ -8,12 +8,14 @@ global.chrome = {
       get: vi.fn((keys) => {
         const result = {};
         for (const key of keys) {
-          if (store[key] !== undefined) result[key] = store[key];
+          if (store[key] !== undefined) result[key] = JSON.parse(JSON.stringify(store[key]));
         }
         return Promise.resolve(result);
       }),
       set: vi.fn((data) => {
-        Object.assign(store, data);
+        for (const [key, value] of Object.entries(data)) {
+          store[key] = JSON.parse(JSON.stringify(value));
+        }
         return Promise.resolve();
       }),
     },
@@ -67,9 +69,7 @@ describe('ErrorHandler', () => {
     });
 
     it('maps 403/Forbidden to access denied', () => {
-      expect(ErrorHandler.getErrorMessage(new Error('403 Forbidden'))).toContain(
-        'Accesso negato',
-      );
+      expect(ErrorHandler.getErrorMessage(new Error('403 Forbidden'))).toContain('Accesso negato');
     });
 
     it('maps 500 to server error', () => {
@@ -103,9 +103,9 @@ describe('ErrorHandler', () => {
     });
 
     it('maps connection errors to reload message', () => {
-      expect(
-        ErrorHandler.getErrorMessage(new Error('Could not establish connection')),
-      ).toContain('Ricarica la pagina');
+      expect(ErrorHandler.getErrorMessage(new Error('Could not establish connection'))).toContain(
+        'Ricarica la pagina',
+      );
     });
 
     it('maps QUOTA_BYTES to storage full message', () => {
@@ -141,17 +141,23 @@ describe('ErrorHandler', () => {
       expect(store.errorLogs[0].message).not.toContain('429');
     });
 
-    it('enforces max 50 error logs', async () => {
+    it('enforces max 50 error logs by shifting oldest', async () => {
+      // Pre-fill with 50 entries — index 0 is "Error-0" (first inserted)
       store.errorLogs = Array.from({ length: 50 }, (_, i) => ({
-        message: `Error ${i}`,
-        timestamp: Date.now() - i * 1000,
+        message: `Error-${i}`,
+        timestamp: Date.now() - (50 - i) * 1000,
       }));
 
       await ErrorHandler.logError(new Error('New error'));
 
       expect(store.errorLogs).toHaveLength(50);
-      // First (oldest) was shifted out
-      expect(store.errorLogs[49].message).not.toContain('Error 0');
+      // "Error-0" was at position 0 and should have been shifted out
+      const allMessages = store.errorLogs.map((l) => l.message);
+      expect(allMessages).not.toContain('Error-0');
+      // New entry is at the end (pushed)
+      expect(allMessages[49]).toContain('errore imprevisto'); // getErrorMessage('New error')
+      // "Error-1" should now be at position 0
+      expect(allMessages[0]).toBe('Error-1');
     });
 
     it('survives chrome storage failures gracefully', async () => {
