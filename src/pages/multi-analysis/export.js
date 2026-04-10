@@ -20,7 +20,11 @@ export async function exportPdf() {
     );
   } catch (error) {
     Logger.error('Errore PDF:', error);
-    await Modal.alert("Errore durante l'esportazione PDF: " + error.message, 'Errore', '❌');
+    await Modal.alert(
+      I18n.t('multi.exportError', { type: 'PDF' }) + error.message,
+      I18n.t('multi.errorTitle'),
+      '❌',
+    );
   }
 }
 
@@ -38,7 +42,11 @@ export async function exportMarkdown() {
     );
   } catch (error) {
     Logger.error('Errore Markdown:', error);
-    await Modal.alert("Errore durante l'esportazione Markdown: " + error.message, 'Errore', '❌');
+    await Modal.alert(
+      I18n.t('multi.exportError', { type: 'Markdown' }) + error.message,
+      I18n.t('multi.errorTitle'),
+      '❌',
+    );
   }
 }
 
@@ -90,7 +98,11 @@ export async function sendEmail() {
     await EmailManager.showEmailModal(content, 'Analisi Multi Articolo');
   } catch (error) {
     Logger.error('Errore email:', error);
-    await Modal.alert("Errore durante l'invio email: " + error.message, 'Errore', '❌');
+    await Modal.alert(
+      I18n.t('multi.exportError', { type: 'Email' }) + error.message,
+      I18n.t('multi.errorTitle'),
+      '❌',
+    );
   }
 }
 

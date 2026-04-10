@@ -41,17 +41,24 @@ export class CacheManager {
   }
 
   /**
-   * Hash semplice di un oggetto per generare chiave cache
+   * Hash FNV-1a a 52-bit di un oggetto per generare chiave cache.
+   * Usa due hash indipendenti (FNV-1a con seed diversi) combinati in una chiave
+   * a 52 bit per ridurre drasticamente le collisioni rispetto a djb2 a 32 bit.
    */
   hashObject(obj) {
     const str = JSON.stringify(obj);
-    let hash = 0;
+    let h1 = 0x811c9dc5;
+    let h2 = 0x01000193;
     for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32bit integer
+      const c = str.charCodeAt(i);
+      h1 ^= c;
+      h1 = Math.imul(h1, 0x01000193);
+      h2 ^= c;
+      h2 = Math.imul(h2, 0x811c9dc5);
     }
-    return 'cache_' + Math.abs(hash).toString(36);
+    const hi = (Math.abs(h1) >>> 0).toString(36);
+    const lo = (Math.abs(h2) >>> 0).toString(36);
+    return `cache_${hi}_${lo}`;
   }
 
   /**

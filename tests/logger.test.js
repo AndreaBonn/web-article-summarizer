@@ -8,13 +8,13 @@ describe('Logger', () => {
   });
 
   it('logs debug messages when level is debug', () => {
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const spy = vi.spyOn(console, 'debug').mockImplementation(() => {});
     Logger.debug('test message');
     expect(spy).toHaveBeenCalledWith('test message');
   });
 
   it('logs info messages when level is debug', () => {
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const spy = vi.spyOn(console, 'info').mockImplementation(() => {});
     Logger.info('info message');
     expect(spy).toHaveBeenCalledWith('info message');
   });
@@ -33,38 +33,42 @@ describe('Logger', () => {
 
   it('suppresses debug when level is info', () => {
     Logger.level = 'info';
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const spy = vi.spyOn(console, 'debug').mockImplementation(() => {});
     Logger.debug('should not appear');
     expect(spy).not.toHaveBeenCalled();
   });
 
   it('suppresses debug and info when level is warn', () => {
     Logger.level = 'warn';
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     Logger.debug('no');
     Logger.info('no');
     Logger.warn('yes');
-    expect(logSpy).not.toHaveBeenCalled();
+    expect(debugSpy).not.toHaveBeenCalled();
+    expect(infoSpy).not.toHaveBeenCalled();
     expect(warnSpy).toHaveBeenCalledWith('yes');
   });
 
   it('suppresses everything when level is silent', () => {
     Logger.level = 'silent';
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     Logger.debug('no');
     Logger.info('no');
     Logger.warn('no');
     Logger.error('no');
-    expect(logSpy).not.toHaveBeenCalled();
+    expect(debugSpy).not.toHaveBeenCalled();
+    expect(infoSpy).not.toHaveBeenCalled();
     expect(warnSpy).not.toHaveBeenCalled();
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
   it('passes multiple arguments through', () => {
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const spy = vi.spyOn(console, 'info').mockImplementation(() => {});
     Logger.info('msg', { data: 1 }, [2, 3]);
     expect(spy).toHaveBeenCalledWith('msg', { data: 1 }, [2, 3]);
   });

@@ -316,5 +316,29 @@
   "multi.emailQASection": "## Q&A",
   "multi.emailQuestion": "**Q{index}:**",
   "multi.emailAnswer": "**A{index}:**",
-  "multi.copyError": "Copy error"
+  "multi.copyError": "Copy error",
+
+  "voice.notInitialized": "Voice Controller not initialized",
+  "voice.recognitionError": "Voice Recognition Error",
+  "voice.noVoicesAvailable": "No voices available for this language",
+  "voice.selectTitle": "Select TTS Voice",
+  "voice.close": "Close",
+
+  "citations.fromCache": "From cache",
+
+  "common.copyError": "Unable to copy to clipboard",
+  "common.invalidInput": "Invalid Input",
+  "common.actionIrreversible": "This action cannot be undone.",
+  "common.titleUnavailable": "Title unavailable",
+  "common.analysisNotFound": "Analysis not found",
+  "common.loading": "Loading...",
+
+  "qa.invalidQuestion": "The question is not valid: ",
+
+  "translation.textUnavailable": "Text not available for translation",
+  "translation.translateArticle": "Translate Article",
+
+  "settings.loadError": "Error during loading. Reload the page.",
+
+  "pdf.invalidFile": "Invalid file. Please upload a PDF file."
 }
