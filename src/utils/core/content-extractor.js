@@ -69,11 +69,15 @@ export class ContentExtractor {
         }
       }
     } catch (error) {
-      Logger.warn('Readability fallito:', error);
+      // Re-throw semantic errors (the user needs to know)
+      if (error.message === 'Article too short') throw error;
+      Logger.warn('Readability fallito, uso estrazione manuale:', error);
     }
 
-    // Fallback: estrazione manuale
-    return this.fallbackExtraction(document);
+    // Fallback: estrazione manuale — segnala il degrado al chiamante
+    const result = this.fallbackExtraction(document);
+    result.degraded = true;
+    return result;
   }
 
   static processReadabilityArticle(article, document) {

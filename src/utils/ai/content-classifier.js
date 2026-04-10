@@ -19,7 +19,17 @@ export class ContentClassifier {
       const aiResult = await this.aiClassification(article);
       return { ...aiResult, method: 'ai' };
     } catch (error) {
-      Logger.error('Errore classificazione AI:', error);
+      const isNetworkOrApi =
+        error.message?.includes('fetch') ||
+        error.message?.includes('Network') ||
+        error.message?.includes('API') ||
+        error.message?.includes('timeout') ||
+        error.message?.includes('401') ||
+        error.message?.includes('429');
+      Logger.error(
+        `Errore classificazione AI (${isNetworkOrApi ? 'rete/API' : 'interno'}):`,
+        error,
+      );
       return { category: 'general', method: 'fallback', error: error.message };
     }
   }
@@ -82,22 +92,26 @@ export class ContentClassifier {
    * Salva la correzione dell'utente per migliorare l'euristica
    */
   static async saveUserCorrection(articleUrl, detectedCategory, userCategory) {
-    const result = await chrome.storage.local.get(['classificationCorrections']);
-    const corrections = result.classificationCorrections || [];
+    try {
+      const result = await chrome.storage.local.get(['classificationCorrections']);
+      const corrections = result.classificationCorrections || [];
 
-    corrections.push({
-      url: articleUrl,
-      detected: detectedCategory,
-      corrected: userCategory,
-      timestamp: Date.now(),
-    });
+      corrections.push({
+        url: articleUrl,
+        detected: detectedCategory,
+        corrected: userCategory,
+        timestamp: Date.now(),
+      });
 
-    // Mantieni solo le ultime 100 correzioni
-    if (corrections.length > 100) {
-      corrections.shift();
+      // Mantieni solo le ultime 100 correzioni
+      if (corrections.length > 100) {
+        corrections.shift();
+      }
+
+      await chrome.storage.local.set({ classificationCorrections: corrections });
+    } catch (error) {
+      Logger.warn('Impossibile salvare correzione classificazione:', error);
     }
-
-    await chrome.storage.local.set({ classificationCorrections: corrections });
   }
 
   /**

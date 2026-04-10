@@ -5,6 +5,11 @@ export const Modal = {
   show(options) {
     return new Promise((resolve) => {
       const modal = document.getElementById('customModal');
+      if (!modal) {
+        // Modal HTML non presente nella pagina — fallback silenzioso
+        resolve(false);
+        return;
+      }
       const icon = document.getElementById('modalIcon');
       const title = document.getElementById('modalTitle');
       const message = document.getElementById('modalMessage');
@@ -13,17 +18,21 @@ export const Modal = {
 
       // Set content
       icon.textContent = options.icon || '\u2139\uFE0F';
-      title.textContent = options.title || (typeof I18n !== 'undefined' ? I18n.t('modal.defaultTitle') : 'Info');
+      title.textContent =
+        options.title || (typeof I18n !== 'undefined' ? I18n.t('modal.defaultTitle') : 'Info');
       message.textContent = options.message || '';
 
       // Configure buttons
       if (options.type === 'confirm') {
         cancelBtn.classList.remove('hidden');
-        cancelBtn.textContent = options.cancelText || (typeof I18n !== 'undefined' ? I18n.t('modal.cancel') : 'Annulla');
-        confirmBtn.textContent = options.confirmText || (typeof I18n !== 'undefined' ? I18n.t('modal.confirm') : 'OK');
+        cancelBtn.textContent =
+          options.cancelText || (typeof I18n !== 'undefined' ? I18n.t('modal.cancel') : 'Annulla');
+        confirmBtn.textContent =
+          options.confirmText || (typeof I18n !== 'undefined' ? I18n.t('modal.confirm') : 'OK');
       } else {
         cancelBtn.classList.add('hidden');
-        confirmBtn.textContent = options.confirmText || (typeof I18n !== 'undefined' ? I18n.t('modal.confirm') : 'OK');
+        confirmBtn.textContent =
+          options.confirmText || (typeof I18n !== 'undefined' ? I18n.t('modal.confirm') : 'OK');
       }
 
       // Show modal
@@ -58,7 +67,14 @@ export const Modal = {
   },
 
   confirm(message, title = 'Conferma', icon = '\u2753') {
-    return this.show({ type: 'confirm', title, message, icon, confirmText: 'OK', cancelText: 'Annulla' });
+    return this.show({
+      type: 'confirm',
+      title,
+      message,
+      icon,
+      confirmText: 'OK',
+      cancelText: 'Annulla',
+    });
   },
 
   success(message, title = 'Successo') {
@@ -71,5 +87,5 @@ export const Modal = {
 
   warning(message, title = 'Attenzione') {
     return this.show({ type: 'alert', title, message, icon: '\u26A0\uFE0F', confirmText: 'OK' });
-  }
+  },
 };

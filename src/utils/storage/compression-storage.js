@@ -42,10 +42,7 @@ export class CompressionStorage extends CompressionCore {
       };
     } catch (error) {
       Logger.error('Errore nel salvare dati compressi:', error);
-      return {
-        success: false,
-        error: error.message,
-      };
+      throw new Error(`Salvataggio compresso fallito: ${error.message}`, { cause: error });
     }
   }
 
@@ -85,8 +82,8 @@ export class CompressionStorage extends CompressionCore {
         },
       };
     } catch (error) {
-      Logger.error('Errore nel caricare dati compressi:', error);
-      return null;
+      Logger.error('Errore nel caricare dati compressi (possibile corruzione):', error);
+      throw new Error(`Dati compressi corrotti o illeggibili: ${error.message}`, { cause: error });
     }
   }
 

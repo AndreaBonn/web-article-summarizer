@@ -110,7 +110,7 @@ export class ErrorHandler {
 
       const entry = {
         message: this.getErrorMessage(error),
-        originalMessage: error.message,
+        originalMessage: (error.message || '').substring(0, 200),
         errorName: error.name,
         context,
         timestamp: Date.now(),
@@ -198,18 +198,23 @@ export class ErrorHandler {
    * Pulisci log errori
    */
   static async clearErrorLogs() {
-    await chrome.storage.local.remove(['errorLogs']);
+    try {
+      await chrome.storage.local.remove(['errorLogs']);
+    } catch (error) {
+      Logger.warn('Impossibile pulire log errori:', error);
+    }
   }
 
   /**
-   * Wrapper per try-catch con gestione automatica errori
+   * Wrapper per try-catch con gestione automatica errori.
+   * Mostra l'errore all'utente e lo ri-propaga al chiamante.
    */
-  static async handleAsync(asyncFn, context = '', fallbackValue = null) {
+  static async handleAsync(asyncFn, context = '') {
     try {
       return await asyncFn();
     } catch (error) {
       await this.showError(error, context);
-      return fallbackValue;
+      throw error;
     }
   }
 }

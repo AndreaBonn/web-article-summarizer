@@ -53,6 +53,13 @@ export class ResponseParser {
       });
     }
 
+    if (keyPoints.length === 0 && keyPointsText.trim().length > 0) {
+      Logger.warn(
+        'parseKeyPointsResponse: nessun punto chiave estratto dalla regex. Raw:',
+        keyPointsText.substring(0, 100),
+      );
+    }
+
     return keyPoints;
   }
 }

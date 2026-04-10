@@ -16,7 +16,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/manifest-v3-blue" alt="Manifest V3" />
   <img src="https://img.shields.io/badge/version-2.2.0-green" alt="Version" />
-  <img src="https://img.shields.io/badge/license-MIT-yellow" alt="License" />
+  <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License" />
 </p>
 
 ---
@@ -33,6 +33,7 @@
 - [Development](#development)
 - [Project Structure](#project-structure)
 - [Permissions](#permissions)
+- [Security](#security)
 - [Contributing](#contributing)
 - [Author](#author)
 
@@ -316,6 +317,16 @@ API calls are made directly to provider endpoints. No data is sent to third-part
 
 ---
 
+## Security
+
+This extension implements a comprehensive, multi-layered security architecture including XSS prevention, prompt injection defense (5 languages), strict Content Security Policy, iframe sandboxing, and more.
+
+For the full security overview, see **[SECURITY.md](SECURITY.md)**.
+
+To report a vulnerability, please follow the [responsible disclosure process](SECURITY.md#reporting-a-vulnerability).
+
+---
+
 ## Contributing
 
 Contributions are welcome. Please:
@@ -338,4 +349,6 @@ Make sure all tests pass and linting is clean before submitting.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
+
+If you use or redistribute this software, you must retain the copyright notice and provide attribution to the original author.

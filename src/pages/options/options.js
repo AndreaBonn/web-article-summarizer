@@ -73,21 +73,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadSettings() {
-  const settings = await StorageManager.getSettings();
+  try {
+    const settings = await StorageManager.getSettings();
 
-  document.getElementById('defaultProvider').value = settings.selectedProvider;
-  document.getElementById('saveHistory').checked = settings.saveHistory;
-  document.getElementById('darkMode').checked = settings.darkMode || false;
+    document.getElementById('defaultProvider').value = settings.selectedProvider;
+    document.getElementById('saveHistory').checked = settings.saveHistory;
+    document.getElementById('darkMode').checked = settings.darkMode || false;
 
-  // Performance settings
-  document.getElementById('enableCache').checked = settings.enableCache !== false;
-  document.getElementById('cacheTTL').value = settings.cacheTTL || 7;
-  document.getElementById('enableFallback').checked = settings.enableFallback || false;
-  document.getElementById('enableCompression').checked = settings.enableCompression !== false;
-  document.getElementById('autoCleanup').checked = settings.autoCleanup !== false;
+    // Performance settings
+    document.getElementById('enableCache').checked = settings.enableCache !== false;
+    document.getElementById('cacheTTL').value = settings.cacheTTL || 7;
+    document.getElementById('enableFallback').checked = settings.enableFallback || false;
+    document.getElementById('enableCompression').checked = settings.enableCompression !== false;
+    document.getElementById('autoCleanup').checked = settings.autoCleanup !== false;
 
-  // Applica il tema
-  applyTheme(settings.darkMode);
+    // Applica il tema
+    applyTheme(settings.darkMode);
+  } catch (error) {
+    Logger.error('Errore caricamento impostazioni:', error);
+    showToast('Impossibile caricare le impostazioni. Valori predefiniti applicati.', 'error');
+  }
 }
 
 async function loadApiKeys() {
@@ -172,48 +177,58 @@ const KEY_MIN_LENGTHS = {
 async function saveApiKeys() {
   const providers = ['groq', 'openai', 'anthropic', 'gemini'];
 
-  for (const provider of providers) {
-    const input = document.getElementById(`${provider}Key`);
-    const key = input.value.trim();
+  try {
+    for (const provider of providers) {
+      const input = document.getElementById(`${provider}Key`);
+      const key = input.value.trim();
 
-    // Non salvare se il campo è ancora mascherato (non modificato dall'utente)
-    if (key && input.dataset.masked !== 'true') {
-      const expectedPrefix = KEY_PREFIXES[provider];
-      if (expectedPrefix && !key.startsWith(expectedPrefix)) {
-        showStatus(
-          provider,
-          'error',
-          `Formato non valido: la chiave ${provider} deve iniziare con "${expectedPrefix}"`,
-        );
-        continue;
+      // Non salvare se il campo è ancora mascherato (non modificato dall'utente)
+      if (key && input.dataset.masked !== 'true') {
+        const expectedPrefix = KEY_PREFIXES[provider];
+        if (expectedPrefix && !key.startsWith(expectedPrefix)) {
+          showStatus(
+            provider,
+            'error',
+            `Formato non valido: la chiave ${provider} deve iniziare con "${expectedPrefix}"`,
+          );
+          continue;
+        }
+        const minLen = KEY_MIN_LENGTHS[provider];
+        if (minLen && key.length < minLen) {
+          showStatus(provider, 'error', `Chiave troppo corta (minimo ${minLen} caratteri)`);
+          continue;
+        }
+        await StorageManager.saveApiKey(provider, key);
+        showStatus(provider, 'success', I18n.t('settings.status.saved'));
       }
-      const minLen = KEY_MIN_LENGTHS[provider];
-      if (minLen && key.length < minLen) {
-        showStatus(provider, 'error', `Chiave troppo corta (minimo ${minLen} caratteri)`);
-        continue;
-      }
-      await StorageManager.saveApiKey(provider, key);
-      showStatus(provider, 'success', I18n.t('settings.status.saved'));
     }
-  }
 
-  showToast(I18n.t('settings.toast.keysSaved'), 'success');
+    showToast(I18n.t('settings.toast.keysSaved'), 'success');
+  } catch (error) {
+    Logger.error('Errore salvataggio API keys:', error);
+    showToast('Errore nel salvataggio delle chiavi API. Riprova.', 'error');
+  }
 }
 
 async function saveSettings() {
-  const darkMode = document.getElementById('darkMode').checked;
+  try {
+    const darkMode = document.getElementById('darkMode').checked;
 
-  // Merge with existing settings to preserve performance settings
-  const settings = await StorageManager.getSettings();
-  settings.selectedProvider = document.getElementById('defaultProvider').value;
-  settings.summaryLength = 'detailed'; // Fisso a dettagliato per massima completezza
-  settings.tone = 'neutral'; // Fisso a neutrale
-  settings.saveHistory = document.getElementById('saveHistory').checked;
-  settings.darkMode = darkMode;
+    // Merge with existing settings to preserve performance settings
+    const settings = await StorageManager.getSettings();
+    settings.selectedProvider = document.getElementById('defaultProvider').value;
+    settings.summaryLength = 'detailed'; // Fisso a dettagliato per massima completezza
+    settings.tone = 'neutral'; // Fisso a neutrale
+    settings.saveHistory = document.getElementById('saveHistory').checked;
+    settings.darkMode = darkMode;
 
-  await StorageManager.saveSettings(settings);
-  applyTheme(darkMode);
-  showToast(I18n.t('settings.toast.prefSaved'), 'success');
+    await StorageManager.saveSettings(settings);
+    applyTheme(darkMode);
+    showToast(I18n.t('settings.toast.prefSaved'), 'success');
+  } catch (error) {
+    Logger.error('Errore salvataggio impostazioni:', error);
+    showToast('Errore nel salvataggio delle impostazioni. Riprova.', 'error');
+  }
 }
 
 function applyTheme(isDark) {
@@ -262,24 +277,29 @@ async function testApiKey(provider) {
 }
 
 async function savePerformanceSettings() {
-  const settings = await StorageManager.getSettings();
+  try {
+    const settings = await StorageManager.getSettings();
 
-  settings.enableCache = document.getElementById('enableCache').checked;
-  settings.cacheTTL = parseInt(document.getElementById('cacheTTL').value);
-  settings.enableFallback = document.getElementById('enableFallback').checked;
-  settings.enableCompression = document.getElementById('enableCompression').checked;
-  settings.autoCleanup = document.getElementById('autoCleanup').checked;
+    settings.enableCache = document.getElementById('enableCache').checked;
+    settings.cacheTTL = parseInt(document.getElementById('cacheTTL').value);
+    settings.enableFallback = document.getElementById('enableFallback').checked;
+    settings.enableCompression = document.getElementById('enableCompression').checked;
+    settings.autoCleanup = document.getElementById('autoCleanup').checked;
 
-  await StorageManager.saveSettings(settings);
+    await StorageManager.saveSettings(settings);
 
-  // Configura TTL cache
-  const cacheManager = new CacheManager();
-  cacheManager.setDefaultTTL(settings.cacheTTL);
+    // Configura TTL cache
+    const cacheManager = new CacheManager();
+    cacheManager.setDefaultTTL(settings.cacheTTL);
 
-  showToast(I18n.t('settings.toast.perfSaved'), 'success');
+    showToast(I18n.t('settings.toast.perfSaved'), 'success');
 
-  // Refresh stats
-  await loadPerformanceStats();
+    // Refresh stats
+    await loadPerformanceStats();
+  } catch (error) {
+    Logger.error('Errore salvataggio impostazioni performance:', error);
+    showToast('Errore nel salvataggio. Riprova.', 'error');
+  }
 }
 
 async function loadPerformanceStats() {

@@ -7,6 +7,7 @@ import { Logger } from '../../utils/core/logger.js';
 import { getLanguageName } from '../../utils/i18n/language-names.js';
 import { CitationFormatter } from '../../utils/ai/citation-formatter.js';
 import { displayPDFContent } from './display-pdf.js';
+import { Modal } from '../../utils/core/modal.js';
 
 // Display content
 export function displayContent() {
@@ -231,7 +232,7 @@ function highlightParagraph(paragraphNumber) {
     }
   } else {
     // In iframe view, show a message
-    alert('💡 Passa alla vista "📄 Testo" per evidenziare i paragrafi');
+    Modal.alert('Passa alla vista "Testo" per evidenziare i paragrafi');
   }
 }
 

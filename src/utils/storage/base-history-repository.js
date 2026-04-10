@@ -21,8 +21,12 @@ export class BaseHistoryRepository {
   }
 
   async _getAll() {
-    const result = await chrome.storage.local.get([this.storageKey]);
-    return result[this.storageKey] || [];
+    try {
+      const result = await chrome.storage.local.get([this.storageKey]);
+      return result[this.storageKey] || [];
+    } catch (error) {
+      throw new Error(`Impossibile leggere la cronologia: ${error.message}`, { cause: error });
+    }
   }
 
   async _saveAll(history) {

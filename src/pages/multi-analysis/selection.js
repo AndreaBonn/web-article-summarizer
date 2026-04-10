@@ -15,21 +15,21 @@ export function displayArticles(articles) {
   const listEl = document.getElementById('articlesList');
 
   if (articles.length === 0) {
-    listEl.innerHTML = `<p class="multi-empty-message">${I18n.t('multi.noArticles')}</p>`;
+    listEl.innerHTML = `<p class="multi-empty-message">${HtmlSanitizer.escape(I18n.t('multi.noArticles'))}</p>`;
     return;
   }
 
   listEl.innerHTML = articles
     .map(
       (article) => `
-    <div class="article-item" data-id="${article.id}">
-      <input type="checkbox" class="article-checkbox" data-id="${article.id}" />
+    <div class="article-item" data-id="${HtmlSanitizer.escape(article.id)}">
+      <input type="checkbox" class="article-checkbox" data-id="${HtmlSanitizer.escape(article.id)}" />
       <div class="article-info">
         <div class="article-title">${HtmlSanitizer.escape(article.article.title)}</div>
         <div class="article-meta">
           <span class="meta-badge provider">${HtmlSanitizer.escape(article.metadata.provider)}</span>
           <span class="meta-badge date">${HistoryManager.formatDate(article.timestamp)}</span>
-          <span class="meta-badge words">${article.article.wordCount} ${I18n.t('article.words')}</span>
+          <span class="meta-badge words">${Number(article.article.wordCount) || 0} ${HtmlSanitizer.escape(I18n.t('article.words'))}</span>
         </div>
       </div>
     </div>
