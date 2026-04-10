@@ -52,21 +52,73 @@ export class ContentDetector {
     const sample = text.toLowerCase().slice(0, 1000);
 
     const patterns = {
-      it: ['che', 'della', 'degli', 'delle', 'questo', 'questa', 'sono', 'essere', 'nell', 'alla'],
-      en: ['the', 'and', 'that', 'this', 'with', 'from', 'have', 'been', 'which', 'their'],
-      es: ['que', 'del', 'los', 'las', 'esta', 'este', 'para', 'con', 'una', 'por'],
-      fr: ['que', 'les', 'des', 'cette', 'dans', 'pour', 'avec', 'sont', 'qui', 'pas'],
-      de: ['der', 'die', 'das', 'und', 'ist', 'des', 'dem', 'den', 'nicht', 'sich'],
+      it: [
+        /\bche\b/,
+        /\bdella\b/,
+        /\bdegli\b/,
+        /\bdelle\b/,
+        /\bquesto\b/,
+        /\bquesta\b/,
+        /\bsono\b/,
+        /\bessere\b/,
+        /\bnell\b/,
+        /\balla\b/,
+      ],
+      en: [
+        /\bthe\b/,
+        /\band\b/,
+        /\bthat\b/,
+        /\bthis\b/,
+        /\bwith\b/,
+        /\bfrom\b/,
+        /\bhave\b/,
+        /\bbeen\b/,
+        /\bwhich\b/,
+        /\btheir\b/,
+      ],
+      es: [
+        /\bque\b/,
+        /\bdel\b/,
+        /\blos\b/,
+        /\blas\b/,
+        /\besta\b/,
+        /\beste\b/,
+        /\bpara\b/,
+        /\bcon\b/,
+        /\buna\b/,
+        /\bpor\b/,
+      ],
+      fr: [
+        /\bque\b/,
+        /\bles\b/,
+        /\bdes\b/,
+        /\bcette\b/,
+        /\bdans\b/,
+        /\bpour\b/,
+        /\bavec\b/,
+        /\bsont\b/,
+        /\bqui\b/,
+        /\bpas\b/,
+      ],
+      de: [
+        /\bder\b/,
+        /\bdie\b/,
+        /\bdas\b/,
+        /\bund\b/,
+        /\bist\b/,
+        /\bdes\b/,
+        /\bdem\b/,
+        /\bden\b/,
+        /\bnicht\b/,
+        /\bsich\b/,
+      ],
     };
 
     let maxScore = 0;
     let detectedLang = 'en';
 
-    for (const [lang, words] of Object.entries(patterns)) {
-      const score = words.filter((word) => {
-        const regex = new RegExp(`\\b${word}\\b`, 'g');
-        return regex.test(sample);
-      }).length;
+    for (const [lang, regexes] of Object.entries(patterns)) {
+      const score = regexes.filter((regex) => regex.test(sample)).length;
       if (score > maxScore) {
         maxScore = score;
         detectedLang = lang;

@@ -277,7 +277,9 @@ function displayTranslation(translation, targetLang, originalLang, fromCache = f
 
     if (confirmed) {
       // Forza rigenerazione rimuovendo dalla cache
-      clearTranslationCache().then(() => translateArticle());
+      clearTranslationCache()
+        .then(() => translateArticle())
+        .catch((err) => Logger.error('Errore rigenerazione traduzione:', err));
     }
   });
 }
