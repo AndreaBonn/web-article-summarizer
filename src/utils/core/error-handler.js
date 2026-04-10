@@ -75,7 +75,7 @@ export class ErrorHandler {
     if (message.includes('Network') || message.includes('fetch')) {
       return 'Errore di connessione. Verifica la tua connessione internet.';
     }
-    if (message.includes('timeout')) {
+    if (message.toLowerCase().includes('timeout')) {
       return 'Richiesta scaduta. Il server ha impiegato troppo tempo a rispondere.';
     }
 

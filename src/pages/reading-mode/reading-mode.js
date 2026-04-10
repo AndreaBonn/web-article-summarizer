@@ -224,17 +224,17 @@ function setupEventListeners() {
 }
 
 // Resizable divider
-function startResize(e) {
+function startResize(_e) {
   state.isResizing = true;
   document.body.style.cursor = 'col-resize';
   document.body.style.userSelect = 'none';
 
-  const onMouseMove = (_e) => {
+  const onMouseMove = (moveEvent) => {
     if (!state.isResizing) return;
 
     const container = document.querySelector('.reading-container');
     const containerRect = container.getBoundingClientRect();
-    const percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+    const percentage = ((moveEvent.clientX - containerRect.left) / containerRect.width) * 100;
 
     // Limit between 20% and 80%
     if (percentage >= 20 && percentage <= 80) {

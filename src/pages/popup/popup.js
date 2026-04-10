@@ -226,8 +226,14 @@ async function openReadingMode() {
   // Save to chrome.storage.local (persists across tabs)
   try {
     await chrome.storage.local.set({ readingModeData: readingData });
-  } catch {
-    showError('Impossibile aprire la modalità lettura: spazio di archiviazione insufficiente.');
+  } catch (error) {
+    Logger.error('Errore apertura reading mode:', error);
+    const isQuotaError = error.message?.includes('QUOTA') || error.message?.includes('quota');
+    showError(
+      isQuotaError
+        ? 'Impossibile aprire la modalità lettura: spazio di archiviazione insufficiente.'
+        : `Impossibile aprire la modalità lettura: ${error.message}`,
+    );
     return;
   }
 

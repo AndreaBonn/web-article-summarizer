@@ -59,10 +59,16 @@ export class CompressionManager {
     }
 
     try {
-      return LZString.decompressFromUTF16(compressedData.data);
+      const result = LZString.decompressFromUTF16(compressedData.data);
+      if (result === null || result === '') {
+        throw new Error('Decompressione ha restituito dati vuoti — possibile corruzione');
+      }
+      return result;
     } catch (error) {
-      Logger.error('Errore nella decompressione:', error);
-      return compressedData.data;
+      Logger.error('Errore nella decompressione — dati corrotti:', error);
+      throw new Error('Impossibile decomprimere i dati: potrebbero essere corrotti.', {
+        cause: error,
+      });
     }
   }
 

@@ -4,6 +4,7 @@
 // è sempre leggibile — un segreto hardcoded non offre protezione reale.
 
 import { TranslationCache } from './translation-cache.js';
+import { Logger } from '../core/logger.js';
 
 export class StorageManager {
   // API Keys management
@@ -90,21 +91,25 @@ export class StorageManager {
     return TranslationCache.clearEntry(url, provider, targetLanguage);
   }
 
-  // Statistics
+  // Statistics — non-critical, must not break the summary generation flow
   static async updateStats(provider, wordCount, generationTime) {
-    const result = await chrome.storage.local.get(['stats']);
-    const stats = result.stats || {
-      totalSummaries: 0,
-      totalWords: 0,
-      providerUsage: {},
-      totalTime: 0,
-    };
+    try {
+      const result = await chrome.storage.local.get(['stats']);
+      const stats = result.stats || {
+        totalSummaries: 0,
+        totalWords: 0,
+        providerUsage: {},
+        totalTime: 0,
+      };
 
-    stats.totalSummaries++;
-    stats.totalWords += wordCount;
-    stats.providerUsage[provider] = (stats.providerUsage[provider] || 0) + 1;
-    stats.totalTime += generationTime;
+      stats.totalSummaries++;
+      stats.totalWords += wordCount;
+      stats.providerUsage[provider] = (stats.providerUsage[provider] || 0) + 1;
+      stats.totalTime += generationTime;
 
-    await chrome.storage.local.set({ stats });
+      await chrome.storage.local.set({ stats });
+    } catch (error) {
+      Logger.warn('Impossibile aggiornare statistiche:', error.message);
+    }
   }
 }

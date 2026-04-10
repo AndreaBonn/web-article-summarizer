@@ -92,6 +92,9 @@ export async function askQuestion() {
         settings,
       });
 
+      if (!qaResponse) {
+        throw new Error('Il servizio non risponde. Ricarica la pagina e riprova.');
+      }
       if (!qaResponse.success) {
         throw new Error(qaResponse.error);
       }

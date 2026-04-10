@@ -85,25 +85,30 @@ async function loadApiKeys() {
   const providers = ['groq', 'openai', 'anthropic', 'gemini'];
 
   for (const provider of providers) {
-    const key = await StorageManager.getApiKey(provider);
-    if (key) {
-      const input = document.getElementById(`${provider}Key`);
-      // Mostra solo gli ultimi 4 caratteri per sicurezza
-      const masked = '\u2022'.repeat(Math.max(0, key.length - 4)) + key.slice(-4);
-      input.value = masked;
-      input.dataset.masked = 'true';
-      // Al focus, se ancora mascherato, svuota per nuovo inserimento
-      input.addEventListener(
-        'focus',
-        function onFocus() {
-          if (this.dataset.masked === 'true') {
-            this.value = '';
-            this.dataset.masked = 'false';
-          }
-        },
-        { once: true },
-      );
-      showStatus(provider, 'success', I18n.t('settings.status.configured'));
+    try {
+      const key = await StorageManager.getApiKey(provider);
+      if (key) {
+        const input = document.getElementById(`${provider}Key`);
+        // Mostra solo gli ultimi 4 caratteri per sicurezza
+        const masked = '\u2022'.repeat(Math.max(0, key.length - 4)) + key.slice(-4);
+        input.value = masked;
+        input.dataset.masked = 'true';
+        // Al focus, se ancora mascherato, svuota per nuovo inserimento
+        input.addEventListener(
+          'focus',
+          function onFocus() {
+            if (this.dataset.masked === 'true') {
+              this.value = '';
+              this.dataset.masked = 'false';
+            }
+          },
+          { once: true },
+        );
+        showStatus(provider, 'success', I18n.t('settings.status.configured'));
+      }
+    } catch (error) {
+      Logger.warn(`API key ${provider} in formato obsoleto:`, error.message);
+      showStatus(provider, 'error', error.message);
     }
   }
 }
@@ -208,6 +213,10 @@ async function testApiKey(provider) {
       apiKey: key,
     });
 
+    if (!response) {
+      showStatus(provider, 'error', 'Il servizio non risponde. Riprova.');
+      return;
+    }
     if (response.success) {
       showStatus(provider, 'success', I18n.t('settings.test.verified'));
     } else {

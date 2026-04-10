@@ -35,6 +35,9 @@ export async function extractCitations() {
       settings: settings,
     });
 
+    if (!response) {
+      throw new Error('Il servizio non risponde. Riapri il popup e riprova.');
+    }
     if (!response.success) {
       throw new Error(response.error);
     }

@@ -184,11 +184,25 @@ export class InputSanitizer {
     let normalized = text.replace(/[\u200B-\u200F\u2028-\u202F\uFEFF\u00AD]/g, '');
     normalized = normalized.normalize('NFKC');
 
-    // Pattern pericolosi comuni
+    // Pattern pericolosi comuni — EN + IT + FR + ES + DE
     const dangerousPatterns = [
+      // English
       /ignore\s+(all\s+)?(previous|above|prior)\s+instructions?/gi,
       /disregard\s+(all\s+)?(previous|above|prior)\s+instructions?/gi,
       /forget\s+(all\s+)?(previous|above|prior)\s+instructions?/gi,
+      // Italiano
+      /ignora\s+(tutte\s+le\s+)?istruzion[ie]\s+(precedenti|sopra)/gi,
+      /dimentica\s+(tutte\s+le\s+)?istruzion[ie]\s+(precedenti|sopra)/gi,
+      // Français
+      /ignore[rz]?\s+(toutes\s+les\s+)?instructions?\s+(pr[eé]c[eé]dentes?|ci-dessus)/gi,
+      /oublie[rz]?\s+(toutes\s+les\s+)?instructions?\s+(pr[eé]c[eé]dentes?|ci-dessus)/gi,
+      // Español
+      /ignora\s+(todas\s+las\s+)?instrucciones?\s+(anteriores?|previas?)/gi,
+      /olvida\s+(todas\s+las\s+)?instrucciones?\s+(anteriores?|previas?)/gi,
+      // Deutsch
+      /ignorier[en]?\s+(alle\s+)?(vorherigen?\s+)?anweisungen/gi,
+      /vergiss\s+(alle\s+)?(vorherigen?\s+)?anweisungen/gi,
+      // Special tokens and role markers
       /system\s*:\s*/gi,
       /assistant\s*:\s*/gi,
       /user\s*:\s*/gi,
@@ -272,6 +286,7 @@ export class InputSanitizer {
 
     if (!text || typeof text !== 'string') {
       issues.push('Input non è una stringa valida');
+      return { valid: false, issues };
     }
 
     if (text.length < minLength) {
