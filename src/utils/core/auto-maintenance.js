@@ -169,9 +169,10 @@ export class AutoMaintenance {
       );
     } catch (error) {
       Logger.error('Errore lettura impostazioni:', error);
+      // Safe fallback: do nothing rather than risk unwanted cleanup
       return {
-        autoCleanup: true,
-        enableCompression: true,
+        autoCleanup: false,
+        enableCompression: false,
       };
     }
   }

@@ -49,7 +49,7 @@ export class ProviderCaller {
     return content;
   }
 
-  static async callGroqCompletion(apiKey, systemPrompt, userPrompt, options) {
+  static async _callOpenAICompatible(apiKey, systemPrompt, userPrompt, options, url, providerName) {
     const requestBody = {
       model: options.model,
       messages: [
@@ -65,52 +65,7 @@ export class ProviderCaller {
       requestBody.response_format = { type: 'json_object' };
     }
 
-    const response = await this._fetchWithTimeout(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      },
-    );
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        throw new Error('[RATE_LIMIT:Groq]');
-      }
-      let errorMsg;
-      try {
-        errorMsg = (await response.json()).error?.message;
-      } catch {
-        errorMsg = response.statusText;
-      }
-      throw new Error(errorMsg || `Errore API Groq (HTTP ${response.status})`);
-    }
-
-    const data = await this._parseJsonResponse(response, 'Groq');
-    return this._validateChoicesResponse(data, 'Groq');
-  }
-
-  static async callOpenAICompletion(apiKey, systemPrompt, userPrompt, options) {
-    const requestBody = {
-      model: options.model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: options.temperature,
-      max_tokens: options.maxTokens,
-    };
-
-    // Aggiungi response_format se richiesto JSON
-    if (options.responseFormat === 'json') {
-      requestBody.response_format = { type: 'json_object' };
-    }
-
-    const response = await this._fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+    const response = await this._fetchWithTimeout(url, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -121,7 +76,7 @@ export class ProviderCaller {
 
     if (!response.ok) {
       if (response.status === 429) {
-        throw new Error('[RATE_LIMIT:OpenAI]');
+        throw new Error(`[RATE_LIMIT:${providerName}]`);
       }
       let errorMsg;
       try {
@@ -129,11 +84,33 @@ export class ProviderCaller {
       } catch {
         errorMsg = response.statusText;
       }
-      throw new Error(errorMsg || `Errore API OpenAI (HTTP ${response.status})`);
+      throw new Error(errorMsg || `Errore API ${providerName} (HTTP ${response.status})`);
     }
 
-    const data = await this._parseJsonResponse(response, 'OpenAI');
-    return this._validateChoicesResponse(data, 'OpenAI');
+    const data = await this._parseJsonResponse(response, providerName);
+    return this._validateChoicesResponse(data, providerName);
+  }
+
+  static async callGroqCompletion(apiKey, systemPrompt, userPrompt, options) {
+    return this._callOpenAICompatible(
+      apiKey,
+      systemPrompt,
+      userPrompt,
+      options,
+      'https://api.groq.com/openai/v1/chat/completions',
+      'Groq',
+    );
+  }
+
+  static async callOpenAICompletion(apiKey, systemPrompt, userPrompt, options) {
+    return this._callOpenAICompatible(
+      apiKey,
+      systemPrompt,
+      userPrompt,
+      options,
+      'https://api.openai.com/v1/chat/completions',
+      'OpenAI',
+    );
   }
 
   static async callAnthropicCompletion(apiKey, systemPrompt, userPrompt, options) {

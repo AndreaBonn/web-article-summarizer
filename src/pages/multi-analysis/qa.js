@@ -1,7 +1,7 @@
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { InputSanitizer } from '../../utils/security/input-sanitizer.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
-import { APIClient } from '../../utils/ai/api-client.js';
+import { APIOrchestrator as APIClient } from '../../utils/ai/api-orchestrator.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { state } from './state.js';
 import { Logger } from '../../utils/core/logger.js';

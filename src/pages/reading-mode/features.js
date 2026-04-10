@@ -88,6 +88,9 @@ export async function translateArticle() {
         provider,
       });
 
+      if (!translateResponse) {
+        throw new Error('Il servizio non risponde. Ricarica la pagina e riprova.');
+      }
       if (!translateResponse.success) {
         throw new Error(translateResponse.error);
       }
@@ -173,6 +176,9 @@ export async function extractCitations() {
         settings: settings,
       });
 
+      if (!response) {
+        throw new Error('Il servizio non risponde. Ricarica la pagina e riprova.');
+      }
       if (!response.success) {
         throw new Error(response.error || "Errore durante l'estrazione");
       }
@@ -347,5 +353,9 @@ export async function updateDataInStorage() {
     }
   } catch (error) {
     Logger.error('Error updating storage:', error);
+    await Modal.warning(
+      'I dati restano visibili ma non sono stati salvati nella cronologia.',
+      'Errore salvataggio',
+    );
   }
 }

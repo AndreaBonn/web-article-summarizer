@@ -8,28 +8,52 @@ import { exportPdf, exportMarkdown, sendEmail, copyContent } from './export.js';
 import { submitQuestion } from './qa.js';
 
 export function formatMarkdown(text) {
-  const e = (s) => HtmlSanitizer.escape(s);
+  // DOM-based approach: uses textContent for all user data (XSS-safe)
+  const container = document.createElement('div');
+  const paragraphs = text.split(/\n\n+/);
 
-  // Processa riga per riga: escape il testo raw, poi applica formattazione
-  const lines = text.split('\n');
-  const htmlLines = lines.map((line) => {
-    // Heading h4 (###)
-    const h4Match = line.match(/^### (.*)$/);
-    if (h4Match) return `<h4>${e(h4Match[1])}</h4>`;
+  paragraphs.forEach((paragraph) => {
+    const lines = paragraph.split('\n');
 
-    // Heading h3 (##)
-    const h3Match = line.match(/^## (.*)$/);
-    if (h3Match) return `<h3>${e(h3Match[1])}</h3>`;
+    lines.forEach((line) => {
+      // Heading h4 (###)
+      const h4Match = line.match(/^### (.*)$/);
+      if (h4Match) {
+        const el = document.createElement('h4');
+        el.textContent = h4Match[1];
+        container.appendChild(el);
+        return;
+      }
 
-    // Testo normale: escape prima, poi bold
-    let escaped = e(line);
-    escaped = escaped.replace(/\*\*(.*?)\*\*/g, (_, g1) => `<strong>${g1}</strong>`);
-    return escaped;
+      // Heading h3 (##)
+      const h3Match = line.match(/^## (.*)$/);
+      if (h3Match) {
+        const el = document.createElement('h3');
+        el.textContent = h3Match[1];
+        container.appendChild(el);
+        return;
+      }
+
+      // Empty line — skip
+      if (!line.trim()) return;
+
+      // Normal text with bold support via DOM
+      const p = document.createElement('p');
+      const parts = line.split(/\*\*(.*?)\*\*/g);
+      parts.forEach((part, i) => {
+        if (i % 2 === 1) {
+          const strong = document.createElement('strong');
+          strong.textContent = part;
+          p.appendChild(strong);
+        } else if (part) {
+          p.appendChild(document.createTextNode(part));
+        }
+      });
+      container.appendChild(p);
+    });
   });
 
-  // Unisci: righe vuote → nuovo paragrafo, righe singole → <br>
-  const joined = htmlLines.join('\n');
-  return '<p>' + joined.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
+  return container.innerHTML;
 }
 
 export function showAnalysisModal() {

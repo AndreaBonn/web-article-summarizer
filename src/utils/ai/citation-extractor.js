@@ -1,6 +1,6 @@
 // Citation Extractor - Estrazione citazioni da articoli (facade)
 import { PromptRegistry } from './prompt-registry.js';
-import { APIClient } from './api-client.js';
+import { APIOrchestrator as APIClient } from './api-orchestrator.js';
 import { Logger } from '../core/logger.js';
 import { parseLLMJson } from './json-repair.js';
 import { CitationFormatter } from './citation-formatter.js';

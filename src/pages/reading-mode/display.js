@@ -296,7 +296,7 @@ export function displayKeypointsInTab(keyPoints) {
   let html = '';
   keyPoints.forEach((point, index) => {
     html += `
-      <div class="keypoint" data-paragraph="${point.paragraphs}">
+      <div class="keypoint" data-paragraph="${HtmlSanitizer.escape(String(point.paragraphs))}">
         <div class="keypoint-header">
           <div class="keypoint-title">${index + 1}. ${HtmlSanitizer.escape(point.title)}</div>
           <div class="keypoint-ref">§${HtmlSanitizer.escape(String(point.paragraphs))}</div>

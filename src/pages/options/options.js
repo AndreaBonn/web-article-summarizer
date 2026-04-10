@@ -5,6 +5,8 @@ import { I18n } from '../../utils/i18n/i18n.js';
 import { APIResilience } from '../../utils/ai/api-resilience.js';
 import { CacheManager } from '../../utils/storage/cache-manager.js';
 import { CompressionManager } from '../../utils/storage/compression-manager.js';
+import { Modal } from '../../utils/core/modal.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     await I18n.initPage();
@@ -85,25 +87,30 @@ async function loadApiKeys() {
   const providers = ['groq', 'openai', 'anthropic', 'gemini'];
 
   for (const provider of providers) {
-    const key = await StorageManager.getApiKey(provider);
-    if (key) {
-      const input = document.getElementById(`${provider}Key`);
-      // Mostra solo gli ultimi 4 caratteri per sicurezza
-      const masked = '\u2022'.repeat(Math.max(0, key.length - 4)) + key.slice(-4);
-      input.value = masked;
-      input.dataset.masked = 'true';
-      // Al focus, se ancora mascherato, svuota per nuovo inserimento
-      input.addEventListener(
-        'focus',
-        function onFocus() {
-          if (this.dataset.masked === 'true') {
-            this.value = '';
-            this.dataset.masked = 'false';
-          }
-        },
-        { once: true },
-      );
-      showStatus(provider, 'success', I18n.t('settings.status.configured'));
+    try {
+      const key = await StorageManager.getApiKey(provider);
+      if (key) {
+        const input = document.getElementById(`${provider}Key`);
+        // Mostra solo gli ultimi 4 caratteri per sicurezza
+        const masked = '\u2022'.repeat(Math.max(0, key.length - 4)) + key.slice(-4);
+        input.value = masked;
+        input.dataset.masked = 'true';
+        // Al focus, se ancora mascherato, svuota per nuovo inserimento
+        input.addEventListener(
+          'focus',
+          function onFocus() {
+            if (this.dataset.masked === 'true') {
+              this.value = '';
+              this.dataset.masked = 'false';
+            }
+          },
+          { once: true },
+        );
+        showStatus(provider, 'success', I18n.t('settings.status.configured'));
+      }
+    } catch (error) {
+      Logger.warn(`API key ${provider} in formato obsoleto:`, error.message);
+      showStatus(provider, 'error', error.message);
     }
   }
 }
@@ -140,6 +147,13 @@ const KEY_PREFIXES = {
   gemini: 'AIza',
 };
 
+const KEY_MIN_LENGTHS = {
+  groq: 40,
+  openai: 40,
+  anthropic: 50,
+  gemini: 35,
+};
+
 async function saveApiKeys() {
   const providers = ['groq', 'openai', 'anthropic', 'gemini'];
 
@@ -156,6 +170,11 @@ async function saveApiKeys() {
           'error',
           `Formato non valido: la chiave ${provider} deve iniziare con "${expectedPrefix}"`,
         );
+        continue;
+      }
+      const minLen = KEY_MIN_LENGTHS[provider];
+      if (minLen && key.length < minLen) {
+        showStatus(provider, 'error', `Chiave troppo corta (minimo ${minLen} caratteri)`);
         continue;
       }
       await StorageManager.saveApiKey(provider, key);
@@ -208,6 +227,10 @@ async function testApiKey(provider) {
       apiKey: key,
     });
 
+    if (!response) {
+      showStatus(provider, 'error', 'Il servizio non risponde. Riprova.');
+      return;
+    }
     if (response.success) {
       showStatus(provider, 'success', I18n.t('settings.test.verified'));
     } else {
@@ -313,7 +336,11 @@ async function runCleanup() {
 }
 
 async function clearCache() {
-  if (confirm(I18n.t('settings.cache.confirmClear'))) {
+  const confirmed = await Modal.confirm(
+    I18n.t('settings.cache.confirmClear'),
+    I18n.t('settings.cache.clearTitle') || 'Svuota Cache',
+  );
+  if (confirmed) {
     const cacheManager = new CacheManager();
     await cacheManager.clearAll();
     showToast(I18n.t('settings.cache.cleared'), 'success');
@@ -322,7 +349,11 @@ async function clearCache() {
 }
 
 async function clearLogs() {
-  if (confirm(I18n.t('settings.logs.confirmClear'))) {
+  const confirmed = await Modal.confirm(
+    I18n.t('settings.logs.confirmClear'),
+    I18n.t('settings.logs.clearTitle') || 'Svuota Log',
+  );
+  if (confirmed) {
     const resilience = new APIResilience();
     const cacheManager = new CacheManager();
     await resilience.clearLogs();

@@ -3,7 +3,7 @@
 // Generazione AI delegata a multi-analysis-generators.js.
 
 import { StorageManager } from '../storage/storage-manager.js';
-import { APIClient } from '../ai/api-client.js';
+import { APIOrchestrator as APIClient } from '../ai/api-orchestrator.js';
 import { Logger } from './logger.js';
 import {
   generateGlobalSummary,
@@ -19,17 +19,15 @@ export class MultiAnalysisManager {
     const apiKey = await StorageManager.getApiKey(provider);
 
     if (!apiKey) {
-      // Fallback: assume correlati se non c'è API key
-      Logger.warn('API key non disponibile per verifica correlazione');
-      return { related: true, reason: null };
+      Logger.warn('API key non disponibile: verifica correlazione saltata');
+      return { related: true, reason: 'Verifica saltata: API key non configurata', skipped: true };
     }
 
     try {
       return await this.checkCorrelationWithAI(articles, provider, apiKey);
     } catch (error) {
       Logger.error('Errore verifica correlazione:', error);
-      // Fallback: assume correlati in caso di errore
-      return { related: true, reason: null };
+      return { related: true, reason: `Verifica saltata: ${error.message}`, skipped: true };
     }
   }
 

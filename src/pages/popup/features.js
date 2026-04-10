@@ -12,6 +12,7 @@ import { Modal } from '../../utils/core/modal.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { createTTSButton } from './voice.js';
 import { Logger } from '../../utils/core/logger.js';
+import { ErrorHandler } from '../../utils/core/error-handler.js';
 import { getLanguageNameIT } from '../../utils/i18n/language-names.js';
 
 // Translation System — usa un oggetto wrapper per permettere la mutazione cross-modulo
@@ -80,6 +81,9 @@ export async function askQuestion() {
       settings,
     });
 
+    if (!response) {
+      throw new Error('Il servizio non risponde. Riapri il popup e riprova.');
+    }
     if (!response.success) {
       throw new Error(response.error);
     }
@@ -121,8 +125,10 @@ export async function askQuestion() {
     elements.questionInput.value = '';
   } catch (error) {
     Logger.error('Errore Q&A:', error);
+    await ErrorHandler.logError(error, 'askQuestion');
     elements.qaAnswer.classList.remove('loading');
-    elements.qaAnswer.textContent = I18n.t('feedback.error') + ' ' + error.message;
+    elements.qaAnswer.textContent =
+      I18n.t('feedback.error') + ' ' + ErrorHandler.getErrorMessage(error);
   } finally {
     elements.askBtn.disabled = false;
     elements.askBtn.textContent = I18n.t('qa.ask');
@@ -193,6 +199,9 @@ export async function translateArticle() {
         provider,
       });
 
+      if (!translateResponse) {
+        throw new Error('Il servizio non risponde. Riapri il popup e riprova.');
+      }
       if (!translateResponse.success) {
         throw new Error(translateResponse.error);
       }
@@ -295,6 +304,11 @@ async function copyTranslation() {
       btn.textContent = originalText;
     }, 2000);
   } catch (error) {
-    Logger.error('Errore copia:', error);
+    Logger.error('Errore copia traduzione:', error);
+    const btn = document.getElementById('copyTranslationBtn');
+    btn.textContent = '✗';
+    setTimeout(() => {
+      btn.textContent = '📋';
+    }, 2000);
   }
 }

@@ -1,5 +1,6 @@
 // Translator - Gestione traduzione articoli completi
-import { APIClient } from '../ai/api-client.js';
+import { APIOrchestrator as APIClient } from '../ai/api-orchestrator.js';
+import { ContentDetector } from '../ai/content-detector.js';
 import { PromptRegistry } from '../ai/prompt-registry.js';
 import { InputSanitizer } from '../security/input-sanitizer.js';
 import { Logger } from './logger.js';
@@ -7,7 +8,7 @@ import { LANGUAGE_NAMES } from '../i18n/language-names.js';
 
 export class Translator {
   static async translateArticle(article, targetLanguage, provider, apiKey, contentType = null) {
-    const detectedType = contentType || APIClient.detectContentType(article);
+    const detectedType = contentType || ContentDetector.detectContentType(article);
     const systemPrompt = PromptRegistry.getTranslationSystemPrompt(provider, detectedType);
     const userPrompt = this.buildUserPrompt(article, targetLanguage, detectedType);
     try {

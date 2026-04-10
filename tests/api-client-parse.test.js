@@ -17,9 +17,11 @@ vi.mock('@utils/security/input-sanitizer.js', () => ({
   },
 }));
 
-import { APIClient } from '@utils/ai/api-client.js';
+import { ResponseParser } from '@utils/ai/response-parser.js';
+import { ContentDetector } from '@utils/ai/content-detector.js';
+import { ProviderCaller } from '@utils/ai/provider-caller.js';
 
-describe('APIClient.parseResponse()', () => {
+describe('ResponseParser.parseResponse()', () => {
   it('parsa risposta ben formattata con ## RIASSUNTO e ## PUNTI CHIAVE', () => {
     const responseText = `## RIASSUNTO
 
@@ -33,7 +35,7 @@ Questo è un riassunto abbastanza lungo da superare il limite minimo di cinquant
 2. **Titolo Punto Due** (§2-3)
    Descrizione del secondo punto chiave con ulteriori dettagli.`;
 
-    const result = APIClient.parseResponse(responseText);
+    const result = ResponseParser.parseResponse(responseText);
     expect(result.summary).toContain('riassunto abbastanza lungo');
     expect(result.keyPoints).toHaveLength(2);
     expect(result.keyPoints[0].title).toBe('Titolo Punto Uno');
@@ -44,12 +46,12 @@ Questo è un riassunto abbastanza lungo da superare il limite minimo di cinquant
 
   it('lancia errore per risposta senza separatore ## PUNTI CHIAVE con summary troppo corto', () => {
     const malformattata = 'Risposta malformata senza sezioni corrette';
-    expect(() => APIClient.parseResponse(malformattata)).toThrow();
+    expect(() => ResponseParser.parseResponse(malformattata)).toThrow();
   });
 
   it('lancia errore per risposta troppo corta (sotto 50 caratteri)', () => {
     const corta = '## RIASSUNTO\n\nBreve.\n\n## PUNTI CHIAVE\n\n';
-    expect(() => APIClient.parseResponse(corta)).toThrow('formato non valido');
+    expect(() => ResponseParser.parseResponse(corta)).toThrow('formato non valido');
   });
 
   it('restituisce keyPoints vuoti se la sezione punti chiave non ha pattern validi', () => {
@@ -61,7 +63,7 @@ Questo riassunto è abbastanza lungo da superare il minimo di cinquanta caratter
 
 Nessun punto in formato standard qui.`;
 
-    const result = APIClient.parseResponse(responseText);
+    const result = ResponseParser.parseResponse(responseText);
     expect(result.summary).toBeTruthy();
     expect(result.keyPoints).toHaveLength(0);
   });
@@ -76,12 +78,12 @@ Il contenuto del riassunto è qui e deve essere abbastanza lungo per superare il
 1. **Punto** (§1)
    Descrizione.`;
 
-    const result = APIClient.parseResponse(responseText);
+    const result = ResponseParser.parseResponse(responseText);
     expect(result.summary).not.toContain('## RIASSUNTO');
   });
 });
 
-describe('APIClient.detectContentType()', () => {
+describe('ContentDetector.detectContentType()', () => {
   const makeArticle = (title, content) => ({ title, content });
 
   it('rileva articolo scientifico con terminology accademica', () => {
@@ -89,7 +91,7 @@ describe('APIClient.detectContentType()', () => {
       'New Study Results',
       'The methodology used in this study involved participants from multiple groups. The hypothesis was tested with p < 0.05 significance.',
     );
-    expect(APIClient.detectContentType(article)).toBe('scientific');
+    expect(ContentDetector.detectContentType(article)).toBe('scientific');
   });
 
   it('rileva articolo news con riferimenti temporali', () => {
@@ -97,7 +99,7 @@ describe('APIClient.detectContentType()', () => {
       'Breaking News',
       'According to sources, today the government announced a new policy that will affect millions.',
     );
-    expect(APIClient.detectContentType(article)).toBe('news');
+    expect(ContentDetector.detectContentType(article)).toBe('news');
   });
 
   it('rileva tutorial dal titolo', () => {
@@ -105,7 +107,7 @@ describe('APIClient.detectContentType()', () => {
       'How to install Node.js on Ubuntu',
       'In this guide we will go through step by step installation. First install the dependencies, then configure the environment.',
     );
-    expect(APIClient.detectContentType(article)).toBe('tutorial');
+    expect(ContentDetector.detectContentType(article)).toBe('tutorial');
   });
 
   it('restituisce "general" per contenuto generico senza pattern specifici', () => {
@@ -113,49 +115,49 @@ describe('APIClient.detectContentType()', () => {
       'Un articolo qualunque',
       'Questo è un testo generico che non contiene termini specifici di nessuna categoria particolare.',
     );
-    expect(APIClient.detectContentType(article)).toBe('general');
+    expect(ContentDetector.detectContentType(article)).toBe('general');
   });
 });
 
-describe('APIClient.detectLanguage()', () => {
+describe('ContentDetector.detectLanguage()', () => {
   it('rileva italiano da testo con parole comuni italiane', () => {
     const text =
       'Questo articolo parla della situazione economica italiana. La situazione della economia è che questo e quello sono diversi.';
-    expect(APIClient.detectLanguage(text)).toBe('it');
+    expect(ContentDetector.detectLanguage(text)).toBe('it');
   });
 
   it('rileva inglese da testo con parole comuni inglesi', () => {
     const text =
       'This article discusses the current economic situation. The government have been working with their international partners from which the results have been positive.';
-    expect(APIClient.detectLanguage(text)).toBe('en');
+    expect(ContentDetector.detectLanguage(text)).toBe('en');
   });
 
   it('rileva spagnolo da testo con parole comuni spagnole', () => {
     const text =
       'Este artículo habla de la situación económica actual. Los datos que tenemos para este análisis son los siguientes por las razones que mencionamos.';
-    expect(APIClient.detectLanguage(text)).toBe('es');
+    expect(ContentDetector.detectLanguage(text)).toBe('es');
   });
 
   it('restituisce "en" come fallback per testo senza pattern riconoscibili', () => {
     // Testo con poche parole ambigue
     const text = '12345 67890 xyzxyz';
     // Il fallback è "en" (maxScore = 0 → detectedLang resta "en")
-    expect(APIClient.detectLanguage(text)).toBe('en');
+    expect(ContentDetector.detectLanguage(text)).toBe('en');
   });
 });
 
-describe('APIClient._validateChoicesResponse()', () => {
+describe('ProviderCaller._validateChoicesResponse()', () => {
   it('restituisce il content per risposta valida', () => {
     const data = {
       choices: [{ message: { content: 'Risposta valida dal modello.' } }],
     };
-    const result = APIClient._validateChoicesResponse(data, 'Groq');
+    const result = ProviderCaller._validateChoicesResponse(data, 'Groq');
     expect(result).toBe('Risposta valida dal modello.');
   });
 
   it('lancia errore se choices è un array vuoto', () => {
     const data = { choices: [] };
-    expect(() => APIClient._validateChoicesResponse(data, 'OpenAI')).toThrow(
+    expect(() => ProviderCaller._validateChoicesResponse(data, 'OpenAI')).toThrow(
       'OpenAI ha restituito una risposta vuota',
     );
   });
@@ -164,20 +166,18 @@ describe('APIClient._validateChoicesResponse()', () => {
     const data = {
       choices: [{ message: { content: '' } }],
     };
-    expect(() => APIClient._validateChoicesResponse(data, 'Groq')).toThrow(
-      'risposta vuota',
-    );
+    expect(() => ProviderCaller._validateChoicesResponse(data, 'Groq')).toThrow('risposta vuota');
   });
 
   it('lancia errore se choices[0].message.content è solo spazi', () => {
     const data = {
       choices: [{ message: { content: '   ' } }],
     };
-    expect(() => APIClient._validateChoicesResponse(data, 'Groq')).toThrow();
+    expect(() => ProviderCaller._validateChoicesResponse(data, 'Groq')).toThrow();
   });
 
   it('include il nome del provider nel messaggio di errore', () => {
     const data = { choices: [] };
-    expect(() => APIClient._validateChoicesResponse(data, 'Anthropic')).toThrow('Anthropic');
+    expect(() => ProviderCaller._validateChoicesResponse(data, 'Anthropic')).toThrow('Anthropic');
   });
 });

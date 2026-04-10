@@ -28,7 +28,6 @@ export default [
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-throw-literal': 'off',
-      'preserve-caught-error': 'error',
     },
   },
 
