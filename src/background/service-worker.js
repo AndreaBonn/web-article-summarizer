@@ -6,6 +6,11 @@ import { AutoMaintenance } from '../utils/core/auto-maintenance.js';
 import { CitationExtractor } from '../utils/ai/citation-extractor.js';
 import { Translator } from '../utils/core/translator.js';
 import { AdvancedAnalysis } from '../utils/ai/advanced-analysis.js';
+import {
+  translatePDFText,
+  extractPDFCitations,
+  askQuestionPDF,
+} from '../pages/reading-mode/pdf.js';
 import { ErrorHandler } from '../utils/core/error-handler.js';
 import { Logger } from '../utils/core/logger.js';
 
@@ -100,6 +105,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       })
       .catch((error) => {
         Logger.error('Errore Q&A:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true;
+  }
+
+  if (request.action === 'translatePDF') {
+    handleTranslatePDF(request)
+      .then((result) => {
+        sendResponse({ success: true, result });
+      })
+      .catch((error) => {
+        Logger.error('Errore traduzione PDF:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true;
+  }
+
+  if (request.action === 'extractPDFCitations') {
+    handleExtractPDFCitations(request)
+      .then((result) => {
+        sendResponse({ success: true, result });
+      })
+      .catch((error) => {
+        Logger.error('Errore citazioni PDF:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true;
+  }
+
+  if (request.action === 'askPDFQuestion') {
+    handleAskPDFQuestion(request)
+      .then((result) => {
+        sendResponse({ success: true, result });
+      })
+      .catch((error) => {
+        Logger.error('Errore Q&A PDF:', error);
         sendResponse({ success: false, error: error.message });
       });
     return true;
@@ -300,6 +341,67 @@ async function handleAskQuestion(request) {
   } catch (error) {
     const errorMessage = ErrorHandler.getErrorMessage(error);
     await ErrorHandler.logError(error, 'handleAskQuestion');
+    throw new Error(errorMessage, { cause: error });
+  }
+}
+
+async function handleTranslatePDF(request) {
+  const provider = validateProvider(request.provider);
+  const apiKey = await StorageManager.getApiKey(provider);
+  if (!apiKey) {
+    throw new Error('API key non configurata. Vai nelle impostazioni.');
+  }
+
+  try {
+    return await translatePDFText(
+      request.text,
+      request.targetLanguage,
+      provider,
+      apiKey,
+      request.forceTranslate || false,
+    );
+  } catch (error) {
+    const errorMessage = ErrorHandler.getErrorMessage(error);
+    await ErrorHandler.logError(error, 'handleTranslatePDF');
+    throw new Error(errorMessage, { cause: error });
+  }
+}
+
+async function handleExtractPDFCitations(request) {
+  const provider = validateProvider(request.provider);
+  const apiKey = await StorageManager.getApiKey(provider);
+  if (!apiKey) {
+    throw new Error('API key non configurata. Vai nelle impostazioni.');
+  }
+
+  try {
+    return await extractPDFCitations(request.text, request.filename, provider, apiKey);
+  } catch (error) {
+    const errorMessage = ErrorHandler.getErrorMessage(error);
+    await ErrorHandler.logError(error, 'handleExtractPDFCitations');
+    throw new Error(errorMessage, { cause: error });
+  }
+}
+
+async function handleAskPDFQuestion(request) {
+  const provider = validateProvider(request.provider);
+  const apiKey = await StorageManager.getApiKey(provider);
+  if (!apiKey) {
+    throw new Error('API key non configurata. Vai nelle impostazioni.');
+  }
+
+  try {
+    const answer = await askQuestionPDF(
+      request.question,
+      request.extractedText,
+      request.summary,
+      provider,
+      apiKey,
+    );
+    return { answer };
+  } catch (error) {
+    const errorMessage = ErrorHandler.getErrorMessage(error);
+    await ErrorHandler.logError(error, 'handleAskPDFQuestion');
     throw new Error(errorMessage, { cause: error });
   }
 }

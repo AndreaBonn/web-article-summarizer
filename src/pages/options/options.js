@@ -6,6 +6,7 @@ import { APIResilience } from '../../utils/ai/api-resilience.js';
 import { CacheManager } from '../../utils/storage/cache-manager.js';
 import { CompressionManager } from '../../utils/storage/compression-manager.js';
 import { Modal } from '../../utils/core/modal.js';
+import { eventCleanup } from '../../utils/core/event-cleanup.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -16,23 +17,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadStats();
     await loadPerformanceStats();
 
-    // Event listeners
-    document.getElementById('saveKeysBtn').addEventListener('click', saveApiKeys);
-    document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
-    document
-      .getElementById('savePerformanceBtn')
-      .addEventListener('click', savePerformanceSettings);
-    document.getElementById('clearCacheBtn').addEventListener('click', clearCache);
-    document.getElementById('clearLogsBtn').addEventListener('click', clearLogs);
-    document.getElementById('runCleanupBtn').addEventListener('click', runCleanup);
+    // Event listeners (managed via eventCleanup for consistency)
+    eventCleanup.addEventListener(document.getElementById('saveKeysBtn'), 'click', saveApiKeys);
+    eventCleanup.addEventListener(
+      document.getElementById('saveSettingsBtn'),
+      'click',
+      saveSettings,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('savePerformanceBtn'),
+      'click',
+      savePerformanceSettings,
+    );
+    eventCleanup.addEventListener(document.getElementById('clearCacheBtn'), 'click', clearCache);
+    eventCleanup.addEventListener(document.getElementById('clearLogsBtn'), 'click', clearLogs);
+    eventCleanup.addEventListener(document.getElementById('runCleanupBtn'), 'click', runCleanup);
 
     // Test API keys
     document.querySelectorAll('.btn-test').forEach((btn) => {
-      btn.addEventListener('click', () => testApiKey(btn.dataset.provider));
+      eventCleanup.addEventListener(btn, 'click', () => testApiKey(btn.dataset.provider));
     });
 
     // Applica tema in tempo reale quando cambia il checkbox
-    document.getElementById('darkMode').addEventListener('change', (e) => {
+    eventCleanup.addEventListener(document.getElementById('darkMode'), 'change', (e) => {
       applyTheme(e.target.checked);
     });
 

@@ -5,7 +5,6 @@
 import { APIOrchestrator as APIClient } from '../../utils/ai/api-orchestrator.js';
 import { parseLLMJson } from '../../utils/ai/json-repair.js';
 import { InputSanitizer } from '../../utils/security/input-sanitizer.js';
-import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { Logger } from '../../utils/core/logger.js';
 import { getLanguageNameForPrompt } from '../../utils/i18n/language-names.js';
 
@@ -73,13 +72,8 @@ ${sanitizedText}`;
 }
 
 // Extract citations from PDF text
-export async function extractPDFCitations(text, filename, provider, _settings) {
+export async function extractPDFCitations(text, filename, provider, apiKey) {
   Logger.info('Extracting citations from PDF:', filename);
-
-  const apiKey = await StorageManager.getApiKey(provider);
-  if (!apiKey) {
-    throw new Error('API key non configurata per ' + provider);
-  }
 
   // Build prompt for citation extraction
   const systemPrompt = `Sei un esperto nell'analisi di documenti accademici e scientifici.
