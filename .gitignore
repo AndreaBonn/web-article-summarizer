@@ -35,4 +35,5 @@ CLAUDE.md
 
 # Internal development docs (not for public consumption)
 docs/
+!.github/docs/
 public/icons/README.md
