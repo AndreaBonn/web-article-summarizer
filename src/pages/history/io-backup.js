@@ -154,6 +154,13 @@ export async function importHistory(event) {
   if (!file) return;
 
   try {
+    // Validate file type
+    if (file.type && !['application/json', 'text/json', ''].includes(file.type)) {
+      if (!file.name.endsWith('.json')) {
+        throw new Error('Formato file non valido. Seleziona un file .json');
+      }
+    }
+
     // Leggi file con limite di dimensione (10 MB)
     const MAX_IMPORT_SIZE = 10 * 1024 * 1024;
     if (file.size > MAX_IMPORT_SIZE) {

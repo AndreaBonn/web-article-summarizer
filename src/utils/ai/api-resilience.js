@@ -379,34 +379,44 @@ export class APIResilience {
    * Ottieni statistiche API
    */
   async getStats() {
-    const result = await chrome.storage.local.get(['apiLogs', 'fallbackLogs']);
-    const apiLogs = result.apiLogs || [];
-    const fallbackLogs = result.fallbackLogs || [];
+    try {
+      const result = await chrome.storage.local.get(['apiLogs', 'fallbackLogs']);
+      const apiLogs = result.apiLogs || [];
+      const fallbackLogs = result.fallbackLogs || [];
 
-    const successCount = apiLogs.filter((log) => log.success).length;
-    const failureCount = apiLogs.filter((log) => !log.success && !log.retrying).length;
-    const retryCount = apiLogs.filter((log) => log.retrying).length;
-    const fallbackCount = fallbackLogs.length;
+      const successCount = apiLogs.filter((log) => log.success).length;
+      const failureCount = apiLogs.filter((log) => !log.success && !log.retrying).length;
+      const retryCount = apiLogs.filter((log) => log.retrying).length;
+      const fallbackCount = fallbackLogs.length;
 
-    const successRate = apiLogs.length > 0 ? ((successCount / apiLogs.length) * 100).toFixed(1) : 0;
+      const successRate =
+        apiLogs.length > 0 ? ((successCount / apiLogs.length) * 100).toFixed(1) : 0;
 
-    return {
-      totalCalls: apiLogs.length,
-      successCount,
-      failureCount,
-      retryCount,
-      fallbackCount,
-      successRate: parseFloat(successRate),
-      recentLogs: apiLogs.slice(-10),
-      recentFallbacks: fallbackLogs.slice(-10),
-    };
+      return {
+        totalCalls: apiLogs.length,
+        successCount,
+        failureCount,
+        retryCount,
+        fallbackCount,
+        successRate: parseFloat(successRate),
+        recentLogs: apiLogs.slice(-10),
+        recentFallbacks: fallbackLogs.slice(-10),
+      };
+    } catch (error) {
+      Logger.error('Errore lettura statistiche API:', error);
+      return null;
+    }
   }
 
   /**
    * Pulisci log vecchi
    */
   async clearLogs() {
-    await chrome.storage.local.remove(['apiLogs', 'fallbackLogs']);
+    try {
+      await chrome.storage.local.remove(['apiLogs', 'fallbackLogs']);
+    } catch (error) {
+      Logger.error('Errore pulizia log API:', error);
+    }
   }
 
   sleep(ms) {

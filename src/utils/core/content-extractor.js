@@ -106,6 +106,7 @@ export class ContentExtractor {
       wordCount: wordCount,
       readingTimeMinutes: Math.ceil(wordCount / WORDS_PER_MINUTE),
       excerpt: article.excerpt || fullText.substring(0, 200) + '...',
+      extractionMethod: 'readability',
     };
   }
 
@@ -170,6 +171,7 @@ export class ContentExtractor {
       wordCount: wordCount,
       readingTimeMinutes: Math.ceil(wordCount / WORDS_PER_MINUTE),
       excerpt: fullText.substring(0, 200) + '...',
+      extractionMethod: 'fallback',
     };
   }
 

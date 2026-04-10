@@ -164,20 +164,6 @@ function displayHistory(history) {
 
   emptyEl.classList.add('hidden');
 
-  // Usa lazy loader invece di innerHTML
-  if (!state.lazyLoader) {
-    state.lazyLoader = new HistoryLazyLoader(listEl, 20);
-    state.lazyLoader.onItemClick = openDetail;
-    state.lazyLoader.onFavoriteToggle = async (id) => {
-      const isFavorite = await HistoryManager.toggleFavorite(id);
-      const entry = state.currentHistory.find((e) => e.id === id);
-      if (entry) {
-        entry.favorite = isFavorite;
-      }
-      return isFavorite;
-    };
-  }
-
   state.lazyLoader.setItems(history);
 }
 

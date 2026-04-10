@@ -304,6 +304,11 @@ async function copyTranslation() {
       btn.textContent = originalText;
     }, 2000);
   } catch (error) {
-    Logger.error('Errore copia:', error);
+    Logger.error('Errore copia traduzione:', error);
+    const btn = document.getElementById('copyTranslationBtn');
+    btn.textContent = '✗';
+    setTimeout(() => {
+      btn.textContent = '📋';
+    }, 2000);
   }
 }

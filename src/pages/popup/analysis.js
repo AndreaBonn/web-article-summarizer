@@ -268,6 +268,7 @@ export async function displayResults() {
     );
   } catch (error) {
     Logger.error('Errore salvataggio cronologia:', error);
+    await ErrorHandler.logError(error, 'displayResults.saveHistory');
   }
 
   showState('results');

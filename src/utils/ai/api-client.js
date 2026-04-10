@@ -8,7 +8,7 @@ import { ResponseParser } from './response-parser.js';
 export const DEFAULT_MODELS = {
   groq: 'llama-3.3-70b-versatile',
   openai: 'gpt-4o',
-  anthropic: 'claude-3-5-sonnet-20241022',
+  anthropic: 'claude-sonnet-4-5-20250514',
   gemini: 'gemini-2.5-pro',
 };
 

@@ -114,7 +114,12 @@ async function loadData() {
       // Fallback to sessionStorage (for test files)
       const sessionData = sessionStorage.getItem('readingModeData');
       if (sessionData) {
-        state.currentData = JSON.parse(sessionData);
+        try {
+          state.currentData = JSON.parse(sessionData);
+        } catch {
+          Logger.warn('sessionStorage: dati corrotti, ignorati');
+          throw new Error('NODATA');
+        }
       } else {
         throw new Error('NODATA');
       }

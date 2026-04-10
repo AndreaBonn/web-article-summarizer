@@ -353,5 +353,9 @@ export async function updateDataInStorage() {
     }
   } catch (error) {
     Logger.error('Error updating storage:', error);
+    await Modal.warning(
+      'I dati restano visibili ma non sono stati salvati nella cronologia.',
+      'Errore salvataggio',
+    );
   }
 }
