@@ -365,14 +365,22 @@ export async function importHistory(event) {
     const text = await file.text();
     const backup = JSON.parse(text);
 
-    // Valida struttura
+    // Valida struttura del backup
     if (
       !backup.version ||
-      !backup.data ||
       typeof backup.version !== 'string' ||
-      !Array.isArray(backup.data)
+      !backup.data ||
+      typeof backup.data !== 'object' ||
+      Array.isArray(backup.data)
     ) {
       throw new Error('File di backup non valido');
+    }
+
+    // Valida che contenga almeno una delle chiavi attese
+    const hasArticles = backup.data.singleArticles && Array.isArray(backup.data.singleArticles);
+    const hasMulti = backup.data.multiAnalysis && Array.isArray(backup.data.multiAnalysis);
+    if (!hasArticles && !hasMulti) {
+      throw new Error('Il backup non contiene dati importabili');
     }
 
     // Chiedi conferma
@@ -400,6 +408,25 @@ export async function importHistory(event) {
     btn.textContent = '⏳ Importazione...';
     btn.disabled = true;
 
+    // Whitelist di valori validi per i metadati
+    const VALID_PROVIDERS = ['groq', 'openai', 'anthropic', 'gemini'];
+    const VALID_CONTENT_TYPES = ['general', 'scientific', 'news', 'technical', 'opinion'];
+
+    const sanitizeMetadata = (metadata) => {
+      if (!metadata || typeof metadata !== 'object') return { provider: 'groq', language: 'it' };
+      return {
+        ...metadata,
+        provider: VALID_PROVIDERS.includes(metadata.provider) ? metadata.provider : 'groq',
+        contentType: VALID_CONTENT_TYPES.includes(metadata.contentType)
+          ? metadata.contentType
+          : undefined,
+        language:
+          typeof metadata.language === 'string' && /^[a-z]{2}(-[A-Z]{2})?$/.test(metadata.language)
+            ? metadata.language
+            : 'it',
+      };
+    };
+
     // Importa articoli singoli
     let importedSingle = 0;
     if (backup.data.singleArticles && Array.isArray(backup.data.singleArticles)) {
@@ -409,8 +436,8 @@ export async function importHistory(event) {
       for (const article of backup.data.singleArticles) {
         // Evita duplicati basati su ID
         if (!currentIds.has(article.id)) {
-          // Genera nuovo ID se necessario
-          article.id = Date.now() + Math.random();
+          article.id = crypto.randomUUID();
+          article.metadata = sanitizeMetadata(article.metadata);
           await HistoryManager.saveSummary(
             article.article,
             article.summary,
@@ -435,8 +462,7 @@ export async function importHistory(event) {
       for (const analysis of backup.data.multiAnalysis) {
         // Evita duplicati basati su ID
         if (!currentIds.has(analysis.id)) {
-          // Genera nuovo ID se necessario
-          analysis.id = Date.now() + Math.random();
+          analysis.id = crypto.randomUUID();
           await HistoryManager.saveMultiAnalysis(analysis.analysis, analysis.articles);
           importedMulti++;
         }

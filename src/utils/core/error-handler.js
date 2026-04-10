@@ -109,7 +109,7 @@ export class ErrorHandler {
       const logs = result.errorLogs || [];
 
       logs.push({
-        message: error.message || error.toString(),
+        message: this.getErrorMessage(error),
         context,
         timestamp: Date.now(),
         url: (() => {

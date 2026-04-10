@@ -1,4 +1,5 @@
 import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
+import { InputSanitizer } from '../../utils/security/input-sanitizer.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { APIClient } from '../../utils/ai/api-client.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
@@ -63,7 +64,12 @@ export async function submitQuestion() {
   }
 }
 
-async function askQuestionToArticles(question) {
+async function askQuestionToArticles(rawQuestion) {
+  const question = InputSanitizer.sanitizeUserPrompt(rawQuestion, {
+    maxLength: 500,
+    minLength: 3,
+  });
+
   const settings = await StorageManager.getSettings();
   const provider = settings.selectedProvider || 'groq';
   const apiKey = await StorageManager.getApiKey(provider);

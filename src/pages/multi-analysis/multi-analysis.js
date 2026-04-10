@@ -6,6 +6,7 @@ import { I18n } from '../../utils/i18n/i18n.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { MultiAnalysisManager } from '../../utils/core/multi-analysis-manager.js';
 import { Modal } from '../../utils/core/modal.js';
+import { ErrorHandler } from '../../utils/core/error-handler.js';
 import { state } from './state.js';
 import { exportPdf, exportMarkdown, sendEmail, copyContent } from './export.js';
 import { submitQuestion } from './qa.js';
@@ -243,13 +244,7 @@ async function startAnalysis() {
     Logger.error('Stack trace:', error.stack);
     hideProgress();
     await Modal.alert(
-      I18n.t('multi.analysisError') +
-        ' ' +
-        error.message +
-        '\n\n' +
-        I18n.t('multi.errorDetails') +
-        ' ' +
-        (error.stack || 'N/A'),
+      I18n.t('multi.analysisError') + ' ' + ErrorHandler.getErrorMessage(error),
       I18n.t('multi.errorTitle'),
       '❌',
     );
@@ -288,47 +283,50 @@ function showUnrelatedModal(reason = null) {
 
     modal.classList.remove('hidden');
 
-    const handleQAOnly = () => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    const handleChoice = (choice) => {
       modal.classList.add('hidden');
-      cleanup();
-      resolve('qaOnly');
+      controller.abort();
+      resolve(choice);
     };
 
-    const handleFullAnalysis = () => {
-      modal.classList.add('hidden');
-      cleanup();
-      resolve('full');
-    };
-
-    const handleCancel = () => {
-      modal.classList.add('hidden');
-      cleanup();
-      resolve('cancel');
-    };
-
-    const cleanup = () => {
-      document.getElementById('unrelatedQAOnly').removeEventListener('click', handleQAOnly);
-      document
-        .getElementById('unrelatedFullAnalysis')
-        .removeEventListener('click', handleFullAnalysis);
-      document.getElementById('unrelatedCancel').removeEventListener('click', handleCancel);
-    };
-
-    document.getElementById('unrelatedQAOnly').addEventListener('click', handleQAOnly);
-    document.getElementById('unrelatedFullAnalysis').addEventListener('click', handleFullAnalysis);
-    document.getElementById('unrelatedCancel').addEventListener('click', handleCancel);
+    document
+      .getElementById('unrelatedQAOnly')
+      .addEventListener('click', () => handleChoice('qaOnly'), { signal });
+    document
+      .getElementById('unrelatedFullAnalysis')
+      .addEventListener('click', () => handleChoice('full'), { signal });
+    document
+      .getElementById('unrelatedCancel')
+      .addEventListener('click', () => handleChoice('cancel'), { signal });
   });
 }
 
 function formatMarkdown(text) {
-  const escaped = HtmlSanitizer.escape(text);
-  return escaped
-    .replace(/### (.*)/gm, (_, g1) => `<h4>${g1}</h4>`)
-    .replace(/## (.*)/gm, (_, g1) => `<h3>${g1}</h3>`)
-    .replace(/\*\*(.*?)\*\*/g, (_, g1) => `<strong>${g1}</strong>`)
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^(.*)$/, '<p>$1</p>');
+  const e = (s) => HtmlSanitizer.escape(s);
+
+  // Processa riga per riga: escape il testo raw, poi applica formattazione
+  const lines = text.split('\n');
+  const htmlLines = lines.map((line) => {
+    // Heading h4 (###)
+    const h4Match = line.match(/^### (.*)$/);
+    if (h4Match) return `<h4>${e(h4Match[1])}</h4>`;
+
+    // Heading h3 (##)
+    const h3Match = line.match(/^## (.*)$/);
+    if (h3Match) return `<h3>${e(h3Match[1])}</h3>`;
+
+    // Testo normale: escape prima, poi bold
+    let escaped = e(line);
+    escaped = escaped.replace(/\*\*(.*?)\*\*/g, (_, g1) => `<strong>${g1}</strong>`);
+    return escaped;
+  });
+
+  // Unisci: righe vuote → nuovo paragrafo, righe singole → <br>
+  const joined = htmlLines.join('\n');
+  return '<p>' + joined.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
 }
 
 function showAnalysisModal() {
