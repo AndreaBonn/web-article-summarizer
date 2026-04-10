@@ -352,3 +352,7 @@ Make sure all tests pass and linting is clean before submitting.
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
 
 If you use or redistribute this software, you must retain the copyright notice and provide attribution to the original author.
+
+---
+
+If you find this project useful, please consider giving it a star on GitHub — it helps others discover it and motivates continued development.

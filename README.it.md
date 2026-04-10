@@ -360,3 +360,7 @@ Assicurati che tutti i test passino e il linting sia pulito prima di inviare.
 Questo progetto è distribuito sotto licenza Apache 2.0. Vedi il file [LICENSE](LICENSE) per i dettagli.
 
 Se utilizzi o redistribuisci questo software, devi mantenere la nota di copyright e fornire attribuzione all'autore originale.
+
+---
+
+Se questo progetto ti è stato utile, lascia una stella su GitHub — aiuta altri a scoprirlo e motiva lo sviluppo continuo.
