@@ -14,7 +14,7 @@ export class AdvancedAnalysis {
         maxTokens: provider === 'gemini' ? 8000 : 1500,
       });
     } catch (error) {
-      throw new Error(`Errore Q&A: ${error.message}`);
+      throw new Error(`Errore Q&A: ${error.message}`, { cause: error });
     }
   }
 

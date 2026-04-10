@@ -40,7 +40,10 @@ export async function analyzeArticle() {
         msgError.message?.includes('Could not establish connection') ||
         msgError.message?.includes('Receiving end does not exist')
       ) {
-        throw new Error('Impossibile comunicare con la pagina. Ricarica la pagina (F5) e riprova.');
+        throw new Error(
+          'Impossibile comunicare con la pagina. Ricarica la pagina (F5) e riprova.',
+          { cause: msgError },
+        );
       }
       throw msgError;
     }

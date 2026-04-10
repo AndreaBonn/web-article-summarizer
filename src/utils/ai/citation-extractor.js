@@ -32,7 +32,7 @@ export const CitationExtractor = {
       return this.parseCitations(response, article);
     } catch (error) {
       Logger.error('Errore estrazione citazioni:', error);
-      throw new Error('Impossibile estrarre le citazioni: ' + error.message);
+      throw new Error('Impossibile estrarre le citazioni: ' + error.message, { cause: error });
     }
   },
 
@@ -217,7 +217,7 @@ Analizza ora e restituisci SOLO il JSON valido.`;
     } catch (error) {
       Logger.error('Errore parsing citazioni:', error);
       Logger.error('Risposta completa:', response.substring(0, 1000));
-      throw new Error('Errore nel parsing delle citazioni: ' + error.message);
+      throw new Error('Errore nel parsing delle citazioni: ' + error.message, { cause: error });
     }
   },
 

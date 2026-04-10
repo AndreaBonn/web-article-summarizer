@@ -13,9 +13,10 @@ export class BaseHistoryRepository {
       if (error.message?.includes('QUOTA_BYTES')) {
         throw new Error(
           'Spazio di archiviazione esaurito. Pulisci la cronologia nelle impostazioni.',
+          { cause: error },
         );
       }
-      throw new Error(`Errore salvataggio: ${error.message}`);
+      throw new Error(`Errore salvataggio: ${error.message}`, { cause: error });
     }
   }
 

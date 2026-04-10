@@ -154,10 +154,10 @@ export class PDFAnalyzer {
       Logger.error('Errore estrazione PDF:', error);
 
       if (error.name === 'PasswordException') {
-        throw new Error(this.ERROR_MESSAGES.PASSWORD_PROTECTED);
+        throw new Error(this.ERROR_MESSAGES.PASSWORD_PROTECTED, { cause: error });
       }
 
-      throw new Error(this.ERROR_MESSAGES.EXTRACTION_FAILED);
+      throw new Error(this.ERROR_MESSAGES.EXTRACTION_FAILED, { cause: error });
     }
   }
 
@@ -202,7 +202,7 @@ export class PDFAnalyzer {
       return analysis;
     } catch (error) {
       Logger.error('Errore API:', error);
-      throw new Error(this.ERROR_MESSAGES.API_ERROR + ': ' + error.message);
+      throw new Error(this.ERROR_MESSAGES.API_ERROR + ': ' + error.message, { cause: error });
     }
   }
 

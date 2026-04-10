@@ -64,7 +64,7 @@ ${text}`;
     return { sameLanguage: false, translation };
   } catch (error) {
     Logger.error('API translation error:', error);
-    throw new Error('Errore durante la traduzione: ' + error.message);
+    throw new Error('Errore durante la traduzione: ' + error.message, { cause: error });
   }
 }
 
@@ -125,7 +125,7 @@ Rispondi in formato JSON come specificato.`;
     }
   } catch (error) {
     Logger.error('Error extracting PDF citations:', error);
-    throw new Error('Errore estrazione citazioni: ' + error.message);
+    throw new Error('Errore estrazione citazioni: ' + error.message, { cause: error });
   }
 }
 
@@ -163,6 +163,6 @@ Rispondi alla domanda basandoti sul documento sopra.`;
     return answer;
   } catch (error) {
     Logger.error('Error asking question about PDF:', error);
-    throw new Error('Errore durante la risposta: ' + error.message);
+    throw new Error('Errore durante la risposta: ' + error.message, { cause: error });
   }
 }

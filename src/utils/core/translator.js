@@ -16,7 +16,7 @@ export class Translator {
         maxTokens: provider === 'gemini' ? 8000 : 4096,
       });
     } catch (error) {
-      throw new Error(`Errore traduzione: ${error.message}`);
+      throw new Error(`Errore traduzione: ${error.message}`, { cause: error });
     }
   }
 

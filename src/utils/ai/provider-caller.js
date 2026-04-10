@@ -19,6 +19,7 @@ export class ProviderCaller {
       if (error.name === 'AbortError') {
         throw new Error(
           `Timeout: il provider non ha risposto entro ${FETCH_TIMEOUT_MS / 1000} secondi. Riprova.`,
+          { cause: error },
         );
       }
       throw error;

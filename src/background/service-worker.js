@@ -170,7 +170,7 @@ async function handleGenerateSummary(article, provider, settings) {
     Logger.error('Errore generazione riassunto:', error);
     const errorMessage = ErrorHandler.getErrorMessage(error);
     await ErrorHandler.logError(error, 'handleGenerateSummary');
-    throw new Error(errorMessage);
+    throw new Error(errorMessage, { cause: error });
   }
 }
 
@@ -193,7 +193,7 @@ async function testApiKey(provider, apiKey) {
     await APIClient.callAPI(provider, apiKey, testArticle, testSettings);
     return true;
   } catch (error) {
-    throw new Error(`Test fallito: ${error.message}`);
+    throw new Error(`Test fallito: ${error.message}`, { cause: error });
   }
 }
 
@@ -248,7 +248,7 @@ async function handleExtractCitations(article, provider, settings) {
     Logger.error('Errore estrazione citazioni:', error);
     const errorMessage = ErrorHandler.getErrorMessage(error);
     await ErrorHandler.logError(error, 'handleExtractCitations');
-    throw new Error(errorMessage);
+    throw new Error(errorMessage, { cause: error });
   }
 }
 
@@ -271,7 +271,7 @@ async function handleTranslateArticle(request) {
   } catch (error) {
     const errorMessage = ErrorHandler.getErrorMessage(error);
     await ErrorHandler.logError(error, 'handleTranslateArticle');
-    throw new Error(errorMessage);
+    throw new Error(errorMessage, { cause: error });
   }
 }
 
@@ -295,6 +295,6 @@ async function handleAskQuestion(request) {
   } catch (error) {
     const errorMessage = ErrorHandler.getErrorMessage(error);
     await ErrorHandler.logError(error, 'handleAskQuestion');
-    throw new Error(errorMessage);
+    throw new Error(errorMessage, { cause: error });
   }
 }
