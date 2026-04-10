@@ -12,7 +12,12 @@ import {
 describe('formatCitationsText()', () => {
   it('test_formatCitationsText_arrayCompleto_contieneAutoreAnnoSorgente', () => {
     const citations = [
-      { author: 'Rossi M.', year: '2023', source: 'Nature', quote_text: 'La scoperta è rivoluzionaria.' },
+      {
+        author: 'Rossi M.',
+        year: '2023',
+        source: 'Nature',
+        quote_text: 'La scoperta è rivoluzionaria.',
+      },
     ];
     const result = formatCitationsText(citations);
 
@@ -62,7 +67,7 @@ describe('formatCitationsText()', () => {
 describe('formatQAText()', () => {
   it('test_formatQAText_arrayCoppieQA_contieneQeR', () => {
     const qa = [
-      { question: 'Cos\'è il TDD?', answer: 'Test-Driven Development.' },
+      { question: "Cos'è il TDD?", answer: 'Test-Driven Development.' },
       { question: 'Perché usarlo?', answer: 'Migliora la qualità del codice.' },
     ];
     const result = formatQAText(qa);
@@ -71,7 +76,7 @@ describe('formatQAText()', () => {
     expect(result).toContain('R1:');
     expect(result).toContain('Q2:');
     expect(result).toContain('R2:');
-    expect(result).toContain('Cos\'è il TDD?');
+    expect(result).toContain("Cos'è il TDD?");
     expect(result).toContain('Test-Driven Development.');
   });
 
@@ -117,12 +122,10 @@ describe('formatTranslationText()', () => {
     expect(formatTranslationText(undefined)).toBe('');
   });
 
-  it('test_formatTranslationText_oggettoSenzaText_usaOggettoComeFallback', () => {
-    // Comportamento attuale: translation.text è undefined, quindi cade su `|| translation` (l'oggetto {})
-    // L'oggetto vuoto è truthy → viene formattato come "[object Object]"
-    // Questo test documenta il comportamento esistente senza modificare l'implementazione
+  it('test_formatTranslationText_oggettoSenzaText_restituisceStringaVuota', () => {
+    // Oggetto senza .text → stringa vuota (non [object Object])
     const result = formatTranslationText({});
-    expect(result).toContain('TRADUZIONE:');
+    expect(result).toBe('');
   });
 });
 

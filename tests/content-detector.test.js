@@ -23,10 +23,10 @@ describe('ContentDetector.detectContentType()', () => {
     expect(ContentDetector.detectContentType(article)).toBe('news');
   });
 
-  it('test_detectContentType_keywordBreaking_restittuisceNews', () => {
+  it('test_detectContentType_multipleNewsSignals_restittuisceNews', () => {
     const article = makeArticle(
       'Aggiornamento urgente',
-      'Breaking: the company has just announced a major restructuring plan for all divisions.',
+      'Breaking: the company reported today a major restructuring plan according to sources close to the CEO.',
     );
     expect(ContentDetector.detectContentType(article)).toBe('news');
   });
@@ -95,7 +95,7 @@ describe('ContentDetector.detectContentType()', () => {
 describe('ContentDetector.detectLanguage()', () => {
   it('test_detectLanguage_testoItaliano_restittuisceIt', () => {
     const text =
-      'Questo articolo parla della situazione della scuola italiana. La riforma delle università è questo anno nell\'agenda politica.';
+      "Questo articolo parla della situazione della scuola italiana. La riforma delle università è questo anno nell'agenda politica.";
     expect(ContentDetector.detectLanguage(text)).toBe('it');
   });
 

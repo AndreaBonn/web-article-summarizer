@@ -55,7 +55,7 @@ export function formatQAText(qaArray) {
 export function formatTranslationText(translation) {
   if (!translation) return '';
 
-  const translationText = translation.text || translation;
+  const translationText = typeof translation === 'string' ? translation : translation.text;
   if (!translationText) return '';
 
   return `${SEPARATOR}\n\nTRADUZIONE:\n${translationText}\n\n`;
