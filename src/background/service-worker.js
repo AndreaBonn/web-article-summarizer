@@ -4,6 +4,8 @@ import { APIClient } from '../utils/ai/api-client.js';
 import { CacheManager } from '../utils/storage/cache-manager.js';
 import { AutoMaintenance } from '../utils/core/auto-maintenance.js';
 import { CitationExtractor } from '../utils/ai/citation-extractor.js';
+import { Translator } from '../utils/core/translator.js';
+import { AdvancedAnalysis } from '../utils/ai/advanced-analysis.js';
 import { ErrorHandler } from '../utils/core/error-handler.js';
 import { Logger } from '../utils/core/logger.js';
 
@@ -69,6 +71,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       })
       .catch((error) => {
         Logger.error('Errore test API:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true;
+  }
+
+  if (request.action === 'translateArticle') {
+    handleTranslateArticle(request)
+      .then((result) => {
+        sendResponse({ success: true, result });
+      })
+      .catch((error) => {
+        Logger.error('Errore traduzione:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true;
+  }
+
+  if (request.action === 'askQuestion') {
+    handleAskQuestion(request)
+      .then((result) => {
+        sendResponse({ success: true, result });
+      })
+      .catch((error) => {
+        Logger.error('Errore Q&A:', error);
         sendResponse({ success: false, error: error.message });
       });
     return true;
@@ -144,7 +170,7 @@ async function handleGenerateSummary(article, provider, settings) {
     Logger.error('Errore generazione riassunto:', error);
     const errorMessage = ErrorHandler.getErrorMessage(error);
     await ErrorHandler.logError(error, 'handleGenerateSummary');
-    throw new Error(errorMessage);
+    throw new Error(errorMessage, { cause: error });
   }
 }
 
@@ -167,7 +193,7 @@ async function testApiKey(provider, apiKey) {
     await APIClient.callAPI(provider, apiKey, testArticle, testSettings);
     return true;
   } catch (error) {
-    throw new Error(`Test fallito: ${error.message}`);
+    throw new Error(`Test fallito: ${error.message}`, { cause: error });
   }
 }
 
@@ -222,6 +248,53 @@ async function handleExtractCitations(article, provider, settings) {
     Logger.error('Errore estrazione citazioni:', error);
     const errorMessage = ErrorHandler.getErrorMessage(error);
     await ErrorHandler.logError(error, 'handleExtractCitations');
-    throw new Error(errorMessage);
+    throw new Error(errorMessage, { cause: error });
+  }
+}
+
+async function handleTranslateArticle(request) {
+  const provider = validateProvider(request.provider);
+  const apiKey = await StorageManager.getApiKey(provider);
+  if (!apiKey) {
+    throw new Error('API key non configurata. Vai nelle impostazioni.');
+  }
+
+  try {
+    const translation = await Translator.translateArticle(
+      request.article,
+      request.targetLanguage,
+      provider,
+      apiKey,
+      request.contentType || null,
+    );
+    return { translation };
+  } catch (error) {
+    const errorMessage = ErrorHandler.getErrorMessage(error);
+    await ErrorHandler.logError(error, 'handleTranslateArticle');
+    throw new Error(errorMessage, { cause: error });
+  }
+}
+
+async function handleAskQuestion(request) {
+  const provider = validateProvider(request.provider);
+  const apiKey = await StorageManager.getApiKey(provider);
+  if (!apiKey) {
+    throw new Error('API key non configurata. Vai nelle impostazioni.');
+  }
+
+  try {
+    const answer = await AdvancedAnalysis.askQuestion(
+      request.question,
+      request.article,
+      request.summary,
+      provider,
+      apiKey,
+      request.settings || {},
+    );
+    return { answer };
+  } catch (error) {
+    const errorMessage = ErrorHandler.getErrorMessage(error);
+    await ErrorHandler.logError(error, 'handleAskQuestion');
+    throw new Error(errorMessage, { cause: error });
   }
 }

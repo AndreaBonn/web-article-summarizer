@@ -3,6 +3,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { Logger } from '../core/logger.js';
 import { PDFCacheManager } from './pdf-cache-manager.js';
 import { StorageManager } from '../storage/storage-manager.js';
+import { getLanguageNameForPrompt } from '../i18n/language-names.js';
 import { parseLLMJson } from '../ai/json-repair.js';
 import { APIClient } from '../ai/api-client.js';
 
@@ -153,10 +154,10 @@ export class PDFAnalyzer {
       Logger.error('Errore estrazione PDF:', error);
 
       if (error.name === 'PasswordException') {
-        throw new Error(this.ERROR_MESSAGES.PASSWORD_PROTECTED);
+        throw new Error(this.ERROR_MESSAGES.PASSWORD_PROTECTED, { cause: error });
       }
 
-      throw new Error(this.ERROR_MESSAGES.EXTRACTION_FAILED);
+      throw new Error(this.ERROR_MESSAGES.EXTRACTION_FAILED, { cause: error });
     }
   }
 
@@ -201,7 +202,7 @@ export class PDFAnalyzer {
       return analysis;
     } catch (error) {
       Logger.error('Errore API:', error);
-      throw new Error(this.ERROR_MESSAGES.API_ERROR + ': ' + error.message);
+      throw new Error(this.ERROR_MESSAGES.API_ERROR + ': ' + error.message, { cause: error });
     }
   }
 
@@ -210,20 +211,12 @@ export class PDFAnalyzer {
    */
   buildSystemPrompt(settings) {
     const language = settings.outputLanguage || 'it';
-    const languageNames = {
-      it: 'italiano',
-      en: 'inglese',
-      es: 'spagnolo',
-      fr: 'francese',
-      de: 'tedesco',
-    };
-
     return `Sei un esperto analista di documenti. Il tuo compito è analizzare documenti PDF e fornire:
 1. Un riassunto chiaro e conciso
 2. I punti chiave più importanti
 3. Eventuali citazioni rilevanti
 
-Rispondi SEMPRE in ${languageNames[language]}.
+Rispondi SEMPRE in ${getLanguageNameForPrompt(language)}.
 
 Formato risposta (JSON):
 {

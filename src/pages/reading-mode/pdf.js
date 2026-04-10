@@ -6,6 +6,7 @@ import { APIClient } from '../../utils/ai/api-client.js';
 import { parseLLMJson } from '../../utils/ai/json-repair.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { Logger } from '../../utils/core/logger.js';
+import { getLanguageNameForPrompt } from '../../utils/i18n/language-names.js';
 
 // Translate PDF text
 export async function translatePDFText(
@@ -17,16 +18,7 @@ export async function translatePDFText(
 ) {
   Logger.info('Translating PDF text to:', targetLanguage, 'Force:', forceTranslate);
 
-  // Language names for prompt
-  const languageNames = {
-    it: 'italiano',
-    en: 'inglese',
-    es: 'spagnolo',
-    fr: 'francese',
-    de: 'tedesco',
-  };
-
-  const targetLangName = languageNames[targetLanguage] || targetLanguage;
+  const targetLangName = getLanguageNameForPrompt(targetLanguage);
 
   // Build prompt
   let systemPrompt, userPrompt;
@@ -72,7 +64,7 @@ ${text}`;
     return { sameLanguage: false, translation };
   } catch (error) {
     Logger.error('API translation error:', error);
-    throw new Error('Errore durante la traduzione: ' + error.message);
+    throw new Error('Errore durante la traduzione: ' + error.message, { cause: error });
   }
 }
 
@@ -133,7 +125,7 @@ Rispondi in formato JSON come specificato.`;
     }
   } catch (error) {
     Logger.error('Error extracting PDF citations:', error);
-    throw new Error('Errore estrazione citazioni: ' + error.message);
+    throw new Error('Errore estrazione citazioni: ' + error.message, { cause: error });
   }
 }
 
@@ -171,6 +163,6 @@ Rispondi alla domanda basandoti sul documento sopra.`;
     return answer;
   } catch (error) {
     Logger.error('Error asking question about PDF:', error);
-    throw new Error('Errore durante la risposta: ' + error.message);
+    throw new Error('Errore durante la risposta: ' + error.message, { cause: error });
   }
 }

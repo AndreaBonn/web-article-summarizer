@@ -22,7 +22,7 @@ export class PDFCacheManager {
       return hashHex;
     } catch (error) {
       Logger.error('Errore calcolo hash:', error);
-      throw new Error('Impossibile calcolare hash del file');
+      throw new Error('Impossibile calcolare hash del file', { cause: error });
     }
   }
 

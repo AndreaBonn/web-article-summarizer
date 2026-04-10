@@ -14,6 +14,7 @@ import { ProgressTracker } from '../../utils/core/progress-tracker.js';
 import { eventCleanup } from '../../utils/core/event-cleanup.js';
 import { ErrorHandler } from '../../utils/core/error-handler.js';
 import { Logger } from '../../utils/core/logger.js';
+import { ThemeManager } from '../../utils/core/theme-manager.js';
 
 // Initialization
 document.addEventListener('DOMContentLoaded', async () => {
@@ -47,11 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const settings = await StorageManager.getSettings();
     elements.providerSelect.value = settings.selectedProvider;
 
-    // Initialize theme icon based on saved settings
-    if (settings.darkMode) {
-      elements.themeToggleBtn.textContent = '◐';
-      elements.themeToggleBtn.title = 'Tema Chiaro';
-    }
+    // Theme is auto-initialized by ThemeManager import
 
     // Load saved UI language
     const savedUILanguage = await StorageManager.getUILanguage();
@@ -85,7 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     eventCleanup.addEventListener(elements.analyzeBtn, 'click', analyzeArticle);
     eventCleanup.addEventListener(elements.generateBtn, 'click', generateSummary);
     eventCleanup.addEventListener(elements.retryBtn, 'click', analyzeArticle);
-    eventCleanup.addEventListener(elements.themeToggleBtn, 'click', toggleTheme);
+    eventCleanup.addEventListener(elements.themeToggleBtn, 'click', () => ThemeManager.toggle());
     eventCleanup.addEventListener(elements.settingsBtn, 'click', () => {
       chrome.runtime.openOptionsPage();
     });
@@ -202,26 +199,7 @@ function reset() {
   showState('initial');
 }
 
-// Theme Toggle
-async function toggleTheme() {
-  const settings = await StorageManager.getSettings();
-  const newDarkMode = !settings.darkMode;
-
-  // Update settings
-  settings.darkMode = newDarkMode;
-  await StorageManager.saveSettings(settings);
-
-  // Apply theme
-  if (newDarkMode) {
-    document.body.classList.add('dark-mode');
-    elements.themeToggleBtn.textContent = '◐';
-    elements.themeToggleBtn.title = 'Tema Chiaro';
-  } else {
-    document.body.classList.remove('dark-mode');
-    elements.themeToggleBtn.textContent = '◑';
-    elements.themeToggleBtn.title = 'Tema Scuro';
-  }
-}
+// Theme toggle delegated to ThemeManager
 
 // Open Reading Mode
 async function openReadingMode() {

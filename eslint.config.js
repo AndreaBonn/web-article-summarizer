@@ -27,10 +27,8 @@ export default [
       eqeqeq: 'error',
       'no-eval': 'error',
       'no-implied-eval': 'error',
-      // Disabilitato: il codice esistente ricompila errori nel catch senza propagare la cause.
-      // È un pattern diffuso nel codebase — abilitare quando si fa cleanup degli error handler.
       'no-throw-literal': 'off',
-      'preserve-caught-error': 'off',
+      'preserve-caught-error': 'error',
     },
   },
 

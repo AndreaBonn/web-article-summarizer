@@ -28,6 +28,7 @@
       "matches": ["https://*/*"],
       "exclude_matches": ["https://accounts.google.com/*", "https://*.banking.com/*"],
       "js": ["src/content/content-script.js"],
+      "css": ["src/content/content-script.css"],
       "run_at": "document_idle"
     }
   ],
@@ -37,7 +38,7 @@
     "128": "public/icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; object-src 'none'; img-src 'self' data:; connect-src https://api.groq.com https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; frame-src 'self'"
+    "extension_pages": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; font-src 'self'; object-src 'none'; img-src 'self' data:; media-src 'none'; connect-src https://api.groq.com https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; frame-src https: http:"
   },
   "web_accessible_resources": [
     {

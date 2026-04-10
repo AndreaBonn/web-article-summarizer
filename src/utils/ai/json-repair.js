@@ -72,6 +72,6 @@ export function parseLLMJson(text) {
     return result;
   } catch (repairError) {
     Logger.error('JSON repair failed:', repairError);
-    throw new Error('Malformed JSON from LLM that could not be repaired');
+    throw new Error('Malformed JSON from LLM that could not be repaired', { cause: repairError });
   }
 }

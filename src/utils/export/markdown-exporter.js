@@ -1,5 +1,6 @@
 // Markdown Exporter - Genera file Markdown ben formattati
 import { CitationExtractor } from '../ai/citation-extractor.js';
+import { CitationFormatter } from '../ai/citation-formatter.js';
 
 export class MarkdownExporter {
   static exportToMarkdown(
@@ -228,18 +229,6 @@ export class MarkdownExporter {
   }
 
   static getCitationTypeLabel(type) {
-    const labels = {
-      direct_quote: 'Citazione Diretta',
-      indirect_quote: 'Citazione Indiretta',
-      study_reference: 'Studio/Ricerca',
-      statistic: 'Statistica',
-      expert_opinion: 'Opinione Esperto',
-      book_reference: 'Libro',
-      article_reference: 'Articolo',
-      report_reference: 'Report',
-      organization_data: 'Dati Organizzazione',
-      web_source: 'Fonte Web',
-    };
-    return labels[type] || 'Altro';
+    return CitationFormatter.getCitationTypeLabel(type);
   }
 }

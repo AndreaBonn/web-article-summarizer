@@ -114,17 +114,7 @@ function highlightParagraph(paragraphNumber) {
   }, HIGHLIGHT_DURATION_MS);
 }
 
-// Inietta CSS per highlight
-const style = document.createElement('style');
-style.textContent = `
-  .ai-summarizer-highlight {
-    background-color: rgba(255, 255, 0, 0.3) !important;
-    border-left: 4px solid #ff6b00 !important;
-    padding-left: 12px !important;
-    transition: all 0.3s ease !important;
-  }
-`;
-document.head.appendChild(style);
+// CSS highlight is now injected via manifest.json content_scripts.css
 
 // Evidenzia testo specifico nella pagina (per citazioni)
 function highlightTextInPage(searchText) {
@@ -227,70 +217,68 @@ function highlightTextInPage(searchText) {
   }
 
   // Evidenzia i nodi trovati
-  nodesToHighlight.forEach(
-    ({ node, text, searchText: textToHighlight, _exact, keywordMatch }, idx) => {
-      const parent = node.parentElement;
+  nodesToHighlight.forEach(({ node, text, searchText: textToHighlight, keywordMatch }, idx) => {
+    const parent = node.parentElement;
 
-      // Per keyword match, evidenzia tutto il nodo
-      if (keywordMatch) {
+    // Per keyword match, evidenzia tutto il nodo
+    if (keywordMatch) {
+      const highlight = document.createElement('span');
+      highlight.className = 'citation-highlight';
+      highlight.style.backgroundColor = '#ffeb3b';
+      highlight.style.padding = '2px 4px';
+      highlight.style.borderRadius = '3px';
+      highlight.style.fontWeight = 'bold';
+      highlight.textContent = text;
+
+      parent.replaceChild(highlight, node);
+
+      if (idx === 0) {
+        highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    // Per match esatti/parziali, evidenzia solo la parte corrispondente
+    const textNormalized = normalizeText(text);
+    const searchNormalized = normalizeText(textToHighlight);
+    const index = textNormalized.indexOf(searchNormalized);
+
+    if (index !== -1) {
+      // Trova l'indice nel testo originale (non normalizzato)
+      // Questo è approssimativo ma funziona nella maggior parte dei casi
+      const originalIndex = text
+        .toLowerCase()
+        .indexOf(textToHighlight.toLowerCase().substring(0, 50));
+
+      if (originalIndex !== -1) {
+        const before = text.substring(0, originalIndex);
+        const matchLength = Math.min(textToHighlight.length, text.length - originalIndex);
+        const match = text.substring(originalIndex, originalIndex + matchLength);
+        const after = text.substring(originalIndex + matchLength);
+
+        const fragment = document.createDocumentFragment();
+
+        if (before) fragment.appendChild(document.createTextNode(before));
+
         const highlight = document.createElement('span');
         highlight.className = 'citation-highlight';
         highlight.style.backgroundColor = '#ffeb3b';
         highlight.style.padding = '2px 4px';
         highlight.style.borderRadius = '3px';
         highlight.style.fontWeight = 'bold';
-        highlight.textContent = text;
+        highlight.textContent = match;
+        fragment.appendChild(highlight);
 
-        parent.replaceChild(highlight, node);
+        if (after) fragment.appendChild(document.createTextNode(after));
+
+        parent.replaceChild(fragment, node);
 
         if (idx === 0) {
           highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        return;
       }
-
-      // Per match esatti/parziali, evidenzia solo la parte corrispondente
-      const textNormalized = normalizeText(text);
-      const searchNormalized = normalizeText(textToHighlight);
-      const index = textNormalized.indexOf(searchNormalized);
-
-      if (index !== -1) {
-        // Trova l'indice nel testo originale (non normalizzato)
-        // Questo è approssimativo ma funziona nella maggior parte dei casi
-        const originalIndex = text
-          .toLowerCase()
-          .indexOf(textToHighlight.toLowerCase().substring(0, 50));
-
-        if (originalIndex !== -1) {
-          const before = text.substring(0, originalIndex);
-          const matchLength = Math.min(textToHighlight.length, text.length - originalIndex);
-          const match = text.substring(originalIndex, originalIndex + matchLength);
-          const after = text.substring(originalIndex + matchLength);
-
-          const fragment = document.createDocumentFragment();
-
-          if (before) fragment.appendChild(document.createTextNode(before));
-
-          const highlight = document.createElement('span');
-          highlight.className = 'citation-highlight';
-          highlight.style.backgroundColor = '#ffeb3b';
-          highlight.style.padding = '2px 4px';
-          highlight.style.borderRadius = '3px';
-          highlight.style.fontWeight = 'bold';
-          highlight.textContent = match;
-          fragment.appendChild(highlight);
-
-          if (after) fragment.appendChild(document.createTextNode(after));
-
-          parent.replaceChild(fragment, node);
-
-          if (idx === 0) {
-            highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }
-      }
-    },
-  );
+    }
+  });
 
   // Se trovato almeno un match, scroll al primo
   if (nodesToHighlight.length > 0) {

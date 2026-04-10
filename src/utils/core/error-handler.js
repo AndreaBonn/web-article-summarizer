@@ -108,7 +108,7 @@ export class ErrorHandler {
       const result = await chrome.storage.local.get(['errorLogs']);
       const logs = result.errorLogs || [];
 
-      logs.push({
+      const entry = {
         message: this.getErrorMessage(error),
         context,
         timestamp: Date.now(),
@@ -123,7 +123,14 @@ export class ErrorHandler {
             return 'unknown';
           }
         })(),
-      });
+      };
+
+      // Preserve cause chain for debugging
+      if (error.cause) {
+        entry.cause = error.cause.message || String(error.cause);
+      }
+
+      logs.push(entry);
 
       // Mantieni solo gli ultimi MAX_ERROR_LOGS errori
       if (logs.length > MAX_ERROR_LOGS) {

@@ -179,6 +179,11 @@ export class InputSanitizer {
    * Previene prompt injection
    */
   static escapePromptInjection(text) {
+    // Remove zero-width/invisible chars that can bypass pattern matching,
+    // then normalize to NFKC (composes back to standard chars after decomposition)
+    let normalized = text.replace(/[\u200B-\u200F\u2028-\u202F\uFEFF\u00AD]/g, '');
+    normalized = normalized.normalize('NFKC');
+
     // Pattern pericolosi comuni
     const dangerousPatterns = [
       /ignore\s+(all\s+)?(previous|above|prior)\s+instructions?/gi,
@@ -192,7 +197,7 @@ export class InputSanitizer {
       /\[\/INST\]/gi,
     ];
 
-    let safe = text;
+    let safe = normalized;
     dangerousPatterns.forEach((pattern) => {
       safe = safe.replace(pattern, '');
     });

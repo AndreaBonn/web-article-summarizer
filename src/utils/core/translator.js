@@ -3,6 +3,7 @@ import { APIClient } from '../ai/api-client.js';
 import { PromptRegistry } from '../ai/prompt-registry.js';
 import { InputSanitizer } from '../security/input-sanitizer.js';
 import { Logger } from './logger.js';
+import { LANGUAGE_NAMES } from '../i18n/language-names.js';
 
 export class Translator {
   static async translateArticle(article, targetLanguage, provider, apiKey, contentType = null) {
@@ -15,20 +16,12 @@ export class Translator {
         maxTokens: provider === 'gemini' ? 8000 : 4096,
       });
     } catch (error) {
-      throw new Error(`Errore traduzione: ${error.message}`);
+      throw new Error(`Errore traduzione: ${error.message}`, { cause: error });
     }
   }
 
   static buildUserPrompt(article, targetLanguage, contentType) {
-    const languageNames = {
-      it: 'Italiano',
-      en: 'English',
-      es: 'Español',
-      fr: 'Français',
-      de: 'Deutsch',
-    };
-
-    const langName = languageNames[targetLanguage] || targetLanguage;
+    const langName = LANGUAGE_NAMES[targetLanguage] || targetLanguage;
 
     // ✅ SANITIZZA IL TITOLO
     let cleanTitle;
