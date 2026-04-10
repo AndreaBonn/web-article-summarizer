@@ -13,11 +13,11 @@ export const Logger = {
   },
 
   debug(...args) {
-    if (this._shouldLog('debug')) console.log(...args);
+    if (this._shouldLog('debug')) console.debug(...args);
   },
 
   info(...args) {
-    if (this._shouldLog('info')) console.log(...args);
+    if (this._shouldLog('info')) console.info(...args);
   },
 
   warn(...args) {
