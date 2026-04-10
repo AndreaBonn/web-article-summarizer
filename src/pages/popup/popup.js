@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await chrome.runtime.openOptionsPage();
       } catch (error) {
         Logger.error('Impossibile aprire le impostazioni:', error);
+        showError('Impossibile aprire le impostazioni. Riprova.');
       }
     });
     eventCleanup.addEventListener(elements.historyBtn, 'click', async () => {
@@ -95,6 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await chrome.tabs.create({ url: 'src/pages/history/history.html' });
       } catch (error) {
         Logger.error('Impossibile aprire la cronologia:', error);
+        showError('Impossibile aprire la cronologia. Riprova.');
       }
     });
     eventCleanup.addEventListener(elements.multiAnalysisBtn, 'click', async () => {
@@ -102,6 +104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await chrome.tabs.create({ url: 'src/pages/multi-analysis/multi-analysis.html' });
       } catch (error) {
         Logger.error('Impossibile aprire multi-analisi:', error);
+        showError('Impossibile aprire multi-analisi. Riprova.');
       }
     });
     eventCleanup.addEventListener(elements.pdfAnalysisBtn, 'click', async () => {
@@ -109,6 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await chrome.tabs.create({ url: 'src/pages/pdf-analysis/pdf-analysis.html' });
       } catch (error) {
         Logger.error('Impossibile aprire analisi PDF:', error);
+        showError('Impossibile aprire analisi PDF. Riprova.');
       }
     });
     eventCleanup.addEventListener(elements.readingModeBtn, 'click', openReadingMode);
@@ -252,5 +256,5 @@ async function openReadingMode() {
   }
 
   // Open reading mode in new tab
-  chrome.tabs.create({ url: 'src/pages/reading-mode/reading-mode.html' });
+  await chrome.tabs.create({ url: 'src/pages/reading-mode/reading-mode.html' });
 }

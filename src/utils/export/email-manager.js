@@ -43,7 +43,7 @@ export class EmailManager {
     let content = '';
 
     // Oggetto
-    const subject = `Riassunto: ${article.title}`;
+    const subject = `Riassunto: ${(article.title || '').replace(/[\r\n]/g, ' ')}`;
 
     // Corpo
     content += `RIASSUNTO ARTICOLO\n`;

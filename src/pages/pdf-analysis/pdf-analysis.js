@@ -12,81 +12,92 @@ let selectedFile = null;
 let pdfAnalyzer = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  Logger.info('PDF Analysis: Inizializzazione...');
+  try {
+    Logger.info('PDF Analysis: Inizializzazione...');
 
-  await I18n.initPage();
+    await I18n.initPage();
 
-  // Configura PDF.js worker
-  pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL(
-    'public/workers/pdf.worker.min.js',
-  );
-  Logger.debug('PDF.js configurato con worker:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+    // Configura PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL(
+      'public/workers/pdf.worker.min.js',
+    );
+    Logger.debug('PDF.js configurato con worker:', pdfjsLib.GlobalWorkerOptions.workerSrc);
 
-  // Inizializza PDF Analyzer
-  pdfAnalyzer = new PDFAnalyzer();
+    // Inizializza PDF Analyzer
+    pdfAnalyzer = new PDFAnalyzer();
 
-  // Carica impostazioni
-  const settings = await StorageManager.getSettings();
-  const providerSelect = document.getElementById('providerSelect');
-  providerSelect.value = settings.selectedProvider || 'claude';
-
-  // Aggiorna il testo del provider nell'info box
-  document.getElementById('currentProvider').textContent =
-    providerSelect.options[providerSelect.selectedIndex].text;
-
-  const savedLanguage = await StorageManager.getSelectedLanguage();
-  if (savedLanguage) {
-    document.getElementById('languageSelect').value = savedLanguage;
-  }
-
-  // Event listeners
-  document.getElementById('backBtn').addEventListener('click', () => {
-    window.close();
-  });
-
-  document.getElementById('themeToggleBtn').addEventListener('click', () => ThemeManager.toggle());
-
-  // Provider change
-  document.getElementById('providerSelect').addEventListener('change', async (e) => {
+    // Carica impostazioni
     const settings = await StorageManager.getSettings();
-    settings.selectedProvider = e.target.value;
-    await StorageManager.saveSettings(settings);
+    const providerSelect = document.getElementById('providerSelect');
+    providerSelect.value = settings.selectedProvider || 'claude';
+
+    // Aggiorna il testo del provider nell'info box
     document.getElementById('currentProvider').textContent =
-      e.target.options[e.target.selectedIndex].text;
-  });
+      providerSelect.options[providerSelect.selectedIndex].text;
 
-  // Language change
-  document.getElementById('languageSelect').addEventListener('change', async (e) => {
-    await StorageManager.saveSelectedLanguage(e.target.value);
-  });
+    const savedLanguage = await StorageManager.getSelectedLanguage();
+    if (savedLanguage) {
+      document.getElementById('languageSelect').value = savedLanguage;
+    }
 
-  // File input
-  const fileInput = document.getElementById('pdfFileInput');
-  const dropZone = document.getElementById('pdfDropZone');
-  const browseBtn = document.getElementById('pdfBrowseBtn');
+    // Event listeners
+    document.getElementById('backBtn').addEventListener('click', () => {
+      window.close();
+    });
 
-  browseBtn.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', handleFileSelect);
+    document
+      .getElementById('themeToggleBtn')
+      .addEventListener('click', () => ThemeManager.toggle());
 
-  // Drag & Drop
-  dropZone.addEventListener('dragover', handleDragOver);
-  dropZone.addEventListener('dragleave', handleDragLeave);
-  dropZone.addEventListener('drop', handleDrop);
+    // Provider change
+    document.getElementById('providerSelect').addEventListener('change', async (e) => {
+      const settings = await StorageManager.getSettings();
+      settings.selectedProvider = e.target.value;
+      await StorageManager.saveSettings(settings);
+      document.getElementById('currentProvider').textContent =
+        e.target.options[e.target.selectedIndex].text;
+    });
 
-  // Remove file
-  document.getElementById('removeFileBtn').addEventListener('click', removeFile);
+    // Language change
+    document.getElementById('languageSelect').addEventListener('change', async (e) => {
+      await StorageManager.saveSelectedLanguage(e.target.value);
+    });
 
-  // Analyze button
-  document.getElementById('analyzePdfBtn').addEventListener('click', startAnalysis);
+    // File input
+    const fileInput = document.getElementById('pdfFileInput');
+    const dropZone = document.getElementById('pdfDropZone');
+    const browseBtn = document.getElementById('pdfBrowseBtn');
 
-  // Font size controls
-  document.getElementById('fontIncreaseBtn').addEventListener('click', increaseFontSize);
-  document.getElementById('fontDecreaseBtn').addEventListener('click', decreaseFontSize);
+    browseBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFileSelect);
 
-  // Load font size
-  loadFontSize();
+    // Drag & Drop
+    dropZone.addEventListener('dragover', handleDragOver);
+    dropZone.addEventListener('dragleave', handleDragLeave);
+    dropZone.addEventListener('drop', handleDrop);
 
-  Logger.debug('Event listeners configurati');
+    // Remove file
+    document.getElementById('removeFileBtn').addEventListener('click', removeFile);
+
+    // Analyze button
+    document.getElementById('analyzePdfBtn').addEventListener('click', startAnalysis);
+
+    // Font size controls
+    document.getElementById('fontIncreaseBtn').addEventListener('click', increaseFontSize);
+    document.getElementById('fontDecreaseBtn').addEventListener('click', decreaseFontSize);
+
+    // Load font size
+    loadFontSize();
+
+    Logger.debug('Event listeners configurati');
+  } catch (error) {
+    Logger.error('Errore inizializzazione PDF Analysis:', error);
+    const errorEl = document.getElementById('errorMessage');
+    if (errorEl) {
+      errorEl.textContent = 'Errore durante il caricamento. Ricarica la pagina.';
+      errorEl.style.display = 'block';
+    }
+  }
 });
 
 function handleDragOver(e) {

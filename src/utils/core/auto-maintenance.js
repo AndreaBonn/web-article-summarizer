@@ -180,11 +180,15 @@ export class AutoMaintenance {
   /**
    * Programma la prossima manutenzione via chrome.alarms (persistente in MV3)
    */
-  scheduleMaintenance() {
+  async scheduleMaintenance() {
     if (typeof chrome !== 'undefined' && chrome.alarms) {
-      chrome.alarms.create('autoMaintenance', {
-        periodInMinutes: this.maintenanceInterval / 60000,
-      });
+      try {
+        await chrome.alarms.create('autoMaintenance', {
+          periodInMinutes: this.maintenanceInterval / 60000,
+        });
+      } catch (error) {
+        Logger.warn('Impossibile schedulare manutenzione automatica:', error);
+      }
     }
   }
 

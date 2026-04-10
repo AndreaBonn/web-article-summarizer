@@ -51,37 +51,58 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'generateSummary') {
-    handleGenerateSummary(request.article, validateProvider(request.provider), request.settings)
+    let provider;
+    try {
+      provider = validateProvider(request.provider);
+    } catch (error) {
+      sendResponse({ success: false, error: ErrorHandler.getErrorMessage(error) });
+      return false;
+    }
+    handleGenerateSummary(request.article, provider, request.settings)
       .then((result) => {
         sendResponse({ success: true, result });
       })
       .catch((error) => {
         Logger.error('Errore generazione:', error);
-        sendResponse({ success: false, error: error.message });
+        sendResponse({ success: false, error: ErrorHandler.getErrorMessage(error) });
       });
     return true; // Keep the channel open for async response
   }
 
   if (request.action === 'extractCitations') {
-    handleExtractCitations(request.article, validateProvider(request.provider), request.settings)
+    let provider;
+    try {
+      provider = validateProvider(request.provider);
+    } catch (error) {
+      sendResponse({ success: false, error: ErrorHandler.getErrorMessage(error) });
+      return false;
+    }
+    handleExtractCitations(request.article, provider, request.settings)
       .then((result) => {
         sendResponse({ success: true, result });
       })
       .catch((error) => {
         Logger.error('Errore estrazione citazioni:', error);
-        sendResponse({ success: false, error: error.message });
+        sendResponse({ success: false, error: ErrorHandler.getErrorMessage(error) });
       });
     return true;
   }
 
   if (request.action === 'testApiKey') {
-    testApiKey(validateProvider(request.provider), request.apiKey)
+    let provider;
+    try {
+      provider = validateProvider(request.provider);
+    } catch (error) {
+      sendResponse({ success: false, error: ErrorHandler.getErrorMessage(error) });
+      return false;
+    }
+    testApiKey(provider, request.apiKey)
       .then(() => {
         sendResponse({ success: true });
       })
       .catch((error) => {
         Logger.error('Errore test API:', error);
-        sendResponse({ success: false, error: error.message });
+        sendResponse({ success: false, error: ErrorHandler.getErrorMessage(error) });
       });
     return true;
   }
@@ -93,7 +114,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       })
       .catch((error) => {
         Logger.error('Errore traduzione:', error);
-        sendResponse({ success: false, error: error.message });
+        sendResponse({ success: false, error: ErrorHandler.getErrorMessage(error) });
       });
     return true;
   }
@@ -105,7 +126,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       })
       .catch((error) => {
         Logger.error('Errore Q&A:', error);
-        sendResponse({ success: false, error: error.message });
+        sendResponse({ success: false, error: ErrorHandler.getErrorMessage(error) });
       });
     return true;
   }
@@ -117,7 +138,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       })
       .catch((error) => {
         Logger.error('Errore traduzione PDF:', error);
-        sendResponse({ success: false, error: error.message });
+        sendResponse({ success: false, error: ErrorHandler.getErrorMessage(error) });
       });
     return true;
   }
@@ -129,7 +150,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       })
       .catch((error) => {
         Logger.error('Errore citazioni PDF:', error);
-        sendResponse({ success: false, error: error.message });
+        sendResponse({ success: false, error: ErrorHandler.getErrorMessage(error) });
       });
     return true;
   }
@@ -141,7 +162,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       })
       .catch((error) => {
         Logger.error('Errore Q&A PDF:', error);
-        sendResponse({ success: false, error: error.message });
+        sendResponse({ success: false, error: ErrorHandler.getErrorMessage(error) });
       });
     return true;
   }

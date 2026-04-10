@@ -16,7 +16,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/manifest-v3-blue" alt="Manifest V3" />
   <img src="https://img.shields.io/badge/version-2.2.0-green" alt="Versione" />
-  <img src="https://img.shields.io/badge/license-MIT-yellow" alt="Licenza" />
+  <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="Licenza" />
 </p>
 
 ---
@@ -33,6 +33,7 @@
 - [Stack Tecnologico](#stack-tecnologico)
 - [Sviluppo](#sviluppo)
 - [Struttura del Progetto](#struttura-del-progetto)
+- [Sicurezza](#sicurezza)
 - [Contribuire](#contribuire)
 - [Autore](#autore)
 
@@ -41,41 +42,49 @@
 ## Funzionalità
 
 **Analisi Articoli**
+
 - Riassunto con un click da qualsiasi pagina web
 - Estrazione dei punti chiave per una lettura rapida
 - Rilevamento automatico del tipo di contenuto (news, scientifico, tutorial, business, opinione)
 - Lunghezza del riassunto regolabile (breve, medio, dettagliato)
 
 **Traduzione e Citazioni**
+
 - Traduzione completa dell'articolo in 5 lingue
 - Estrazione citazioni bibliografiche con formattazione APA
 - Matching delle fonti e riferimenti a livello di paragrafo
 
 **Modalità Lettura**
+
 - Vista affiancata: articolo originale + analisi AI
 - Pannelli ridimensionabili con divisore trascinabile
 - Controllo dimensione font e tema chiaro/scuro
 
 **Analisi Multi-Articolo**
+
 - Confronto e analisi simultanea di più articoli
 - Q&A trasversale tra articoli
 - Generazione di riassunti consolidati
 
 **Analisi PDF**
+
 - Caricamento e analisi di documenti PDF
 - Estrazione testo con caching intelligente
 - Pipeline di analisi completa (riassunto, punti chiave, traduzione, citazioni)
 
 **Controlli Vocali**
+
 - Text-to-Speech: ascolta riassunti e analisi
 - Speech-to-Text: fai domande usando la voce
 
 **Cronologia ed Esportazione**
+
 - Cronologia automatica con ricerca, filtri e preferiti
 - Esportazione in PDF, Markdown o Email
 - Import/export della cronologia come backup JSON
 
 **Funzionalità Avanzate**
+
 - Cache delle risposte per accesso rapido
 - Compressione dati per storage efficiente
 - Fallback automatico tra provider
@@ -85,12 +94,12 @@
 
 ## Provider Supportati
 
-| Provider | Modello | Piano Gratuito |
-|----------|---------|----------------|
-| [Groq](https://console.groq.com) | Llama 3.3 70B | Si |
-| [OpenAI](https://platform.openai.com) | GPT-4o | No |
-| [Anthropic](https://console.anthropic.com) | Claude 3.5 Sonnet | No |
-| [Google Gemini](https://aistudio.google.com) | Gemini 2.5 Pro | Si |
+| Provider                                     | Modello           | Piano Gratuito |
+| -------------------------------------------- | ----------------- | -------------- |
+| [Groq](https://console.groq.com)             | Llama 3.3 70B     | Si             |
+| [OpenAI](https://platform.openai.com)        | GPT-4o            | No             |
+| [Anthropic](https://console.anthropic.com)   | Claude 3.5 Sonnet | No             |
+| [Google Gemini](https://aistudio.google.com) | Gemini 2.5 Pro    | Si             |
 
 Ogni provider richiede la propria API key. Puoi configurare più provider e passare da uno all'altro.
 
@@ -184,21 +193,21 @@ Scrivi una domanda nella sezione Q&A in fondo al popup oppure usa il pulsante mi
 
 ## Scorciatoie da Tastiera
 
-| Scorciatoia | Azione |
-|-------------|--------|
+| Scorciatoia | Azione                                                  |
+| ----------- | ------------------------------------------------------- |
 | `A-` / `A+` | Diminuisci / aumenta dimensione font (Modalità Lettura) |
 
 ---
 
 ## Formati di Esportazione
 
-| Formato | Descrizione |
-|---------|-------------|
-| **PDF** | Documento formattato con tutte le sezioni di analisi |
-| **Markdown** | Testo strutturato con intestazioni e formattazione |
-| **Email** | Apre il client email predefinito con contenuto pre-compilato |
-| **Copia** | Copia l'analisi negli appunti |
-| **JSON** | Import/export della cronologia per backup |
+| Formato      | Descrizione                                                  |
+| ------------ | ------------------------------------------------------------ |
+| **PDF**      | Documento formattato con tutte le sezioni di analisi         |
+| **Markdown** | Testo strutturato con intestazioni e formattazione           |
+| **Email**    | Apre il client email predefinito con contenuto pre-compilato |
+| **Copia**    | Copia l'analisi negli appunti                                |
+| **JSON**     | Import/export della cronologia per backup                    |
 
 ---
 
@@ -218,18 +227,18 @@ L'output dell'analisi può essere generato in qualsiasi di queste lingue, indipe
 
 ## Stack Tecnologico
 
-| Categoria | Tecnologia |
-|-----------|-----------|
-| Piattaforma | Chrome Extension (Manifest V3) |
-| Build | Vite + @crxjs/vite-plugin |
-| Estrazione Contenuto | @mozilla/readability |
-| Parsing PDF | pdfjs-dist |
-| Export PDF | jspdf |
-| Compressione | lz-string |
-| Testing | Vitest + jsdom |
-| Linting | ESLint (flat config) |
-| Formattazione | Prettier |
-| CI/CD | GitHub Actions |
+| Categoria            | Tecnologia                     |
+| -------------------- | ------------------------------ |
+| Piattaforma          | Chrome Extension (Manifest V3) |
+| Build                | Vite + @crxjs/vite-plugin      |
+| Estrazione Contenuto | @mozilla/readability           |
+| Parsing PDF          | pdfjs-dist                     |
+| Export PDF           | jspdf                          |
+| Compressione         | lz-string                      |
+| Testing              | Vitest + jsdom                 |
+| Linting              | ESLint (flat config)           |
+| Formattazione        | Prettier                       |
+| CI/CD                | GitHub Actions                 |
 
 ---
 
@@ -305,14 +314,24 @@ src/
 
 L'estensione richiede i seguenti permessi Chrome:
 
-| Permesso | Motivazione |
-|----------|-------------|
+| Permesso    | Motivazione                                                      |
+| ----------- | ---------------------------------------------------------------- |
 | `activeTab` | Accedere al tab corrente per estrarre il contenuto dell'articolo |
-| `storage` | Salvare impostazioni, cronologia e dati in cache localmente |
-| `scripting` | Iniettare content script per l'estrazione dell'articolo |
-| `tts` | Text-to-Speech per leggere i riassunti ad alta voce |
+| `storage`   | Salvare impostazioni, cronologia e dati in cache localmente      |
+| `scripting` | Iniettare content script per l'estrazione dell'articolo          |
+| `tts`       | Text-to-Speech per leggere i riassunti ad alta voce              |
 
 Le chiamate API vengono effettuate direttamente agli endpoint dei provider. Nessun dato viene inviato a server terzi oltre al provider AI selezionato.
+
+---
+
+## Sicurezza
+
+Questa estensione implementa un'architettura di sicurezza completa e multi-livello che include prevenzione XSS, difesa contro prompt injection (5 lingue), Content Security Policy restrittiva, sandboxing iframe e molto altro.
+
+Per la panoramica completa sulla sicurezza, vedi **[SECURITY.it.md](SECURITY.it.md)**.
+
+Per segnalare una vulnerabilità, segui il [processo di divulgazione responsabile](SECURITY.it.md#segnalare-una-vulnerabilità).
 
 ---
 
@@ -338,4 +357,6 @@ Assicurati che tutti i test passino e il linting sia pulito prima di inviare.
 
 ## Licenza
 
-Questo progetto è distribuito sotto licenza MIT. Vedi il file [LICENSE](LICENSE) per i dettagli.
+Questo progetto è distribuito sotto licenza Apache 2.0. Vedi il file [LICENSE](LICENSE) per i dettagli.
+
+Se utilizzi o redistribuisci questo software, devi mantenere la nota di copyright e fornire attribuzione all'autore originale.

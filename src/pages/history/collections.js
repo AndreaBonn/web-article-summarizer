@@ -67,14 +67,16 @@ function createPDFCard(entry) {
 
   const badges = [];
   if (hasTranslation) badges.push('<span class="badge">Tradotto</span>');
-  if (hasQA) badges.push(`<span class="badge">${entry.qa.length} Q&A</span>`);
+  if (hasQA) badges.push(`<span class="badge">${Number(entry.qa.length) || 0} Q&A</span>`);
   if (hasCitations)
-    badges.push(`<span class="badge">${entry.citations.citations.length} Citazioni</span>`);
+    badges.push(
+      `<span class="badge">${Number(entry.citations.citations.length) || 0} Citazioni</span>`,
+    );
   if (hasNotes) badges.push('<span class="badge">Note</span>');
   if (entry.metadata.fromCache) badges.push('<span class="badge cache-badge">Cache</span>');
 
   return `
-    <div class="history-card pdf-card" data-id="${entry.id}">
+    <div class="history-card pdf-card" data-id="${HtmlSanitizer.escape(entry.id)}">
       <div class="card-header">
         <div class="card-title-row">
           <h3 class="card-title">${HtmlSanitizer.escape(entry.pdf.name)}</h3>
@@ -228,7 +230,7 @@ function createMultiAnalysisCard(entry) {
   const provider = entry.metadata?.provider || 'unknown';
 
   return `
-    <div class="multi-analysis-card" data-id="${entry.id}">
+    <div class="multi-analysis-card" data-id="${HtmlSanitizer.escape(entry.id)}">
       <div class="multi-analysis-header">
         <div>
           <div class="multi-analysis-title">
@@ -241,7 +243,7 @@ function createMultiAnalysisCard(entry) {
             ${qaCount > 0 ? `<span class="multi-analysis-badge qa">${qaCount} Q&A</span>` : ''}
           </div>
         </div>
-        <button class="btn-favorite-multi ${entry.favorite ? 'active' : ''}" data-id="${entry.id}" title="${entry.favorite ? HtmlSanitizer.escape(I18n.t('history.removeFavorite')) : HtmlSanitizer.escape(I18n.t('history.addFavorite'))}">
+        <button class="btn-favorite-multi ${entry.favorite ? 'active' : ''}" data-id="${HtmlSanitizer.escape(entry.id)}" title="${entry.favorite ? HtmlSanitizer.escape(I18n.t('history.removeFavorite')) : HtmlSanitizer.escape(I18n.t('history.addFavorite'))}">
           ${entry.favorite ? '⭐' : '☆'}
         </button>
       </div>

@@ -113,8 +113,8 @@ export class HistoryLazyLoader {
       <div class="history-item-header">
         <div class="history-item-title">${this.escapeHtml(entry.article.title)}</div>
         <div class="history-item-actions">
-          <button class="btn-favorite ${entry.favorite ? 'active' : ''}" 
-                  data-id="${entry.id}" 
+          <button class="btn-favorite ${entry.favorite ? 'active' : ''}"
+                  data-id="${this.escapeHtml(entry.id)}"
                   title="${entry.favorite ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}">
             ${entry.favorite ? '⭐' : '☆'}
           </button>

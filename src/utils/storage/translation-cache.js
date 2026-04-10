@@ -62,7 +62,10 @@ export class TranslationCache {
 
       await chrome.storage.local.set({ [STORAGE_KEY]: cache });
     } catch (error) {
-      Logger.error('TranslationCache.save failed:', error);
+      Logger.warn(
+        'TranslationCache.save failed (traduzione non in cache, verrà rigenerata):',
+        error,
+      );
     }
   }
 
