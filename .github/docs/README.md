@@ -70,8 +70,8 @@ Guidelines for contributing to the project.
 - [Contributing Guide](CONTRIBUTING.md) - Start contributing
 
 ### For Contributors
-- [GitHub Issues](https://github.com/AndreaBonn/WebArticleSummarizer/issues) - Report bugs or request features
-- [GitHub Discussions](https://github.com/AndreaBonn/WebArticleSummarizer/discussions) - Ask questions and discuss ideas
+- [GitHub Issues](https://github.com/AndreaBonn/web-article-summarizer/issues) - Report bugs or request features
+- [GitHub Discussions](https://github.com/AndreaBonn/web-article-summarizer/discussions) - Ask questions and discuss ideas
 
 ---
 

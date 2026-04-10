@@ -54,12 +54,12 @@ Questo progetto segue un semplice codice di condotta:
 1. Fai il fork del repository su GitHub
 2. Clona il tuo fork localmente:
    ```bash
-   git clone https://github.com/TUO_USERNAME/WebArticleSummarizer.git
-   cd WebArticleSummarizer
+   git clone https://github.com/TUO_USERNAME/web-article-summarizer.git
+   cd web-article-summarizer
    ```
 3. Aggiungi remote upstream:
    ```bash
-   git remote add upstream https://github.com/AndreaBonn/WebArticleSummarizer.git
+   git remote add upstream https://github.com/AndreaBonn/web-article-summarizer.git
    ```
 
 ---
@@ -102,7 +102,7 @@ Questo avvia Vite con hot module replacement (HMR).
 ## Struttura Progetto
 
 ```
-WebArticleSummarizer/
+web-article-summarizer/
 ├── .github/
 │   └── docs/              # Documentazione
 │       ├── ARCHITECTURE.md
@@ -524,7 +524,7 @@ Cerca issue etichettate `good first issue` su GitHub. Questi sono task adatti ai
 
 ### Bug Fix
 
-Controlla la pagina [Issues](https://github.com/AndreaBonn/WebArticleSummarizer/issues) per bug segnalati.
+Controlla la pagina [Issues](https://github.com/AndreaBonn/web-article-summarizer/issues) per bug segnalati.
 
 ---
 

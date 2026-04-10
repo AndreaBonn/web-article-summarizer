@@ -112,8 +112,8 @@ Each provider requires its own API key. You can configure multiple providers and
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/AndreaBonn/WebArticleSummarizer.git
-   cd WebArticleSummarizer
+   git clone https://github.com/AndreaBonn/web-article-summarizer.git
+   cd web-article-summarizer
    ```
 
 2. **Install dependencies**
