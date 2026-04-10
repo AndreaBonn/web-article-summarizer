@@ -30,5 +30,8 @@ secrets.json
 # Backup files
 *.backup
 
+# Claude Code config
+CLAUDE.md
+
 # Internal development docs (not for public consumption)
 docs/
