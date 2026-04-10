@@ -18,5 +18,28 @@
   "export.pdf": "Exporter PDF",
   "export.button": "Exporter",
   "action.cancel": "Annuler",
-  "action.confirm": "OK"
+  "action.confirm": "OK",
+
+  "voice.notInitialized": "Contrôleur vocal non initialisé",
+  "voice.recognitionError": "Erreur de Reconnaissance Vocale",
+  "voice.noVoicesAvailable": "Aucune voix disponible pour cette langue",
+  "voice.selectTitle": "Sélectionner une Voix TTS",
+  "voice.close": "Fermer",
+
+  "citations.fromCache": "Depuis le cache",
+
+  "common.copyError": "Impossible de copier dans le presse-papiers",
+  "common.invalidInput": "Saisie Non Valide",
+  "common.actionIrreversible": "Cette action ne peut pas être annulée.",
+  "common.titleUnavailable": "Titre non disponible",
+  "common.analysisNotFound": "Analyse non trouvée",
+
+  "qa.invalidQuestion": "La question n'est pas valide : ",
+
+  "translation.textUnavailable": "Texte non disponible pour la traduction",
+  "translation.translateArticle": "Traduire l'Article",
+
+  "settings.loadError": "Erreur lors du chargement. Rechargez la page.",
+
+  "pdf.invalidFile": "Fichier non valide. Veuillez télécharger un fichier PDF."
 }

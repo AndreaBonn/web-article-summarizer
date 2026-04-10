@@ -18,5 +18,28 @@
   "export.pdf": "PDF Exportieren",
   "export.button": "Exportieren",
   "action.cancel": "Abbrechen",
-  "action.confirm": "OK"
+  "action.confirm": "OK",
+
+  "voice.notInitialized": "Voice-Controller nicht initialisiert",
+  "voice.recognitionError": "Spracherkennungsfehler",
+  "voice.noVoicesAvailable": "Keine Stimmen für diese Sprache verfügbar",
+  "voice.selectTitle": "TTS-Stimme auswählen",
+  "voice.close": "Schließen",
+
+  "citations.fromCache": "Aus dem Cache",
+
+  "common.copyError": "Kopieren in die Zwischenablage nicht möglich",
+  "common.invalidInput": "Ungültige Eingabe",
+  "common.actionIrreversible": "Diese Aktion kann nicht rückgängig gemacht werden.",
+  "common.titleUnavailable": "Titel nicht verfügbar",
+  "common.analysisNotFound": "Analyse nicht gefunden",
+
+  "qa.invalidQuestion": "Die Frage ist nicht gültig: ",
+
+  "translation.textUnavailable": "Text für die Übersetzung nicht verfügbar",
+  "translation.translateArticle": "Artikel übersetzen",
+
+  "settings.loadError": "Fehler beim Laden. Laden Sie die Seite neu.",
+
+  "pdf.invalidFile": "Ungültige Datei. Bitte laden Sie eine PDF-Datei hoch."
 }

@@ -5,6 +5,7 @@
 import { state, elements } from './state.js';
 import { translationState } from './features.js';
 import { Modal } from '../../utils/core/modal.js';
+import { I18n } from '../../utils/i18n/i18n.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { STTManager } from '../../utils/voice/stt-manager.js';
 import { askQuestion } from './features.js';
@@ -39,7 +40,7 @@ export async function handleVoiceQuestion() {
   const interimTranscript = document.getElementById('interimTranscript');
 
   if (!voiceHolder.value) {
-    await Modal.error('Voice Controller non inizializzato', 'Errore');
+    await Modal.error(I18n.t('voice.notInitialized'), I18n.t('modal.errorTitle'));
     return;
   }
 
@@ -76,7 +77,7 @@ export async function handleVoiceQuestion() {
     voiceBtn.classList.remove('listening');
     listeningIndicator.classList.remove('active');
     interimTranscript.style.display = 'none';
-    await Modal.error(error.message, 'Errore Riconoscimento Vocale');
+    await Modal.error(error.message, I18n.t('voice.recognitionError'));
   }
 }
 
@@ -126,7 +127,7 @@ export async function showVoiceSelector(lang) {
   const currentVoice = voiceHolder.value.ttsManager.getPreferredVoice(lang);
 
   if (voices.length === 0) {
-    await Modal.alert('Nessuna voce disponibile per questa lingua', 'Selezione Voce', '🔊');
+    await Modal.alert(I18n.t('voice.noVoicesAvailable'), I18n.t('voice.selectTitle'), '🔊');
     return;
   }
 
@@ -138,7 +139,7 @@ export async function showVoiceSelector(lang) {
   const cancelBtn = document.getElementById('modalCancelBtn');
 
   icon.textContent = '🔊';
-  title.textContent = 'Seleziona Voce TTS';
+  title.textContent = I18n.t('voice.selectTitle');
   message.innerHTML = buildVoiceSelectorHTML(voices, currentVoice);
   confirmBtn.textContent = 'Chiudi';
   cancelBtn.classList.add('hidden');

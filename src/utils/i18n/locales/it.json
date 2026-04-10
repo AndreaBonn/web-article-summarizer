@@ -316,5 +316,28 @@
   "multi.emailQASection": "## Domande e Risposte",
   "multi.emailQuestion": "**Q{index}:**",
   "multi.emailAnswer": "**R{index}:**",
-  "multi.copyError": "Errore durante la copia"
+  "multi.copyError": "Errore durante la copia",
+
+  "voice.notInitialized": "Voice Controller non inizializzato",
+  "voice.recognitionError": "Errore Riconoscimento Vocale",
+  "voice.noVoicesAvailable": "Nessuna voce disponibile per questa lingua",
+  "voice.selectTitle": "Seleziona Voce TTS",
+  "voice.close": "Chiudi",
+
+  "citations.fromCache": "Da cache",
+
+  "common.copyError": "Impossibile copiare negli appunti",
+  "common.invalidInput": "Input Non Valido",
+  "common.actionIrreversible": "Questa azione non può essere annullata.",
+  "common.titleUnavailable": "Titolo non disponibile",
+  "common.analysisNotFound": "Analisi non trovata",
+
+  "qa.invalidQuestion": "La domanda non è valida: ",
+
+  "translation.textUnavailable": "Testo non disponibile per la traduzione",
+  "translation.translateArticle": "Traduci Articolo",
+
+  "settings.loadError": "Errore durante il caricamento. Ricarica la pagina.",
+
+  "pdf.invalidFile": "File non valido. Carica un file PDF."
 }

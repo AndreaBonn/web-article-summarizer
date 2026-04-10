@@ -8,6 +8,7 @@ import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
 import { CitationExtractor } from '../../utils/ai/citation-extractor.js';
 import { Modal } from '../../utils/core/modal.js';
+import { I18n } from '../../utils/i18n/i18n.js';
 import { Logger } from '../../utils/core/logger.js';
 
 // Citations System
@@ -252,7 +253,7 @@ async function copyCitationsData(citationsData) {
     }, 2000);
   } catch (error) {
     Logger.error('Errore copia citazioni:', error);
-    await Modal.error('Impossibile copiare negli appunti', 'Errore');
+    await Modal.error(I18n.t('common.copyError'), I18n.t('modal.errorTitle'));
   }
 }
 

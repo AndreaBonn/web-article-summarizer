@@ -56,7 +56,7 @@ export async function askQuestion() {
       minLength: 3,
     });
   } catch (error) {
-    await Modal.error('La domanda non è valida: ' + error.message, 'Input Non Valido');
+    await Modal.error(I18n.t('qa.invalidQuestion') + error.message, I18n.t('common.invalidInput'));
     return;
   }
 

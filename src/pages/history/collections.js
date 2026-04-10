@@ -254,7 +254,7 @@ function createMultiAnalysisCard(entry) {
                 .slice(0, 3)
                 .map(
                   (a) => `
-          <div class="multi-analysis-article-item">${HtmlSanitizer.escape(a.title || 'Titolo non disponibile')}</div>
+          <div class="multi-analysis-article-item">${HtmlSanitizer.escape(a.title || I18n.t('common.titleUnavailable'))}</div>
         `,
                 )
                 .join('')
@@ -276,7 +276,7 @@ async function openMultiAnalysis(id) {
   Logger.debug('Entry trovata:', entry);
 
   if (!entry) {
-    await Modal.error('Analisi non trovata');
+    await Modal.error(I18n.t('common.analysisNotFound'));
     return;
   }
 
