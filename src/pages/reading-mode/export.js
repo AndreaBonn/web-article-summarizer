@@ -4,6 +4,12 @@
 import { state, elements } from './state.js';
 import { PDFExporter } from '../../utils/export/pdf-exporter.js';
 import { Logger } from '../../utils/core/logger.js';
+import {
+  formatCitationsText,
+  formatQAText,
+  formatTranslationText,
+  formatKeyPointsText,
+} from '../../shared/export-formatters.js';
 
 // Copy all content
 export async function copyAll() {
@@ -18,48 +24,10 @@ export async function copyAll() {
     text += `${'='.repeat(60)}\n\n`;
     text += `RIASSUNTO:\n${summary}\n\n`;
 
-    if (keyPoints && keyPoints.length > 0) {
-      text += `PUNTI CHIAVE:\n`;
-      keyPoints.forEach((point, index) => {
-        text += `${index + 1}. ${point.title}\n`;
-        text += `   ${point.description}\n\n`;
-      });
-    }
-
-    // Aggiungi traduzione se presente
-    if (state.currentData.translation) {
-      text += `${'='.repeat(60)}\n\n`;
-      text += `TRADUZIONE:\n${state.currentData.translation.text || state.currentData.translation}\n\n`;
-    }
-
-    // Aggiungi Q&A se presenti
-    if (state.currentData.qa && state.currentData.qa.length > 0) {
-      text += `${'='.repeat(60)}\n\n`;
-      text += `DOMANDE E RISPOSTE:\n\n`;
-      state.currentData.qa.forEach((qa, index) => {
-        text += `Q${index + 1}: ${qa.question}\n`;
-        text += `R${index + 1}: ${qa.answer}\n\n`;
-      });
-    }
-
-    // Aggiungi citazioni se presenti
-    if (
-      state.currentData.citations &&
-      state.currentData.citations.citations &&
-      state.currentData.citations.citations.length > 0
-    ) {
-      text += `${'='.repeat(60)}\n\n`;
-      text += `CITAZIONI (${state.currentData.citations.citations.length}):\n\n`;
-      state.currentData.citations.citations.forEach((citation, index) => {
-        text += `[${index + 1}] `;
-        if (citation.author) text += `${citation.author} `;
-        if (citation.year) text += `(${citation.year}) `;
-        if (citation.source) text += `- ${citation.source}`;
-        text += `\n`;
-        if (citation.quote_text) text += `   "${citation.quote_text}"\n`;
-        text += `\n`;
-      });
-    }
+    text += formatKeyPointsText(keyPoints);
+    text += formatTranslationText(state.currentData.translation);
+    text += formatQAText(state.currentData.qa);
+    text += formatCitationsText(state.currentData.citations?.citations);
 
     // Aggiungi note se presenti
     if (state.currentData.notes) {
@@ -88,48 +56,10 @@ export async function copyAll() {
   text += `${'='.repeat(60)}\n\n`;
   text += `RIASSUNTO:\n${summary}\n\n`;
 
-  if (keyPoints && keyPoints.length > 0) {
-    text += `PUNTI CHIAVE:\n`;
-    keyPoints.forEach((point, index) => {
-      text += `${index + 1}. ${point.title} (§${point.paragraphs})\n`;
-      text += `   ${point.description}\n\n`;
-    });
-  }
-
-  // Aggiungi traduzione se presente
-  if (state.currentData.translation) {
-    text += `${'='.repeat(60)}\n\n`;
-    text += `TRADUZIONE:\n${state.currentData.translation.text || state.currentData.translation}\n\n`;
-  }
-
-  // Aggiungi Q&A se presenti
-  if (state.currentData.qa && state.currentData.qa.length > 0) {
-    text += `${'='.repeat(60)}\n\n`;
-    text += `DOMANDE E RISPOSTE:\n\n`;
-    state.currentData.qa.forEach((qa, index) => {
-      text += `Q${index + 1}: ${qa.question}\n`;
-      text += `R${index + 1}: ${qa.answer}\n\n`;
-    });
-  }
-
-  // Aggiungi citazioni se presenti
-  if (
-    state.currentData.citations &&
-    state.currentData.citations.citations &&
-    state.currentData.citations.citations.length > 0
-  ) {
-    text += `${'='.repeat(60)}\n\n`;
-    text += `CITAZIONI (${state.currentData.citations.citations.length}):\n\n`;
-    state.currentData.citations.citations.forEach((citation, index) => {
-      text += `[${index + 1}] `;
-      if (citation.author) text += `${citation.author} `;
-      if (citation.year) text += `(${citation.year}) `;
-      if (citation.source) text += `- ${citation.source}`;
-      text += `\n`;
-      if (citation.quote_text) text += `   "${citation.quote_text}"\n`;
-      text += `\n`;
-    });
-  }
+  text += formatKeyPointsText(keyPoints, true);
+  text += formatTranslationText(state.currentData.translation);
+  text += formatQAText(state.currentData.qa);
+  text += formatCitationsText(state.currentData.citations?.citations);
 
   // Aggiungi note se presenti
   if (state.currentData.notes) {

@@ -12,6 +12,7 @@ import { CitationExtractor } from '../../utils/ai/citation-extractor.js';
 import { ErrorHandler } from '../../utils/core/error-handler.js';
 import { Logger } from '../../utils/core/logger.js';
 import { addTTSButtons } from './voice.js';
+import { formatQAText, formatTranslationText } from '../../shared/export-formatters.js';
 
 export async function analyzeArticle() {
   showState('loading');
@@ -315,18 +316,14 @@ export async function copyToClipboard() {
 
   // Aggiungi traduzione se presente
   if (translationState.value) {
-    text += `\n${'='.repeat(50)}\n\n`;
-    text += `TRADUZIONE:\n${translationState.value}\n`;
+    text += `\n`;
+    text += formatTranslationText(translationState.value);
   }
 
   // Aggiungi Q&A se presenti
   if (state.currentQA && state.currentQA.length > 0) {
-    text += `\n${'='.repeat(50)}\n\n`;
-    text += `DOMANDE E RISPOSTE:\n\n`;
-    state.currentQA.forEach((qa, index) => {
-      text += `Q${index + 1}: ${qa.question}\n`;
-      text += `R${index + 1}: ${qa.answer}\n\n`;
-    });
+    text += `\n`;
+    text += formatQAText(state.currentQA);
   }
 
   // Aggiungi citazioni se presenti
