@@ -165,7 +165,7 @@ export class HistoryLazyLoader {
       this.loadingIndicator.className = 'lazy-loading-indicator';
       this.loadingIndicator.innerHTML = `
         <div class="spinner-small"></div>
-        <span>Caricamento...</span>
+        <span>${I18n.t('common.loading')}</span>
       `;
     }
 

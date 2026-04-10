@@ -331,6 +331,7 @@
   "common.actionIrreversible": "This action cannot be undone.",
   "common.titleUnavailable": "Title unavailable",
   "common.analysisNotFound": "Analysis not found",
+  "common.loading": "Loading...",
 
   "qa.invalidQuestion": "The question is not valid: ",
 

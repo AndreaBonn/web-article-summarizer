@@ -331,6 +331,7 @@
   "common.actionIrreversible": "Questa azione non può essere annullata.",
   "common.titleUnavailable": "Titolo non disponibile",
   "common.analysisNotFound": "Analisi non trovata",
+  "common.loading": "Caricamento...",
 
   "qa.invalidQuestion": "La domanda non è valida: ",
 

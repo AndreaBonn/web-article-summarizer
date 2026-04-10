@@ -258,7 +258,7 @@ function createMultiAnalysisCard(entry) {
         `,
                 )
                 .join('')
-            : '<div class="multi-analysis-article-item">Nessun articolo</div>'
+            : `<div class="multi-analysis-article-item">${I18n.t('multi.noArticles')}</div>`
         }
         ${entry.articles && entry.articles.length > 3 ? `<div class="multi-analysis-article-item">... e altri ${entry.articles.length - 3}</div>` : ''}
       </div>

@@ -33,6 +33,7 @@
   "common.actionIrreversible": "Esta acción no se puede deshacer.",
   "common.titleUnavailable": "Título no disponible",
   "common.analysisNotFound": "Análisis no encontrado",
+  "common.loading": "Cargando...",
 
   "qa.invalidQuestion": "La pregunta no es válida: ",
 

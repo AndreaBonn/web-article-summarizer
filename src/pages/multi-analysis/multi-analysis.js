@@ -68,7 +68,7 @@ function displayArticles(articles) {
   const listEl = document.getElementById('articlesList');
 
   if (articles.length === 0) {
-    listEl.innerHTML = '<p class="multi-empty-message">Nessun articolo disponibile</p>';
+    listEl.innerHTML = `<p class="multi-empty-message">${I18n.t('multi.noArticles')}</p>`;
     return;
   }
 
@@ -252,18 +252,14 @@ async function startAnalysis() {
 }
 
 function showProgress(message, percent) {
-  const modal = document.getElementById('progressModal');
   document.getElementById('progressMessage').textContent = message;
   document.getElementById('progressFill').style.width = percent + '%';
   document.getElementById('progressPercent').textContent = Math.round(percent) + '%';
-  modal.classList.remove('hidden');
+  document.getElementById('progressModal').classList.remove('hidden');
 }
 
-function updateProgress(message, percent) {
-  document.getElementById('progressMessage').textContent = message;
-  document.getElementById('progressFill').style.width = percent + '%';
-  document.getElementById('progressPercent').textContent = Math.round(percent) + '%';
-}
+// updateProgress is an alias — showProgress already handles visible modals
+const updateProgress = showProgress;
 
 function hideProgress() {
   document.getElementById('progressModal').classList.add('hidden');
