@@ -22,6 +22,11 @@ function validateProvider(provider) {
 const autoMaintenance = new AutoMaintenance();
 autoMaintenance.initialize().catch((err) => Logger.error('AutoMaintenance init failed:', err));
 
+// Persistent alarm listener for MV3 (survives service worker restarts)
+chrome.alarms.onAlarm.addListener((alarm) => {
+  autoMaintenance.handleAlarm(alarm);
+});
+
 // MV3 Lifecycle Events
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {

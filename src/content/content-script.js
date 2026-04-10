@@ -6,7 +6,7 @@ const HIGHLIGHT_DURATION_MS = 3000;
 const CITATION_HIGHLIGHT_DURATION_MS = 8000;
 const MIN_PARAGRAPH_LENGTH = 20;
 
-let paragraphMap = new Map();
+const paragraphMap = new Map();
 let extractedArticle = null;
 
 // Listener per messaggi dal popup
@@ -81,7 +81,7 @@ function highlightParagraph(paragraphNumber) {
   });
 
   // Gestisci range (es: "3-5")
-  let paragraphs = [];
+  const paragraphs = [];
   if (typeof paragraphNumber === 'string' && paragraphNumber.includes('-')) {
     const [start, end] = paragraphNumber.split('-').map((n) => parseInt(n));
     for (let i = start; i <= end; i++) {
@@ -280,24 +280,19 @@ function highlightTextInPage(searchText) {
     }
   });
 
-  // Se trovato almeno un match, scroll al primo
-  if (nodesToHighlight.length > 0) {
-    const firstHighlight = document.querySelector('.citation-highlight');
-    if (firstHighlight) {
-      firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Scroll al primo highlight e programma rimozione
+  const firstHighlight = document.querySelector('.citation-highlight');
+  if (firstHighlight) {
+    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-      // Rimuovi highlight dopo CITATION_HIGHLIGHT_DURATION_MS
-      setTimeout(() => {
-        document.querySelectorAll('.citation-highlight').forEach((el) => {
-          const parent = el.parentNode;
-          parent.replaceChild(document.createTextNode(el.textContent), el);
-          parent.normalize();
-        });
-      }, CITATION_HIGHLIGHT_DURATION_MS);
-    }
-
-    return true;
+    setTimeout(() => {
+      document.querySelectorAll('.citation-highlight').forEach((el) => {
+        const parent = el.parentNode;
+        parent.replaceChild(document.createTextNode(el.textContent), el);
+        parent.normalize();
+      });
+    }, CITATION_HIGHLIGHT_DURATION_MS);
   }
 
-  return false;
+  return true;
 }

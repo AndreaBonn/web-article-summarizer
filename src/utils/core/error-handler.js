@@ -110,6 +110,8 @@ export class ErrorHandler {
 
       const entry = {
         message: this.getErrorMessage(error),
+        originalMessage: error.message,
+        errorName: error.name,
         context,
         timestamp: Date.now(),
         url: (() => {
@@ -125,9 +127,12 @@ export class ErrorHandler {
         })(),
       };
 
-      // Preserve cause chain for debugging
+      // Preserve cause chain and stack for debugging
       if (error.cause) {
         entry.cause = error.cause.message || String(error.cause);
+      }
+      if (error.stack) {
+        entry.stack = error.stack.split('\n').slice(0, 5).join('\n');
       }
 
       logs.push(entry);

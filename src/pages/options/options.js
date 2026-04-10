@@ -116,28 +116,36 @@ async function loadApiKeys() {
 }
 
 async function loadStats() {
-  const result = await chrome.storage.local.get(['stats']);
-  const stats = result.stats || {
-    totalSummaries: 0,
-    totalWords: 0,
-    providerUsage: {},
-    totalTime: 0,
-  };
+  try {
+    const result = await chrome.storage.local.get(['stats']);
+    const stats = result.stats || {
+      totalSummaries: 0,
+      totalWords: 0,
+      providerUsage: {},
+      totalTime: 0,
+    };
 
-  document.getElementById('totalSummaries').textContent = stats.totalSummaries;
-  document.getElementById('totalWords').textContent = stats.totalWords.toLocaleString();
+    document.getElementById('totalSummaries').textContent = stats.totalSummaries;
+    document.getElementById('totalWords').textContent = stats.totalWords.toLocaleString();
 
-  // Provider più usato
-  const providers = Object.entries(stats.providerUsage);
-  if (providers.length > 0) {
-    const mostUsed = providers.reduce((a, b) => (a[1] > b[1] ? a : b));
-    document.getElementById('mostUsedProvider').textContent = mostUsed[0];
+    // Provider più usato
+    const providers = Object.entries(stats.providerUsage);
+    if (providers.length > 0) {
+      const mostUsed = providers.reduce((a, b) => (a[1] > b[1] ? a : b));
+      document.getElementById('mostUsedProvider').textContent = mostUsed[0];
+    }
+
+    // Tempo risparmiato (assumendo 225 parole/min)
+    const minutesSaved = Math.floor(stats.totalWords / 225);
+    const hoursSaved = (minutesSaved / 60).toFixed(1);
+    document.getElementById('timeSaved').textContent = `${hoursSaved}h`;
+  } catch (error) {
+    Logger.error('Errore caricamento statistiche:', error);
+    document.getElementById('totalSummaries').textContent = '—';
+    document.getElementById('totalWords').textContent = '—';
+    document.getElementById('mostUsedProvider').textContent = '—';
+    document.getElementById('timeSaved').textContent = '—';
   }
-
-  // Tempo risparmiato (assumendo 225 parole/min)
-  const minutesSaved = Math.floor(stats.totalWords / 225);
-  const hoursSaved = (minutesSaved / 60).toFixed(1);
-  document.getElementById('timeSaved').textContent = `${hoursSaved}h`;
 }
 
 const KEY_PREFIXES = {
@@ -188,13 +196,13 @@ async function saveApiKeys() {
 async function saveSettings() {
   const darkMode = document.getElementById('darkMode').checked;
 
-  const settings = {
-    selectedProvider: document.getElementById('defaultProvider').value,
-    summaryLength: 'detailed', // Fisso a dettagliato per massima completezza
-    tone: 'neutral', // Fisso a neutrale
-    saveHistory: document.getElementById('saveHistory').checked,
-    darkMode: darkMode,
-  };
+  // Merge with existing settings to preserve performance settings
+  const settings = await StorageManager.getSettings();
+  settings.selectedProvider = document.getElementById('defaultProvider').value;
+  settings.summaryLength = 'detailed'; // Fisso a dettagliato per massima completezza
+  settings.tone = 'neutral'; // Fisso a neutrale
+  settings.saveHistory = document.getElementById('saveHistory').checked;
+  settings.darkMode = darkMode;
 
   await StorageManager.saveSettings(settings);
   applyTheme(darkMode);

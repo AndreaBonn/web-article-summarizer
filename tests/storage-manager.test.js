@@ -13,7 +13,9 @@ global.chrome = {
         return Promise.resolve(result);
       }),
       set: vi.fn((data) => {
-        Object.assign(store, data);
+        // JSON round-trip simulates Chrome storage serialization
+        const serialized = JSON.parse(JSON.stringify(data));
+        Object.assign(store, serialized);
         return Promise.resolve();
       }),
     },

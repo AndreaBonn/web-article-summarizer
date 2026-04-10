@@ -186,7 +186,9 @@ export async function translateArticle() {
               <button id="translateBtn" class="btn btn-primary">🌍 Traduci Articolo</button>
             </div>
           `;
-          document.getElementById('translateBtn').addEventListener('click', translateArticle);
+          document
+            .getElementById('translateBtn')
+            .addEventListener('click', translateArticle, { once: true });
           return;
         }
       }
@@ -236,8 +238,10 @@ export async function translateArticle() {
         <button id="translateBtn" class="btn btn-primary">🔄 Riprova</button>
       </div>
     `;
-    // Re-attach event listener
-    document.getElementById('translateBtn').addEventListener('click', translateArticle);
+    // Re-attach event listener (once: prevents stacking on repeated failures)
+    document
+      .getElementById('translateBtn')
+      .addEventListener('click', translateArticle, { once: true });
   } finally {
     resetTranslationButton();
   }

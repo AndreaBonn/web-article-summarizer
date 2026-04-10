@@ -1,4 +1,6 @@
 // Response Parser - Parsing delle risposte dai provider LLM
+import { Logger } from '../core/logger.js';
+
 export class ResponseParser {
   static parseResponse(responseText) {
     const parts = responseText.split('## PUNTI CHIAVE');
@@ -23,6 +25,13 @@ export class ResponseParser {
         paragraphs: match[2],
         description: match[3].trim(),
       });
+    }
+
+    if (keyPoints.length === 0 && keyPointsText.trim().length > 0) {
+      Logger.warn(
+        'Nessun punto chiave estratto dalla regex. Risposta raw:',
+        keyPointsText.substring(0, 100),
+      );
     }
 
     return { summary, keyPoints };

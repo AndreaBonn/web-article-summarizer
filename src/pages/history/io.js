@@ -24,7 +24,12 @@ export async function openReadingModeFromHistory() {
   Logger.debug('Opening reading mode with data:', readingData);
 
   // Save to chrome.storage.local (persists across tabs)
-  await chrome.storage.local.set({ readingModeData: readingData });
+  try {
+    await chrome.storage.local.set({ readingModeData: readingData });
+  } catch (error) {
+    Logger.error('Errore apertura reading mode da cronologia:', error);
+    return;
+  }
 
   // Open reading mode in new tab
   window.open(chrome.runtime.getURL('src/pages/reading-mode/reading-mode.html'), '_blank');

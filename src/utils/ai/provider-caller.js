@@ -31,7 +31,13 @@ export class ProviderCaller {
     if (!contentType.includes('application/json') && !contentType.includes('text/json')) {
       throw new Error(`${provider}: risposta non JSON (Content-Type: ${contentType})`);
     }
-    return await response.json();
+    try {
+      return await response.json();
+    } catch (parseError) {
+      throw new Error(`${provider}: risposta con Content-Type JSON ma body non valido`, {
+        cause: parseError,
+      });
+    }
   }
 
   static _validateChoicesResponse(data, provider) {

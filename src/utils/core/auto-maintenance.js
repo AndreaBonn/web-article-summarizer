@@ -178,18 +178,27 @@ export class AutoMaintenance {
   }
 
   /**
-   * Programma la prossima manutenzione
+   * Programma la prossima manutenzione via chrome.alarms (persistente in MV3)
    */
   scheduleMaintenance() {
-    // Esegui manutenzione ogni 24 ore
-    setTimeout(() => {
-      this.runMaintenance()
-        .then(() => this.scheduleMaintenance())
-        .catch((error) => {
-          Logger.error('Manutenzione automatica fallita:', error);
-          this.scheduleMaintenance();
-        });
-    }, this.maintenanceInterval);
+    if (typeof chrome !== 'undefined' && chrome.alarms) {
+      chrome.alarms.create('autoMaintenance', {
+        periodInMinutes: this.maintenanceInterval / 60000,
+      });
+    }
+  }
+
+  /**
+   * Handler per l'alarm — da registrare nel service worker
+   */
+  async handleAlarm(alarm) {
+    if (alarm.name !== 'autoMaintenance') return;
+
+    try {
+      await this.runMaintenance();
+    } catch (error) {
+      Logger.error('Manutenzione automatica fallita:', error);
+    }
   }
 
   /**
