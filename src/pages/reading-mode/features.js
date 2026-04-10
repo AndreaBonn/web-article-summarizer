@@ -9,7 +9,6 @@ import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { Modal } from '../../utils/core/modal.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
-import { translatePDFText, extractPDFCitations } from './pdf.js';
 
 // Translate article
 export async function translateArticle() {
@@ -42,32 +41,41 @@ export async function translateArticle() {
     let translationResult;
 
     if (state.currentData.isPDF) {
-      // For PDFs, translate directly (needs API key for specialized PDF prompt)
-      const apiKey = await StorageManager.getApiKey(provider);
-      if (!apiKey) {
-        throw new Error('API key non configurata per ' + provider);
-      }
-
-      translationResult = await translatePDFText(
-        extractedText,
+      // Delegate to service worker (API key stays in background)
+      const pdfResponse = await chrome.runtime.sendMessage({
+        action: 'translatePDF',
+        text: extractedText,
         targetLanguage,
         provider,
-        apiKey,
-        false,
-      );
+        forceTranslate: false,
+      });
+
+      if (!pdfResponse) {
+        throw new Error('Il servizio non risponde. Ricarica la pagina e riprova.');
+      }
+      if (!pdfResponse.success) {
+        throw new Error(pdfResponse.error);
+      }
+
+      translationResult = pdfResponse.result;
 
       // Check if same language detected
       if (translationResult.sameLanguage) {
         const choice = await showSameLanguageModal(targetLanguage);
 
         if (choice === 'translate') {
-          translationResult = await translatePDFText(
-            state.currentData.extractedText,
+          const forceResponse = await chrome.runtime.sendMessage({
+            action: 'translatePDF',
+            text: state.currentData.extractedText,
             targetLanguage,
             provider,
-            apiKey,
-            true,
-          );
+            forceTranslate: true,
+          });
+
+          if (!forceResponse || !forceResponse.success) {
+            throw new Error(forceResponse?.error || 'Errore durante la traduzione forzata.');
+          }
+          translationResult = forceResponse.result;
         } else if (choice === 'ignore') {
           translationResult = {
             sameLanguage: false,
@@ -164,9 +172,23 @@ export async function extractCitations() {
     let citations;
 
     if (state.currentData.isPDF) {
-      // For PDFs, extract citations from extracted text - usa la variabile già estratta
+      // Delegate to service worker (API key stays in background)
       const filename = state.currentData.filename || state.currentData.pdf?.name || 'PDF';
-      citations = await extractPDFCitations(extractedText, filename, provider, settings);
+      const pdfResponse = await chrome.runtime.sendMessage({
+        action: 'extractPDFCitations',
+        text: extractedText,
+        filename,
+        provider,
+      });
+
+      if (!pdfResponse) {
+        throw new Error('Il servizio non risponde. Ricarica la pagina e riprova.');
+      }
+      if (!pdfResponse.success) {
+        throw new Error(pdfResponse.error);
+      }
+
+      citations = pdfResponse.result;
     } else {
       // For articles, call background script
       const response = await chrome.runtime.sendMessage({

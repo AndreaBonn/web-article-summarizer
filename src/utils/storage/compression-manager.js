@@ -18,7 +18,7 @@ export class CompressionManager extends CompressionMaintenance {
       let uncompressedItems = 0;
 
       // Analizza cronologia
-      for (let entry of history) {
+      for (const entry of history) {
         if (entry.compressed) {
           totalOriginalSize += entry.originalSize || 0;
           totalCompressedSize += entry.compressedSize || 0;
@@ -32,7 +32,7 @@ export class CompressionManager extends CompressionMaintenance {
       }
 
       // Analizza cache
-      for (let entry of Object.values(cache)) {
+      for (const entry of Object.values(cache)) {
         if (entry.data && entry.data.compressed) {
           totalOriginalSize += entry.data.originalSize || 0;
           totalCompressedSize += entry.data.compressedSize || 0;

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ContentClassifier } from '@utils/ai/content-classifier.js';
 
 // Mock Chrome APIs usate da saveUserCorrection
@@ -12,6 +12,10 @@ beforeEach(() => {
     },
     runtime: { id: 'test-id' },
   };
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 // ---------------------------------------------------------------------------
@@ -100,8 +104,6 @@ describe('ContentClassifier.classifyArticle() — selezione manuale', () => {
     expect(result.category).toBe('general');
     expect(result.method).toBe('fallback');
     expect(result.error).toBeDefined();
-
-    vi.restoreAllMocks();
   });
 });
 

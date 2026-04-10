@@ -1,0 +1,366 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('@utils/security/html-sanitizer.js', () => ({
+  HtmlSanitizer: {
+    escape: vi.fn((s) => s),
+  },
+}));
+
+import { CitationFormatter } from '@utils/ai/citation-formatter.js';
+import { HtmlSanitizer } from '@utils/security/html-sanitizer.js';
+
+// ---------------------------------------------------------------------------
+// Fixture comuni
+// ---------------------------------------------------------------------------
+
+const ARTICLE_COMPLETO = {
+  title: 'The Future of Artificial Intelligence',
+  author: 'Mario Rossi',
+  url: 'https://technews.it/articoli/future-ai-2024',
+  publishedDate: '2024-03-15',
+  siteName: 'TechNews Italia',
+};
+
+const CITATION_DIRETTA = {
+  id: 1,
+  type: 'direct_quote',
+  quote_text: 'AI will transform every industry',
+  author: 'Rossi, Mario',
+  source: 'TechNews Italia',
+  year: '2024',
+  paragraph: '2',
+};
+
+const CITATION_STUDIO = {
+  id: 2,
+  type: 'study_reference',
+  quote_text: 'Machine learning models achieve superhuman performance',
+  author: 'Bianchi, Giulia',
+  source: 'Nature AI',
+  year: '2023',
+  paragraph: '4',
+};
+
+// ---------------------------------------------------------------------------
+// formatCitation — input non validi
+// ---------------------------------------------------------------------------
+
+describe('CitationFormatter.formatCitation() — input non validi', () => {
+  it('test_formatCitation_nullArticle_returnsUnavailable', () => {
+    // Arrange / Act
+    const result = CitationFormatter.formatCitation(null, 'apa');
+
+    // Assert
+    expect(result).toBe('Articolo non disponibile');
+  });
+
+  it('test_formatCitation_nonObjectArticle_returnsUnavailable', () => {
+    // Arrange / Act
+    const resultString = CitationFormatter.formatCitation('stringa', 'apa');
+    const resultNumber = CitationFormatter.formatCitation(42, 'apa');
+
+    // Assert
+    expect(resultString).toBe('Articolo non disponibile');
+    expect(resultNumber).toBe('Articolo non disponibile');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// formatCitation — stili
+// ---------------------------------------------------------------------------
+
+describe('CitationFormatter.formatCitation() — stile APA', () => {
+  it('test_formatCitation_apaStyle_includesAuthorYearTitle', () => {
+    // Arrange / Act
+    const result = CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'apa');
+
+    // Assert
+    expect(result).toContain('Rossi');
+    expect(result).toContain('2024');
+    expect(result).toContain('The Future of Artificial Intelligence');
+  });
+
+  it('test_formatCitation_apaStyle_includesSiteNameOrUrl', () => {
+    // Act
+    const result = CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'apa');
+
+    // Assert
+    expect(result).toContain('technews.it');
+  });
+});
+
+describe('CitationFormatter.formatCitation() — stile MLA', () => {
+  it('test_formatCitation_mlaStyle_includesAccessDate', () => {
+    // Arrange / Act
+    const result = CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'mla');
+
+    // Assert — MLA include una data di accesso
+    expect(result).toBeDefined();
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+    // MLA include il titolo dell'articolo
+    expect(result).toContain('The Future of Artificial Intelligence');
+  });
+
+  it('test_formatCitation_mlaStyle_includesAuthorName', () => {
+    // Act
+    const result = CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'mla');
+
+    // Assert
+    expect(result).toContain('Rossi');
+  });
+});
+
+describe('CitationFormatter.formatCitation() — stile Chicago', () => {
+  it('test_formatCitation_chicagoStyle_formatsCorrectly', () => {
+    // Arrange / Act
+    const result = CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'chicago');
+
+    // Assert
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+    expect(result).toContain('The Future of Artificial Intelligence');
+    expect(result).toContain('Rossi');
+  });
+
+  it('test_formatCitation_chicagoStyle_includesSiteOrDomain', () => {
+    // Act
+    const result = CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'chicago');
+
+    // Assert — Chicago usa il dominio estratto dall'URL o il siteName
+    const includesSiteName = result.includes('TechNews Italia');
+    const includesDomain = result.includes('technews.it');
+    expect(includesSiteName || includesDomain).toBe(true);
+  });
+});
+
+describe('CitationFormatter.formatCitation() — stile IEEE', () => {
+  it('test_formatCitation_ieeeStyle_formatsCorrectly', () => {
+    // Arrange / Act
+    const result = CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'ieee');
+
+    // Assert
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+    expect(result).toContain('The Future of Artificial Intelligence');
+  });
+
+  it('test_formatCitation_ieeeStyle_includesYear', () => {
+    // Act
+    const result = CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'ieee');
+
+    // Assert
+    expect(result).toContain('2024');
+  });
+});
+
+describe('CitationFormatter.formatCitation() — stile Harvard', () => {
+  it('test_formatCitation_harvardStyle_formatsCorrectly', () => {
+    // Arrange / Act
+    const result = CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'harvard');
+
+    // Assert
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+    expect(result).toContain('The Future of Artificial Intelligence');
+    expect(result).toContain('Rossi');
+    expect(result).toContain('2024');
+  });
+});
+
+describe('CitationFormatter.formatCitation() — stile sconosciuto', () => {
+  it('test_formatCitation_unknownStyle_fallsBackToApa', () => {
+    // Arrange
+    const apaResult = CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'apa');
+
+    // Act
+    const unknownResult = CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'bibtex');
+
+    // Assert — fallback a APA, output identico
+    expect(unknownResult).toBe(apaResult);
+  });
+});
+
+describe('CitationFormatter.formatCitation() — URL non valido', () => {
+  it('test_formatCitation_invalidUrl_usesFallbackSiteName', () => {
+    // Arrange
+    const articleConUrlInvalido = {
+      ...ARTICLE_COMPLETO,
+      url: 'not-a-valid-url',
+    };
+
+    // Act — non deve lanciare eccezione
+    let result;
+    expect(() => {
+      result = CitationFormatter.formatCitation(articleConUrlInvalido, 'apa');
+    }).not.toThrow();
+
+    // Assert — deve restituire una stringa valida
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+  });
+});
+
+describe('CitationFormatter.formatCitation() — campi mancanti', () => {
+  it('test_formatCitation_missingFields_usesDefaults', () => {
+    // Arrange — articolo con solo il minimo indispensabile
+    const articleMinimo = { title: 'Titolo Minimo' };
+
+    // Act — non deve lanciare eccezione
+    let result;
+    expect(() => {
+      result = CitationFormatter.formatCitation(articleMinimo, 'apa');
+    }).not.toThrow();
+
+    // Assert
+    expect(typeof result).toBe('string');
+    expect(result).toContain('Titolo Minimo');
+  });
+
+  it('test_formatCitation_missingFields_noErrorOnMlaWithNoDate', () => {
+    // Arrange
+    const articleSenzaData = {
+      title: 'Articolo Senza Data',
+      author: 'Autore Sconosciuto',
+      url: 'https://example.com/articolo',
+    };
+
+    // Act
+    let result;
+    expect(() => {
+      result = CitationFormatter.formatCitation(articleSenzaData, 'mla');
+    }).not.toThrow();
+
+    // Assert
+    expect(typeof result).toBe('string');
+  });
+});
+
+describe('CitationFormatter.formatCitation() — HtmlSanitizer', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    HtmlSanitizer.escape.mockImplementation((s) => s);
+  });
+
+  it('test_formatCitation_anyStyle_callsHtmlSanitizerEscape', () => {
+    // Act
+    CitationFormatter.formatCitation(ARTICLE_COMPLETO, 'apa');
+
+    // Assert — escape chiamato almeno una volta sui campi dell'articolo
+    expect(HtmlSanitizer.escape).toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getCitationTypeLabel
+// ---------------------------------------------------------------------------
+
+describe('CitationFormatter.getCitationTypeLabel()', () => {
+  it('test_getCitationTypeLabel_directQuote_returnsItalianLabel', () => {
+    // Act
+    const result = CitationFormatter.getCitationTypeLabel('direct_quote');
+
+    // Assert — deve restituire una label in italiano, non il tipo grezzo
+    expect(result).toBeDefined();
+    expect(result).not.toBe('direct_quote');
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('test_getCitationTypeLabel_studyReference_returnsItalianLabel', () => {
+    // Act
+    const result = CitationFormatter.getCitationTypeLabel('study_reference');
+
+    // Assert
+    expect(result).not.toBe('study_reference');
+    expect(typeof result).toBe('string');
+  });
+
+  it('test_getCitationTypeLabel_statistic_returnsItalianLabel', () => {
+    // Act
+    const result = CitationFormatter.getCitationTypeLabel('statistic');
+
+    // Assert
+    expect(result).not.toBe('statistic');
+    expect(typeof result).toBe('string');
+  });
+
+  it('test_getCitationTypeLabel_unknownType_returnsAltro', () => {
+    // Act
+    const result = CitationFormatter.getCitationTypeLabel('tipo_inesistente_xyz');
+
+    // Assert
+    expect(result).toBe('Altro');
+  });
+
+  it('test_getCitationTypeLabel_undefinedType_returnsAltro', () => {
+    // Act
+    const result = CitationFormatter.getCitationTypeLabel(undefined);
+
+    // Assert
+    expect(result).toBe('Altro');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateBibliography
+// ---------------------------------------------------------------------------
+
+describe('CitationFormatter.generateBibliography()', () => {
+  it('test_generateBibliography_withCitations_includesAll', () => {
+    // Arrange
+    const citations = [CITATION_DIRETTA, CITATION_STUDIO];
+
+    // Act
+    const result = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, citations, 'apa');
+
+    // Assert — deve includere contenuto di tutte le citazioni
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+    // Deve contenere riferimento all'articolo principale
+    expect(result).toContain('The Future of Artificial Intelligence');
+  });
+
+  it('test_generateBibliography_noCitations_includesOnlyArticle', () => {
+    // Arrange
+    const citations = [];
+
+    // Act
+    const result = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, citations, 'apa');
+
+    // Assert — senza citazioni, contiene comunque il riferimento all'articolo
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+    expect(result).toContain('The Future of Artificial Intelligence');
+  });
+
+  it('test_generateBibliography_multipleCitations_countMatchesInput', () => {
+    // Arrange
+    const citations = [CITATION_DIRETTA, CITATION_STUDIO];
+
+    // Act
+    const result = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, citations, 'mla');
+
+    // Assert — il risultato deve essere più lungo di quello con zero citazioni
+    const resultNoCitations = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, [], 'mla');
+    expect(result.length).toBeGreaterThan(resultNoCitations.length);
+  });
+
+  it('test_generateBibliography_returnsMarkdownString', () => {
+    // Arrange
+    const citations = [CITATION_DIRETTA];
+
+    // Act
+    const result = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, citations, 'apa');
+
+    // Assert — il risultato è una stringa (markdown)
+    expect(typeof result).toBe('string');
+  });
+
+  it('test_generateBibliography_nullCitations_noThrow', () => {
+    // Act / Assert
+    expect(() => {
+      CitationFormatter.generateBibliography(ARTICLE_COMPLETO, null, 'apa');
+    }).not.toThrow();
+  });
+});

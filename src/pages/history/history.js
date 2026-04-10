@@ -10,6 +10,7 @@ import { SearchOptimizer } from '../../utils/core/search-optimizer.js';
 import { HistoryLazyLoader } from '../../utils/core/history-lazy-loader.js';
 import { VoiceController } from '../../utils/voice/voice-controller.js';
 import { Modal } from '../../utils/core/modal.js';
+import { Logger } from '../../utils/core/logger.js';
 import {
   openDetail,
   closeModal,
@@ -43,146 +44,176 @@ state.loadMultiAnalysisHistory = () => loadMultiAnalysisHistory();
 // Modal System — caricato da utils/modal.js
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await I18n.initPage();
+  try {
+    await I18n.initPage();
 
-  // Initialize voice controller
-  state.voiceController = new VoiceController();
-  await state.voiceController.initialize();
+    // Initialize voice controller
+    state.voiceController = new VoiceController();
+    await state.voiceController.initialize();
 
-  // Setup voice event listeners
-  setupVoiceEventListeners();
+    // Setup voice event listeners
+    setupVoiceEventListeners();
 
-  // Assicurati che il tab single sia visibile all'avvio
-  document.getElementById('historyList').classList.remove('hidden');
-  document.getElementById('multiAnalysisList').classList.add('hidden');
+    // Assicurati che il tab single sia visibile all'avvio
+    document.getElementById('historyList').classList.remove('hidden');
+    document.getElementById('multiAnalysisList').classList.add('hidden');
 
-  await loadHistory();
+    await loadHistory();
 
-  // History tabs event listeners
-  document.querySelectorAll('.history-tab').forEach((tab) => {
-    eventCleanup.addEventListener(tab, 'click', () => switchTab(tab.dataset.tab));
-  });
+    // History tabs event listeners
+    document.querySelectorAll('.history-tab').forEach((tab) => {
+      eventCleanup.addEventListener(tab, 'click', () => switchTab(tab.dataset.tab));
+    });
 
-  // Event listeners
-  eventCleanup.addEventListener(document.getElementById('backBtn'), 'click', () => {
-    window.close();
-  });
+    // Event listeners
+    eventCleanup.addEventListener(document.getElementById('backBtn'), 'click', () => {
+      window.close();
+    });
 
-  // Crea versione debounced della ricerca con feedback visivo
-  state.debouncedSearch = DebounceUtility.debounceWithFeedback(
-    handleSearch,
-    300, // 300ms di attesa
-    document.getElementById('searchInput'),
-  );
+    // Crea versione debounced della ricerca con feedback visivo
+    state.debouncedSearch = DebounceUtility.debounceWithFeedback(
+      handleSearch,
+      300, // 300ms di attesa
+      document.getElementById('searchInput'),
+    );
 
-  eventCleanup.addEventListener(
-    document.getElementById('searchInput'),
-    'input',
-    state.debouncedSearch,
-  );
-  eventCleanup.addEventListener(document.getElementById('searchInTitle'), 'change', () => {
-    // Ri-esegui ricerca se c'è un query
-    const query = document.getElementById('searchInput').value.trim();
-    if (query) handleSearch({ target: document.getElementById('searchInput') });
-  });
-  eventCleanup.addEventListener(document.getElementById('searchInUrl'), 'change', () => {
-    const query = document.getElementById('searchInput').value.trim();
-    if (query) handleSearch({ target: document.getElementById('searchInput') });
-  });
-  eventCleanup.addEventListener(document.getElementById('searchInContent'), 'change', () => {
-    const query = document.getElementById('searchInput').value.trim();
-    if (query) handleSearch({ target: document.getElementById('searchInput') });
-  });
-  eventCleanup.addEventListener(document.getElementById('providerFilter'), 'change', handleFilter);
-  eventCleanup.addEventListener(document.getElementById('languageFilter'), 'change', handleFilter);
-  eventCleanup.addEventListener(
-    document.getElementById('contentTypeFilter'),
-    'change',
-    handleFilter,
-  );
-  eventCleanup.addEventListener(document.getElementById('favoriteFilter'), 'change', handleFilter);
-  eventCleanup.addEventListener(
-    document.getElementById('downloadHistoryBtn'),
-    'click',
-    downloadHistory,
-  );
-  eventCleanup.addEventListener(document.getElementById('importHistoryBtn'), 'click', () => {
-    document.getElementById('importFileInput').click();
-  });
-  eventCleanup.addEventListener(
-    document.getElementById('importFileInput'),
-    'change',
-    importHistory,
-  );
-  eventCleanup.addEventListener(
-    document.getElementById('clearSingleHistoryBtn'),
-    'click',
-    clearSingleHistory,
-  );
-  eventCleanup.addEventListener(
-    document.getElementById('clearPDFHistoryBtn'),
-    'click',
-    clearPDFHistory,
-  );
-  eventCleanup.addEventListener(
-    document.getElementById('clearMultiHistoryBtn'),
-    'click',
-    clearMultiHistory,
-  );
+    eventCleanup.addEventListener(
+      document.getElementById('searchInput'),
+      'input',
+      state.debouncedSearch,
+    );
+    eventCleanup.addEventListener(document.getElementById('searchInTitle'), 'change', () => {
+      // Ri-esegui ricerca se c'è un query
+      const query = document.getElementById('searchInput').value.trim();
+      if (query) handleSearch({ target: document.getElementById('searchInput') });
+    });
+    eventCleanup.addEventListener(document.getElementById('searchInUrl'), 'change', () => {
+      const query = document.getElementById('searchInput').value.trim();
+      if (query) handleSearch({ target: document.getElementById('searchInput') });
+    });
+    eventCleanup.addEventListener(document.getElementById('searchInContent'), 'change', () => {
+      const query = document.getElementById('searchInput').value.trim();
+      if (query) handleSearch({ target: document.getElementById('searchInput') });
+    });
+    eventCleanup.addEventListener(
+      document.getElementById('providerFilter'),
+      'change',
+      handleFilter,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('languageFilter'),
+      'change',
+      handleFilter,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('contentTypeFilter'),
+      'change',
+      handleFilter,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('favoriteFilter'),
+      'change',
+      handleFilter,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('downloadHistoryBtn'),
+      'click',
+      downloadHistory,
+    );
+    eventCleanup.addEventListener(document.getElementById('importHistoryBtn'), 'click', () => {
+      document.getElementById('importFileInput').click();
+    });
+    eventCleanup.addEventListener(
+      document.getElementById('importFileInput'),
+      'change',
+      importHistory,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('clearSingleHistoryBtn'),
+      'click',
+      clearSingleHistory,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('clearPDFHistoryBtn'),
+      'click',
+      clearPDFHistory,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('clearMultiHistoryBtn'),
+      'click',
+      clearMultiHistory,
+    );
 
-  // Modal
-  eventCleanup.addEventListener(document.getElementById('closeModal'), 'click', closeModal);
-  eventCleanup.addEventListener(
-    document.getElementById('readingModeBtn'),
-    'click',
-    openReadingModeFromHistory,
-  );
-  eventCleanup.addEventListener(document.getElementById('exportPdfBtn'), 'click', exportCurrentPdf);
-  eventCleanup.addEventListener(
-    document.getElementById('exportMdBtn'),
-    'click',
-    exportCurrentMarkdown,
-  );
-  eventCleanup.addEventListener(document.getElementById('sendEmailBtn'), 'click', sendCurrentEmail);
-  eventCleanup.addEventListener(
-    document.getElementById('copyModalBtn'),
-    'click',
-    copyCurrentSummary,
-  );
-  eventCleanup.addEventListener(
-    document.getElementById('deleteModalBtn'),
-    'click',
-    deleteCurrentEntry,
-  );
+    // Modal
+    eventCleanup.addEventListener(document.getElementById('closeModal'), 'click', closeModal);
+    eventCleanup.addEventListener(
+      document.getElementById('readingModeBtn'),
+      'click',
+      openReadingModeFromHistory,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('exportPdfBtn'),
+      'click',
+      exportCurrentPdf,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('exportMdBtn'),
+      'click',
+      exportCurrentMarkdown,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('sendEmailBtn'),
+      'click',
+      sendCurrentEmail,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('copyModalBtn'),
+      'click',
+      copyCurrentSummary,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('deleteModalBtn'),
+      'click',
+      deleteCurrentEntry,
+    );
 
-  // Modal tabs
-  document.querySelectorAll('.modal-tab').forEach((tab) => {
-    eventCleanup.addEventListener(tab, 'click', () => switchModalTab(tab.dataset.tab));
-  });
+    // Modal tabs
+    document.querySelectorAll('.modal-tab').forEach((tab) => {
+      eventCleanup.addEventListener(tab, 'click', () => switchModalTab(tab.dataset.tab));
+    });
 
-  // Voice controls in modal
-  eventCleanup.addEventListener(
-    document.getElementById('modalTtsPlayBtn'),
-    'click',
-    handleModalTTSPlay,
-  );
-  eventCleanup.addEventListener(
-    document.getElementById('modalTtsPauseBtn'),
-    'click',
-    handleModalTTSPause,
-  );
-  eventCleanup.addEventListener(
-    document.getElementById('modalTtsStopBtn'),
-    'click',
-    handleModalTTSStop,
-  );
+    // Voice controls in modal
+    eventCleanup.addEventListener(
+      document.getElementById('modalTtsPlayBtn'),
+      'click',
+      handleModalTTSPlay,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('modalTtsPauseBtn'),
+      'click',
+      handleModalTTSPause,
+    );
+    eventCleanup.addEventListener(
+      document.getElementById('modalTtsStopBtn'),
+      'click',
+      handleModalTTSStop,
+    );
 
-  // Close modal on background click
-  document.getElementById('detailModal').addEventListener('click', (e) => {
-    if (e.target.id === 'detailModal') {
-      closeModal();
+    // Close modal on background click
+    eventCleanup.addEventListener(document.getElementById('detailModal'), 'click', (e) => {
+      if (e.target.id === 'detailModal') {
+        closeModal();
+      }
+    });
+
+    // Theme toggle
+    const themeBtn = document.getElementById('themeToggleBtn');
+    if (themeBtn) {
+      eventCleanup.addEventListener(themeBtn, 'click', () => ThemeManager.toggle());
     }
-  });
+  } catch (error) {
+    Logger.error('Errore inizializzazione pagina cronologia:', error);
+  }
 });
 
 export async function loadHistory() {
@@ -356,10 +387,4 @@ function switchTab(tab) {
   }
 }
 
-// Theme managed by ThemeManager (auto-init on import, toggle via button)
-(() => {
-  const themeBtn = document.getElementById('themeToggleBtn');
-  if (themeBtn) {
-    themeBtn.addEventListener('click', () => ThemeManager.toggle());
-  }
-})();
+// Theme managed by ThemeManager (auto-init on import, toggle registered in DOMContentLoaded)

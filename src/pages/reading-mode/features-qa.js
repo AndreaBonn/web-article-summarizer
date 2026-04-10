@@ -8,7 +8,6 @@ import { Logger } from '../../utils/core/logger.js';
 import { StorageManager } from '../../utils/storage/storage-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { Modal } from '../../utils/core/modal.js';
-import { askQuestionPDF } from './pdf.js';
 import { updateDataInStorage } from './features.js';
 
 // Ask question
@@ -51,18 +50,23 @@ export async function askQuestion() {
     let answer;
 
     if (state.currentData.isPDF) {
-      // For PDFs, use extracted text directly (needs API key for specialized PDF prompt)
-      const apiKey = await StorageManager.getApiKey(provider);
-      if (!apiKey) {
-        throw new Error('API key non configurata per ' + provider);
-      }
-      answer = await askQuestionPDF(
+      // Delegate to service worker (API key stays in background)
+      const pdfResponse = await chrome.runtime.sendMessage({
+        action: 'askPDFQuestion',
         question,
-        state.currentData.extractedText,
-        state.currentData.summary,
+        extractedText: state.currentData.extractedText,
+        summary: state.currentData.summary,
         provider,
-        apiKey,
-      );
+      });
+
+      if (!pdfResponse) {
+        throw new Error('Il servizio non risponde. Ricarica la pagina e riprova.');
+      }
+      if (!pdfResponse.success) {
+        throw new Error(pdfResponse.error);
+      }
+
+      answer = pdfResponse.result.answer;
     } else {
       // For articles, prepare article with paragraphs structure
       const articleWithParagraphs = {

@@ -45,35 +45,37 @@ export class RateLimiter {
 
     this.isProcessing = true;
 
-    while (this.requestQueue.length > 0) {
-      const request = this.requestQueue[0];
-      const provider = request.provider;
+    try {
+      while (this.requestQueue.length > 0) {
+        const request = this.requestQueue[0];
+        const provider = request.provider;
 
-      // Controlla rate limit
-      if (!this.canMakeRequest(provider)) {
-        const waitTime = this.getWaitTime(provider);
-        await this.sleep(waitTime);
-        continue;
+        // Controlla rate limit
+        if (!this.canMakeRequest(provider)) {
+          const waitTime = this.getWaitTime(provider);
+          await this.sleep(waitTime);
+          continue;
+        }
+
+        // Rimuovi dalla coda
+        this.requestQueue.shift();
+
+        if (onQueueUpdate) {
+          onQueueUpdate(this.requestQueue.length);
+        }
+
+        // Esegui richiesta
+        try {
+          this.consumeToken(provider);
+          const result = await request.apiCall();
+          request.resolve(result);
+        } catch (error) {
+          request.reject(error);
+        }
       }
-
-      // Rimuovi dalla coda
-      this.requestQueue.shift();
-
-      if (onQueueUpdate) {
-        onQueueUpdate(this.requestQueue.length);
-      }
-
-      // Esegui richiesta
-      try {
-        this.consumeToken(provider);
-        const result = await request.apiCall();
-        request.resolve(result);
-      } catch (error) {
-        request.reject(error);
-      }
+    } finally {
+      this.isProcessing = false;
     }
-
-    this.isProcessing = false;
   }
 
   /**

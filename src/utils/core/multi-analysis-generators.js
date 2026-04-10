@@ -131,15 +131,15 @@ IMPORTANTE: Rispondi SOLO con il JSON nel formato specificato, senza markup mark
   );
 
   try {
-    let cleanedResponse = response
+    const cleanedResponse = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
 
     try {
       return parseLLMJson(cleanedResponse);
-    } catch {
-      // Fall through to text parsing
+    } catch (parseError) {
+      Logger.warn('JSON parsing Q&A fallito, fallback a text parsing:', parseError.message);
     }
 
     return parseQAFromText(response);

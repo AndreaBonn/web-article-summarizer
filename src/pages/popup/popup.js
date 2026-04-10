@@ -83,19 +83,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     eventCleanup.addEventListener(elements.generateBtn, 'click', generateSummary);
     eventCleanup.addEventListener(elements.retryBtn, 'click', analyzeArticle);
     eventCleanup.addEventListener(elements.themeToggleBtn, 'click', () => ThemeManager.toggle());
-    eventCleanup.addEventListener(elements.settingsBtn, 'click', () => {
-      chrome.runtime.openOptionsPage();
+    eventCleanup.addEventListener(elements.settingsBtn, 'click', async () => {
+      try {
+        await chrome.runtime.openOptionsPage();
+      } catch (error) {
+        Logger.error('Impossibile aprire le impostazioni:', error);
+      }
     });
-    eventCleanup.addEventListener(elements.historyBtn, 'click', () => {
-      chrome.tabs.create({ url: 'src/pages/history/history.html' });
+    eventCleanup.addEventListener(elements.historyBtn, 'click', async () => {
+      try {
+        await chrome.tabs.create({ url: 'src/pages/history/history.html' });
+      } catch (error) {
+        Logger.error('Impossibile aprire la cronologia:', error);
+      }
     });
-    eventCleanup.addEventListener(elements.multiAnalysisBtn, 'click', () => {
-      chrome.tabs.create({
-        url: 'src/pages/multi-analysis/multi-analysis.html',
-      });
+    eventCleanup.addEventListener(elements.multiAnalysisBtn, 'click', async () => {
+      try {
+        await chrome.tabs.create({ url: 'src/pages/multi-analysis/multi-analysis.html' });
+      } catch (error) {
+        Logger.error('Impossibile aprire multi-analisi:', error);
+      }
     });
-    eventCleanup.addEventListener(elements.pdfAnalysisBtn, 'click', () => {
-      chrome.tabs.create({ url: 'src/pages/pdf-analysis/pdf-analysis.html' });
+    eventCleanup.addEventListener(elements.pdfAnalysisBtn, 'click', async () => {
+      try {
+        await chrome.tabs.create({ url: 'src/pages/pdf-analysis/pdf-analysis.html' });
+      } catch (error) {
+        Logger.error('Impossibile aprire analisi PDF:', error);
+      }
     });
     eventCleanup.addEventListener(elements.readingModeBtn, 'click', openReadingMode);
     eventCleanup.addEventListener(elements.copyBtn, 'click', copyToClipboard);

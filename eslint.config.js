@@ -28,6 +28,7 @@ export default [
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-throw-literal': 'off',
+      'prefer-const': 'error',
     },
   },
 

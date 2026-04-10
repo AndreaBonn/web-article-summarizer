@@ -4,7 +4,7 @@
 
 import { APIOrchestrator as APIClient } from '../../utils/ai/api-orchestrator.js';
 import { parseLLMJson } from '../../utils/ai/json-repair.js';
-import { StorageManager } from '../../utils/storage/storage-manager.js';
+import { InputSanitizer } from '../../utils/security/input-sanitizer.js';
 import { Logger } from '../../utils/core/logger.js';
 import { getLanguageNameForPrompt } from '../../utils/i18n/language-names.js';
 
@@ -17,6 +17,9 @@ export async function translatePDFText(
   forceTranslate = false,
 ) {
   Logger.info('Translating PDF text to:', targetLanguage, 'Force:', forceTranslate);
+
+  // Sanitize PDF text before sending to AI
+  const sanitizedText = InputSanitizer.sanitizeWebContent(text, { maxLength: 15000 });
 
   const targetLangName = getLanguageNameForPrompt(targetLanguage);
 
@@ -31,7 +34,7 @@ Mantieni il significato originale ma migliora la formattazione, correggi errori 
 
     userPrompt = `Riformatta e migliora questo testo in ${targetLangName}:
 
-${text}`;
+${sanitizedText}`;
   } else {
     // Prompt normale con rilevamento lingua
     systemPrompt = `Sei un traduttore professionale.
@@ -40,7 +43,7 @@ Altrimenti, traduci il testo in ${targetLangName} mantenendo formattazione e str
 
     userPrompt = `Traduci questo testo in ${targetLangName}:
 
-${text}`;
+${sanitizedText}`;
   }
 
   // Call API
@@ -69,13 +72,8 @@ ${text}`;
 }
 
 // Extract citations from PDF text
-export async function extractPDFCitations(text, filename, provider, _settings) {
+export async function extractPDFCitations(text, filename, provider, apiKey) {
   Logger.info('Extracting citations from PDF:', filename);
-
-  const apiKey = await StorageManager.getApiKey(provider);
-  if (!apiKey) {
-    throw new Error('API key non configurata per ' + provider);
-  }
 
   // Build prompt for citation extraction
   const systemPrompt = `Sei un esperto nell'analisi di documenti accademici e scientifici.
@@ -100,9 +98,11 @@ Rispondi in formato JSON:
   "total_citations": numero
 }`;
 
+  const sanitizedText = InputSanitizer.sanitizeWebContent(text, { maxLength: 15000 });
+
   const userPrompt = `Analizza questo documento PDF ed estrai tutte le citazioni e riferimenti:
 
-${text}
+${sanitizedText}
 
 Rispondi in formato JSON come specificato.`;
 
@@ -120,8 +120,12 @@ Rispondi in formato JSON come specificato.`;
 
     try {
       return parseLLMJson(response);
-    } catch {
-      return { citations: [], total_citations: 0 };
+    } catch (parseError) {
+      Logger.error('Errore parsing citazioni PDF — risposta AI non valida:', parseError);
+      Logger.debug('Risposta raw ricevuta:', response?.substring(0, 200));
+      throw new Error('Il provider AI ha restituito un formato di citazioni non valido. Riprova.', {
+        cause: parseError,
+      });
     }
   } catch (error) {
     Logger.error('Error extracting PDF citations:', error);
@@ -143,14 +147,17 @@ REGOLE:
 3. Sii preciso e conciso
 4. Cita parti specifiche del documento quando possibile`;
 
+  const sanitizedText = InputSanitizer.sanitizeWebContent(extractedText, { maxLength: 15000 });
+  const sanitizedQuestion = InputSanitizer.sanitizeUserPrompt(question);
+
   const userPrompt = `DOCUMENTO:
-${extractedText}
+${sanitizedText}
 
 RIASSUNTO:
 ${summary}
 
 DOMANDA:
-${question}
+${sanitizedQuestion}
 
 Rispondi alla domanda basandoti sul documento sopra.`;
 
