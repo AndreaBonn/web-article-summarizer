@@ -16,7 +16,8 @@ import {
 
 import { copyAll, exportToPDF } from './export.js';
 
-import { translateArticle, extractCitations, askQuestion } from './features.js';
+import { translateArticle, extractCitations } from './features.js';
+import { askQuestion } from './features-qa.js';
 
 import {
   setupVoiceEventListeners,

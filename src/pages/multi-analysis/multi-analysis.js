@@ -1,6 +1,7 @@
-// Multi-Analysis Page Script
+// Multi-Analysis Page Script — Controller
+// Orchestrates selection, analysis, and results modules
+
 import { Logger } from '../../utils/core/logger.js';
-import { HtmlSanitizer } from '../../utils/security/html-sanitizer.js';
 import { ThemeManager } from '../../utils/core/theme-manager.js';
 import { I18n } from '../../utils/i18n/i18n.js';
 import { HistoryManager } from '../../utils/storage/history-manager.js';
@@ -9,7 +10,13 @@ import { Modal } from '../../utils/core/modal.js';
 import { ErrorHandler } from '../../utils/core/error-handler.js';
 import { state } from './state.js';
 import { exportPdf, exportMarkdown, sendEmail, copyContent } from './export.js';
-import { submitQuestion } from './qa.js';
+import { loadArticles, selectAll, clearSelection, filterArticles } from './selection.js';
+import {
+  showAnalysisModal,
+  closeAnalysisModal,
+  switchTab,
+  reopenSavedAnalysis,
+} from './results.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   Logger.info('Multi-Analysis: DOMContentLoaded');
@@ -27,7 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadArticles();
 
   const startBtn = document.getElementById('startAnalysisBtn');
-  Logger.debug('Start button trovato:', startBtn);
 
   document.getElementById('backBtn').addEventListener('click', () => {
     window.close();
@@ -39,12 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('filterProvider').addEventListener('change', filterArticles);
 
   if (startBtn) {
-    startBtn.addEventListener('click', () => {
-      Logger.debug('Click su startAnalysisBtn');
-      startAnalysis();
-    });
-  } else {
-    Logger.error('startAnalysisBtn non trovato!');
+    startBtn.addEventListener('click', () => startAnalysis());
   }
 
   document.getElementById('closeModal').addEventListener('click', closeAnalysisModal);
@@ -59,134 +60,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('copyBtn').addEventListener('click', copyContent);
 });
 
-async function loadArticles() {
-  state.allArticles = await HistoryManager.getHistory();
-  displayArticles(state.allArticles);
-}
-
-function displayArticles(articles) {
-  const listEl = document.getElementById('articlesList');
-
-  if (articles.length === 0) {
-    listEl.innerHTML = `<p class="multi-empty-message">${I18n.t('multi.noArticles')}</p>`;
-    return;
-  }
-
-  listEl.innerHTML = articles
-    .map(
-      (article) => `
-    <div class="article-item" data-id="${article.id}">
-      <input type="checkbox" class="article-checkbox" data-id="${article.id}" />
-      <div class="article-info">
-        <div class="article-title">${HtmlSanitizer.escape(article.article.title)}</div>
-        <div class="article-meta">
-          <span class="meta-badge provider">${HtmlSanitizer.escape(article.metadata.provider)}</span>
-          <span class="meta-badge date">${HistoryManager.formatDate(article.timestamp)}</span>
-          <span class="meta-badge words">${article.article.wordCount} ${I18n.t('article.words')}</span>
-        </div>
-      </div>
-    </div>
-  `,
-    )
-    .join('');
-
-  document.querySelectorAll('.article-checkbox').forEach((checkbox) => {
-    checkbox.addEventListener('change', handleSelection);
-  });
-
-  document.querySelectorAll('.article-item').forEach((item) => {
-    item.addEventListener('click', (e) => {
-      if (e.target.classList.contains('article-checkbox')) return;
-      const checkbox = item.querySelector('.article-checkbox');
-      checkbox.checked = !checkbox.checked;
-      handleSelection({ target: checkbox });
-    });
-  });
-}
-
-function handleSelection(e) {
-  const id = e.target.dataset.id;
-  const item = document.querySelector(`.article-item[data-id="${id}"]`);
-
-  if (e.target.checked) {
-    state.selectedArticles.push(id);
-    item.classList.add('selected');
-  } else {
-    state.selectedArticles = state.selectedArticles.filter((artId) => artId !== id);
-    item.classList.remove('selected');
-  }
-
-  updateSelectionCount();
-}
-
-function updateSelectionCount() {
-  const countNumber = document.getElementById('selectionCountNumber');
-  if (countNumber) {
-    countNumber.textContent = state.selectedArticles.length;
-  } else {
-    document.getElementById('selectionCount').textContent =
-      `${state.selectedArticles.length} ${I18n.t('multi.selected')}`;
-  }
-  document.getElementById('startAnalysisBtn').disabled = state.selectedArticles.length < 2;
-}
-
-function selectAll() {
-  const visibleCheckboxes = document.querySelectorAll(
-    '.article-item:not([style*="display: none"]) .article-checkbox',
-  );
-  visibleCheckboxes.forEach((checkbox) => {
-    checkbox.checked = true;
-    const id = checkbox.dataset.id;
-    if (!state.selectedArticles.includes(id)) {
-      state.selectedArticles.push(id);
-      document.querySelector(`.article-item[data-id="${id}"]`).classList.add('selected');
-    }
-  });
-  updateSelectionCount();
-}
-
-function clearSelection() {
-  document.querySelectorAll('.article-checkbox').forEach((checkbox) => {
-    checkbox.checked = false;
-  });
-  document.querySelectorAll('.article-item').forEach((item) => {
-    item.classList.remove('selected');
-  });
-  state.selectedArticles = [];
-  updateSelectionCount();
-}
-
-function filterArticles() {
-  const searchQuery = document.getElementById('searchArticles').value.toLowerCase();
-  const providerFilter = document.getElementById('filterProvider').value;
-
-  const filtered = state.allArticles.filter((article) => {
-    const matchesSearch =
-      !searchQuery ||
-      article.article.title.toLowerCase().includes(searchQuery) ||
-      article.article.url.toLowerCase().includes(searchQuery);
-
-    const matchesProvider = !providerFilter || article.metadata.provider === providerFilter;
-
-    return matchesSearch && matchesProvider;
-  });
-
-  displayArticles(filtered);
-
-  state.selectedArticles.forEach((id) => {
-    const checkbox = document.querySelector(`.article-checkbox[data-id="${id}"]`);
-    if (checkbox) {
-      checkbox.checked = true;
-      document.querySelector(`.article-item[data-id="${id}"]`).classList.add('selected');
-    }
-  });
-}
+// --- Analysis orchestration ---
 
 async function startAnalysis() {
-  Logger.debug('startAnalysis chiamato, articoli selezionati:', state.selectedArticles.length);
-
   if (state.selectedArticles.length < 2) {
-    Logger.debug('Troppo pochi articoli selezionati');
     await Modal.alert(I18n.t('multi.minArticles'), I18n.t('multi.minArticlesTitle'), '⚠️');
     return;
   }
@@ -225,12 +102,11 @@ async function startAnalysis() {
     state.currentAnalysis = await MultiAnalysisManager.analyzeArticles(
       articles,
       options,
-      updateProgress,
+      showProgress,
     );
     hideProgress();
 
     try {
-      Logger.debug('Tentativo di salvare analisi...', state.currentAnalysis, articles);
       const analysisId = await HistoryManager.saveMultiAnalysis(state.currentAnalysis, articles);
       state.currentAnalysis.id = analysisId;
       Logger.info('Analisi salvata nella cronologia con ID:', analysisId);
@@ -240,8 +116,7 @@ async function startAnalysis() {
 
     showAnalysisModal();
   } catch (error) {
-    Logger.error('Errore completo:', error);
-    Logger.error('Stack trace:', error.stack);
+    Logger.error('Errore analisi:', error);
     hideProgress();
     await Modal.alert(
       I18n.t('multi.analysisError') + ' ' + ErrorHandler.getErrorMessage(error),
@@ -257,9 +132,6 @@ function showProgress(message, percent) {
   document.getElementById('progressPercent').textContent = Math.round(percent) + '%';
   document.getElementById('progressModal').classList.remove('hidden');
 }
-
-// updateProgress is an alias — showProgress already handles visible modals
-const updateProgress = showProgress;
 
 function hideProgress() {
   document.getElementById('progressModal').classList.add('hidden');
@@ -298,198 +170,6 @@ function showUnrelatedModal(reason = null) {
       .getElementById('unrelatedCancel')
       .addEventListener('click', () => handleChoice('cancel'), { signal });
   });
-}
-
-function formatMarkdown(text) {
-  const e = (s) => HtmlSanitizer.escape(s);
-
-  // Processa riga per riga: escape il testo raw, poi applica formattazione
-  const lines = text.split('\n');
-  const htmlLines = lines.map((line) => {
-    // Heading h4 (###)
-    const h4Match = line.match(/^### (.*)$/);
-    if (h4Match) return `<h4>${e(h4Match[1])}</h4>`;
-
-    // Heading h3 (##)
-    const h3Match = line.match(/^## (.*)$/);
-    if (h3Match) return `<h3>${e(h3Match[1])}</h3>`;
-
-    // Testo normale: escape prima, poi bold
-    let escaped = e(line);
-    escaped = escaped.replace(/\*\*(.*?)\*\*/g, (_, g1) => `<strong>${g1}</strong>`);
-    return escaped;
-  });
-
-  // Unisci: righe vuote → nuovo paragrafo, righe singole → <br>
-  const joined = htmlLines.join('\n');
-  return '<p>' + joined.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
-}
-
-function showAnalysisModal() {
-  if (!state.currentAnalysis) return;
-
-  Logger.debug('showAnalysisModal - currentAnalysis:', state.currentAnalysis);
-  Logger.debug('currentAnalysis.qa:', state.currentAnalysis.qa);
-
-  if (state.currentAnalysis.globalSummary) {
-    document.getElementById('tabSummary').innerHTML = `
-      <div class="analysis-content">
-        ${formatMarkdown(state.currentAnalysis.globalSummary)}
-      </div>
-    `;
-  } else {
-    document.getElementById('tabSummary').innerHTML =
-      '<p class="multi-empty-message">Riassunto non generato</p>';
-  }
-
-  if (state.currentAnalysis.comparison) {
-    document.getElementById('tabComparison').innerHTML = `
-      <div class="analysis-content">
-        ${formatMarkdown(state.currentAnalysis.comparison)}
-      </div>
-    `;
-  } else {
-    document.getElementById('tabComparison').innerHTML =
-      '<p class="multi-empty-message">Confronto non generato</p>';
-  }
-
-  Logger.debug('Verifica Q&A - qa:', state.currentAnalysis.qa);
-  Logger.debug('Verifica Q&A - interactive:', state.currentAnalysis.qa?.interactive);
-
-  if (state.currentAnalysis.qa && state.currentAnalysis.qa.interactive) {
-    Logger.debug('Rendering Q&A interattivo');
-    document.getElementById('tabQA').innerHTML = `
-      <div class="qa-interactive">
-        <div class="qa-chat-container" id="qaChatContainer">
-          <div class="qa-welcome">
-            <p><strong>Q&A Interattivo</strong></p>
-            <p>Fai domande sui ${state.currentAnalysis.qa.articles?.length || state.selectedArticles.length} articoli selezionati. Il sistema risponderà basandosi esclusivamente sui loro contenuti.</p>
-          </div>
-        </div>
-        <div class="qa-input-container">
-          <input type="text" id="qaInput" placeholder="Scrivi la tua domanda..." />
-          <button id="qaSubmitBtn" class="btn-primary">Invia</button>
-        </div>
-      </div>
-    `;
-
-    if (state.currentAnalysis.qa.questions && state.currentAnalysis.qa.questions.length > 0) {
-      const chatContainer = document.getElementById('qaChatContainer');
-      chatContainer.innerHTML = '';
-
-      state.currentAnalysis.qa.questions.forEach((qa) => {
-        const questionEl = document.createElement('div');
-        questionEl.className = 'qa-message qa-question-msg';
-        questionEl.innerHTML = `<strong>Tu:</strong> ${HtmlSanitizer.escape(qa.question)}`;
-        chatContainer.appendChild(questionEl);
-
-        const answerEl = document.createElement('div');
-        answerEl.className = 'qa-message qa-answer-msg';
-        answerEl.innerHTML = `<strong>Assistente:</strong> ${HtmlSanitizer.escape(qa.answer)}`;
-        chatContainer.appendChild(answerEl);
-      });
-
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-
-    document.getElementById('qaSubmitBtn').addEventListener('click', submitQuestion);
-    document.getElementById('qaInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') submitQuestion();
-    });
-  } else {
-    document.getElementById('tabQA').innerHTML =
-      '<p class="multi-empty-message">Q&A non abilitato</p>';
-  }
-
-  document.getElementById('analysisModal').classList.remove('hidden');
-}
-
-function closeAnalysisModal() {
-  document.getElementById('analysisModal').classList.add('hidden');
-}
-
-function switchTab(tabName) {
-  document.querySelectorAll('.modal-tab').forEach((tab) => {
-    tab.classList.remove('active');
-    if (tab.dataset.tab === tabName) {
-      tab.classList.add('active');
-    }
-  });
-
-  document.querySelectorAll('.modal-pane').forEach((pane) => {
-    pane.classList.remove('active');
-  });
-
-  const tabIds = {
-    summary: 'tabSummary',
-    comparison: 'tabComparison',
-    qa: 'tabQA',
-  };
-
-  const tabId = tabIds[tabName];
-  if (tabId) {
-    const tabElement = document.getElementById(tabId);
-    if (tabElement) {
-      tabElement.classList.add('active');
-    } else {
-      Logger.error('Tab element non trovato:', tabId);
-    }
-  }
-}
-
-// ===== REOPEN SAVED ANALYSIS =====
-
-async function reopenSavedAnalysis(data) {
-  Logger.info('Riapertura analisi salvata:', data);
-
-  state.currentAnalysis = {
-    id: data.id,
-    timestamp: Date.now(),
-    globalSummary: data.analysis.globalSummary,
-    comparison: data.analysis.comparison,
-    qa: data.analysis.qa,
-    metadata: {
-      provider: data.analysis.metadata?.provider || 'unknown',
-    },
-  };
-
-  state.selectedArticles = data.articles.map((a) => a.id);
-  state.allArticles = data.articles.map((a) => ({
-    id: a.id,
-    article: {
-      title: a.title,
-      url: a.url,
-      wordCount: a.wordCount,
-    },
-  }));
-
-  document.querySelector('.selection-panel').style.display = 'none';
-  document.querySelector('.analysis-panel').style.display = 'none';
-
-  const header = document.querySelector('header');
-  header.innerHTML = `
-    <h1>Analisi Multi Articolo</h1>
-    <button id="backBtn" class="btn-back">← Cronologia</button>
-  `;
-
-  document.getElementById('backBtn').addEventListener('click', () => {
-    window.location.href = chrome.runtime.getURL('src/pages/history/history.html');
-  });
-
-  document.getElementById('closeModal').addEventListener('click', () => {
-    window.location.href = chrome.runtime.getURL('src/pages/history/history.html');
-  });
-
-  document.querySelectorAll('.modal-tab').forEach((tab) => {
-    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-  });
-
-  document.getElementById('exportPdfBtn').addEventListener('click', exportPdf);
-  document.getElementById('exportMdBtn').addEventListener('click', exportMarkdown);
-  document.getElementById('sendEmailBtn').addEventListener('click', sendEmail);
-  document.getElementById('copyBtn').addEventListener('click', copyContent);
-
-  showAnalysisModal();
 }
 
 // Theme managed by ThemeManager (auto-init on import)
