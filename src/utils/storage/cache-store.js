@@ -1,8 +1,10 @@
-// Cache Store - Operazioni CRUD sulla cache con TTL e LRU
+// Cache Store - Operazioni core get/set/invalidate con TTL e hashing
 import { Logger } from '../core/logger.js';
+import { CacheInvalidation } from './cache-invalidation.js';
 
-export class CacheStore {
+export class CacheStore extends CacheInvalidation {
   constructor() {
+    super();
     this.defaultTTL = 7 * 24 * 60 * 60 * 1000; // 7 giorni in millisecondi
   }
 
@@ -131,7 +133,6 @@ export class CacheStore {
 
       await chrome.storage.local.set({ summaryCache: cache });
 
-      // Log cache write
       this.logCacheOperation('write', cacheKey, true);
 
       return true;
@@ -218,126 +219,18 @@ export class CacheStore {
    * Invalida tutte le entry per un URL specifico
    */
   async invalidateByUrl(url) {
-    const normalizedUrl = this.normalizeUrl(url);
-
-    try {
-      const result = await chrome.storage.local.get(['summaryCache']);
-      const cache = result.summaryCache || {};
-
-      let invalidatedCount = 0;
-
-      for (const [key, entry] of Object.entries(cache)) {
-        if (this.normalizeUrl(entry.url) === normalizedUrl) {
-          delete cache[key];
-          invalidatedCount++;
-        }
-      }
-
-      if (invalidatedCount > 0) {
-        await chrome.storage.local.set({ summaryCache: cache });
-      }
-
-      return invalidatedCount;
-    } catch (error) {
-      Logger.error("Errore nell'invalidare cache per URL:", error);
-      return 0;
-    }
+    return super.invalidateByUrl(this.normalizeUrl(url), this.normalizeUrl.bind(this));
   }
 
   /**
    * Invalida cache per URL se il contenuto è cambiato
    */
   async invalidateIfContentChanged(url, newContentHash) {
-    const normalizedUrl = this.normalizeUrl(url);
-
-    try {
-      const result = await chrome.storage.local.get(['summaryCache']);
-      const cache = result.summaryCache || {};
-
-      let invalidatedCount = 0;
-
-      for (const [key, entry] of Object.entries(cache)) {
-        if (this.normalizeUrl(entry.url) === normalizedUrl) {
-          // Se l'hash è diverso, invalida
-          if (entry.contentHash && entry.contentHash !== newContentHash) {
-            delete cache[key];
-            invalidatedCount++;
-          }
-        }
-      }
-
-      if (invalidatedCount > 0) {
-        await chrome.storage.local.set({ summaryCache: cache });
-      }
-
-      return invalidatedCount;
-    } catch (error) {
-      Logger.error("Errore nell'invalidare cache per contenuto:", error);
-      return 0;
-    }
-  }
-
-  /**
-   * Pulisci cache scadute
-   */
-  async cleanExpired() {
-    try {
-      const result = await chrome.storage.local.get(['summaryCache']);
-      const cache = result.summaryCache || {};
-
-      const now = Date.now();
-      let cleanedCount = 0;
-
-      for (const [key, entry] of Object.entries(cache)) {
-        if (now > entry.expiresAt) {
-          delete cache[key];
-          cleanedCount++;
-        }
-      }
-
-      if (cleanedCount > 0) {
-        await chrome.storage.local.set({ summaryCache: cache });
-      }
-
-      return cleanedCount;
-    } catch (error) {
-      Logger.error('Errore nella pulizia cache:', error);
-      return 0;
-    }
-  }
-
-  /**
-   * Pulisci cache LRU (Least Recently Used)
-   */
-  async cleanLRU(maxEntries = 100) {
-    try {
-      const result = await chrome.storage.local.get(['summaryCache']);
-      const cache = result.summaryCache || {};
-
-      const entries = Object.entries(cache);
-
-      if (entries.length <= maxEntries) {
-        return 0;
-      }
-
-      // Ordina per lastAccessed (più vecchi prima)
-      entries.sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
-
-      // Rimuovi le entry più vecchie
-      const toRemove = entries.length - maxEntries;
-      const newCache = {};
-
-      for (let i = toRemove; i < entries.length; i++) {
-        newCache[entries[i][0]] = entries[i][1];
-      }
-
-      await chrome.storage.local.set({ summaryCache: newCache });
-
-      return toRemove;
-    } catch (error) {
-      Logger.error('Errore nella pulizia LRU:', error);
-      return 0;
-    }
+    return super.invalidateIfContentChanged(
+      this.normalizeUrl(url),
+      newContentHash,
+      this.normalizeUrl.bind(this),
+    );
   }
 
   /**
@@ -349,11 +242,9 @@ export class CacheStore {
 
   /**
    * Log operazione cache per telemetria.
-   * Implementato nella sottoclasse CacheManager via CacheStats.
-   * Definito qui come no-op per consentire a CacheStore di usarlo via `this`
-   * prima che la catena di ereditarietà sia completa.
+   * Sovrascritto da CacheManager (che eredita CacheStats.logCacheOperation).
    */
   async logCacheOperation(_operation, _key, _success, _reason = null) {
-    // Sovrascritto da CacheManager (che eredita CacheStats.logCacheOperation)
+    // Implementazione fornita dalla catena: CacheStore → CacheStats (via CacheManager)
   }
 }
