@@ -44,7 +44,7 @@ describe('DebounceUtility.debounce()', () => {
 
     debounced();
     vi.advanceTimersByTime(200); // Non ancora scaduto
-    debounced();                  // Reset del timer
+    debounced(); // Reset del timer
     vi.advanceTimersByTime(200); // Solo 200ms dal reset → non deve eseguire
     expect(fn).not.toHaveBeenCalled();
 
@@ -156,6 +156,120 @@ describe('DebounceUtility.throttle()', () => {
     throttled(); // Dopo il limite → esegue
 
     expect(fn).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// debounceImmediate()
+// ---------------------------------------------------------------------------
+describe('DebounceUtility.debounceImmediate()', () => {
+  it('test_debounceImmediate_primaChiamata_eseguiImmediatamente', () => {
+    const fn = vi.fn();
+    const debounced = DebounceUtility.debounceImmediate(fn, 300, true);
+
+    debounced('arg1');
+
+    // Esegue subito alla prima chiamata
+    expect(fn).toHaveBeenCalledOnce();
+    expect(fn).toHaveBeenCalledWith('arg1');
+  });
+
+  it('test_debounceImmediate_secondaChiamataEntroWait_nonRiesegue', () => {
+    const fn = vi.fn();
+    const debounced = DebounceUtility.debounceImmediate(fn, 300, true);
+
+    debounced();
+    debounced(); // Entro il wait → ignorata
+
+    expect(fn).toHaveBeenCalledOnce();
+  });
+
+  it('test_debounceImmediate_dopoScadenzaWait_eseguiDiNuovo', () => {
+    const fn = vi.fn();
+    const debounced = DebounceUtility.debounceImmediate(fn, 300, true);
+
+    debounced();
+    vi.advanceTimersByTime(300); // timeout scaduto → timeout = null
+    debounced(); // callNow = true di nuovo
+
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it('test_debounceImmediate_immediatefalse_nonEseguiSubito', () => {
+    const fn = vi.fn();
+    const debounced = DebounceUtility.debounceImmediate(fn, 300, false);
+
+    debounced();
+    expect(fn).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(300);
+    expect(fn).toHaveBeenCalledOnce();
+  });
+
+  it('test_debounceImmediate_immediateDefault_eseguiImmediatamente', () => {
+    const fn = vi.fn();
+    // immediate default = true
+    const debounced = DebounceUtility.debounceImmediate(fn, 300);
+
+    debounced('x');
+    expect(fn).toHaveBeenCalledWith('x');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// debouncePromise()
+// ---------------------------------------------------------------------------
+describe('DebounceUtility.debouncePromise()', () => {
+  it('test_debouncePromise_chiamataSingola_ritornaValoreFunzione', async () => {
+    const fn = vi.fn().mockResolvedValue('result');
+    const debounced = DebounceUtility.debouncePromise(fn, 200);
+
+    const promise = debounced('input');
+    vi.advanceTimersByTime(200);
+    const result = await promise;
+
+    expect(result).toBe('result');
+    expect(fn).toHaveBeenCalledWith('input');
+  });
+
+  it('test_debouncePromise_chiamateMultiple_cancellaLePrecedenti', async () => {
+    const fn = vi.fn().mockResolvedValue('ok');
+    const debounced = DebounceUtility.debouncePromise(fn, 200);
+
+    const p1 = debounced('first');
+    const p2 = debounced('second');
+
+    vi.advanceTimersByTime(200);
+
+    // p1 deve essere rejected con { cancelled: true }
+    await expect(p1).rejects.toMatchObject({ cancelled: true });
+    // p2 deve risolversi
+    await expect(p2).resolves.toBe('ok');
+
+    expect(fn).toHaveBeenCalledOnce();
+    expect(fn).toHaveBeenCalledWith('second');
+  });
+
+  it('test_debouncePromise_funzioneCheLanciaErrore_rejectConErrore', async () => {
+    const error = new Error('async error');
+    const fn = vi.fn().mockRejectedValue(error);
+    const debounced = DebounceUtility.debouncePromise(fn, 100);
+
+    const promise = debounced();
+    vi.advanceTimersByTime(100);
+
+    await expect(promise).rejects.toThrow('async error');
+  });
+
+  it('test_debouncePromise_nonEsegueAnticipatamente', () => {
+    const fn = vi.fn();
+    const debounced = DebounceUtility.debouncePromise(fn, 300);
+
+    debounced();
+    expect(fn).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(300);
+    expect(fn).toHaveBeenCalledOnce();
   });
 });
 

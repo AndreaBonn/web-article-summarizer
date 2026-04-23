@@ -1,5 +1,299 @@
-import { describe, it, expect } from 'vitest';
-import { parseQAFromText } from '@utils/core/multi-analysis-generators.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// ---------------------------------------------------------------------------
+// Mock deps before importing module under test
+// ---------------------------------------------------------------------------
+
+vi.mock('@utils/ai/api-orchestrator.js', () => ({
+  APIOrchestrator: {
+    generateCompletion: vi.fn(),
+  },
+}));
+
+vi.mock('@utils/ai/json-repair.js', () => ({
+  parseLLMJson: vi.fn(),
+}));
+
+vi.mock('@utils/core/logger.js', () => ({
+  Logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
+
+vi.mock('@utils/ai/prompts/multi-analysis-prompts.js', () => ({
+  getGlobalSummaryPrompt: vi.fn(() => 'global-summary-system-prompt'),
+  getComparisonPrompt: vi.fn(() => 'comparison-system-prompt'),
+  getQAPrompt: vi.fn(() => 'qa-system-prompt'),
+}));
+
+import {
+  generateGlobalSummary,
+  generateComparison,
+  generateQA,
+  parseQAFromText,
+} from '@utils/core/multi-analysis-generators.js';
+
+import { APIOrchestrator as APIClient } from '@utils/ai/api-orchestrator.js';
+import { parseLLMJson } from '@utils/ai/json-repair.js';
+
+// ---------------------------------------------------------------------------
+// Fixture helpers
+// ---------------------------------------------------------------------------
+
+const makeArticle = (overrides = {}) => ({
+  article: { title: 'Article Title', url: 'https://example.com', wordCount: 500 },
+  summary: 'Summary text for the article.',
+  keyPoints: [{ title: 'Point A', description: 'Description A' }],
+  translation: null,
+  ...overrides,
+});
+
+// ---------------------------------------------------------------------------
+// generateGlobalSummary
+// ---------------------------------------------------------------------------
+
+describe('generateGlobalSummary()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    APIClient.generateCompletion.mockResolvedValue('Global summary result');
+  });
+
+  it('calls APIClient.generateCompletion with provider and apiKey', async () => {
+    const articles = [makeArticle()];
+    await generateGlobalSummary(articles, 'groq', 'api-key-123');
+
+    expect(APIClient.generateCompletion).toHaveBeenCalledOnce();
+    const [provider, apiKey] = APIClient.generateCompletion.mock.calls[0];
+    expect(provider).toBe('groq');
+    expect(apiKey).toBe('api-key-123');
+  });
+
+  it('returns the value from APIClient.generateCompletion', async () => {
+    const articles = [makeArticle()];
+    const result = await generateGlobalSummary(articles, 'groq', 'key');
+
+    expect(result).toBe('Global summary result');
+  });
+
+  it('uses article summary when no translation present', async () => {
+    const articles = [makeArticle({ translation: null, summary: 'My summary text' })];
+    await generateGlobalSummary(articles, 'groq', 'key');
+
+    const userPrompt = APIClient.generateCompletion.mock.calls[0][3];
+    expect(userPrompt).toContain('My summary text');
+  });
+
+  it('uses translation text when translation is present', async () => {
+    const articles = [
+      makeArticle({ translation: { text: 'Translated content' }, summary: 'Original' }),
+    ];
+    await generateGlobalSummary(articles, 'groq', 'key');
+
+    const userPrompt = APIClient.generateCompletion.mock.calls[0][3];
+    expect(userPrompt).toContain('Translated content');
+    expect(userPrompt).not.toContain('Original');
+  });
+
+  it('includes article title and URL in user prompt', async () => {
+    const articles = [makeArticle()];
+    await generateGlobalSummary(articles, 'groq', 'key');
+
+    const userPrompt = APIClient.generateCompletion.mock.calls[0][3];
+    expect(userPrompt).toContain('Article Title');
+    expect(userPrompt).toContain('https://example.com');
+  });
+
+  it('includes key points in user prompt when present', async () => {
+    const articles = [
+      makeArticle({
+        keyPoints: [{ title: 'KP1', description: 'Desc1' }],
+      }),
+    ];
+    await generateGlobalSummary(articles, 'groq', 'key');
+
+    const userPrompt = APIClient.generateCompletion.mock.calls[0][3];
+    expect(userPrompt).toContain('KP1');
+    expect(userPrompt).toContain('Desc1');
+  });
+
+  it('omits key points section when keyPoints is empty', async () => {
+    const articles = [makeArticle({ keyPoints: [] })];
+    await generateGlobalSummary(articles, 'groq', 'key');
+
+    const userPrompt = APIClient.generateCompletion.mock.calls[0][3];
+    expect(userPrompt).not.toContain('Punti Chiave');
+  });
+
+  it('sets maxTokens to 8192 for gemini provider', async () => {
+    const articles = [makeArticle()];
+    await generateGlobalSummary(articles, 'gemini', 'key');
+
+    const options = APIClient.generateCompletion.mock.calls[0][4];
+    expect(options.maxTokens).toBe(8192);
+  });
+
+  it('sets maxTokens to 4000 for non-gemini providers', async () => {
+    const articles = [makeArticle()];
+    await generateGlobalSummary(articles, 'openai', 'key');
+
+    const options = APIClient.generateCompletion.mock.calls[0][4];
+    expect(options.maxTokens).toBe(4000);
+  });
+
+  it('handles multiple articles correctly', async () => {
+    const articles = [
+      makeArticle(),
+      makeArticle({ article: { title: 'Second', url: 'https://b.com', wordCount: 200 } }),
+    ];
+    await generateGlobalSummary(articles, 'groq', 'key');
+
+    const userPrompt = APIClient.generateCompletion.mock.calls[0][3];
+    expect(userPrompt).toContain('ARTICOLO 1');
+    expect(userPrompt).toContain('ARTICOLO 2');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateComparison
+// ---------------------------------------------------------------------------
+
+describe('generateComparison()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    APIClient.generateCompletion.mockResolvedValue('Comparison result');
+  });
+
+  it('calls APIClient.generateCompletion once', async () => {
+    const articles = [makeArticle(), makeArticle()];
+    await generateComparison(articles, 'groq', 'key');
+
+    expect(APIClient.generateCompletion).toHaveBeenCalledOnce();
+  });
+
+  it('returns the value from APIClient.generateCompletion', async () => {
+    const articles = [makeArticle()];
+    const result = await generateComparison(articles, 'groq', 'key');
+
+    expect(result).toBe('Comparison result');
+  });
+
+  it('sets gemini-specific maxTokens and model when provider is gemini', async () => {
+    const articles = [makeArticle()];
+    await generateComparison(articles, 'gemini', 'key');
+
+    const options = APIClient.generateCompletion.mock.calls[0][4];
+    expect(options.maxTokens).toBe(8000);
+    expect(options.model).toBe('gemini-2.5-pro');
+  });
+
+  it('uses default maxTokens 4000 for non-gemini providers', async () => {
+    const articles = [makeArticle()];
+    await generateComparison(articles, 'anthropic', 'key');
+
+    const options = APIClient.generateCompletion.mock.calls[0][4];
+    expect(options.maxTokens).toBe(4000);
+    expect(options.model).toBeUndefined();
+  });
+
+  it('uses translation text when available', async () => {
+    const articles = [makeArticle({ translation: { text: 'Translated' }, summary: 'Original' })];
+    await generateComparison(articles, 'groq', 'key');
+
+    const userPrompt = APIClient.generateCompletion.mock.calls[0][3];
+    expect(userPrompt).toContain('Translated');
+    expect(userPrompt).not.toContain('Original');
+  });
+
+  it('includes article titles in user prompt', async () => {
+    const articles = [
+      makeArticle({ article: { title: 'First Article', url: 'https://a.com', wordCount: 100 } }),
+    ];
+    await generateComparison(articles, 'groq', 'key');
+
+    const userPrompt = APIClient.generateCompletion.mock.calls[0][3];
+    expect(userPrompt).toContain('First Article');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateQA
+// ---------------------------------------------------------------------------
+
+describe('generateQA()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns parsed JSON when parseLLMJson succeeds', async () => {
+    const parsedData = [{ question: 'Q?', answer: 'A.' }];
+    APIClient.generateCompletion.mockResolvedValue(
+      '```json\n[{"question":"Q?","answer":"A."}]\n```',
+    );
+    parseLLMJson.mockReturnValue(parsedData);
+
+    const result = await generateQA([makeArticle()], 'groq', 'key');
+
+    expect(result).toEqual(parsedData);
+  });
+
+  it('falls back to parseQAFromText when parseLLMJson throws', async () => {
+    APIClient.generateCompletion.mockResolvedValue('Q1: Question?\nR1: Answer.');
+    parseLLMJson.mockImplementation(() => {
+      throw new Error('parse failed');
+    });
+
+    const result = await generateQA([makeArticle()], 'groq', 'key');
+
+    expect(Array.isArray(result)).toBe(true);
+    expect(result[0]).toHaveProperty('question');
+    expect(result[0]).toHaveProperty('answer');
+  });
+
+  it('strips markdown code fences before parsing', async () => {
+    APIClient.generateCompletion.mockResolvedValue('```json\n{"qa": []}\n```');
+    const parsed = { qa: [] };
+    parseLLMJson.mockReturnValue(parsed);
+
+    await generateQA([makeArticle()], 'groq', 'key');
+
+    const passedText = parseLLMJson.mock.calls[0][0];
+    expect(passedText).not.toContain('```');
+  });
+
+  it('sets maxTokens to 4096 for gemini provider', async () => {
+    APIClient.generateCompletion.mockResolvedValue('Q1: Q?\nR1: A.');
+    parseLLMJson.mockImplementation(() => {
+      throw new Error('x');
+    });
+
+    await generateQA([makeArticle()], 'gemini', 'key');
+
+    const options = APIClient.generateCompletion.mock.calls[0][4];
+    expect(options.maxTokens).toBe(4096);
+  });
+
+  it('sets maxTokens to 3000 for non-gemini providers', async () => {
+    APIClient.generateCompletion.mockResolvedValue('Q1: Q?\nR1: A.');
+    parseLLMJson.mockImplementation(() => {
+      throw new Error('x');
+    });
+
+    await generateQA([makeArticle()], 'groq', 'key');
+
+    const options = APIClient.generateCompletion.mock.calls[0][4];
+    expect(options.maxTokens).toBe(3000);
+  });
+
+  it('returns default QA when response has no Q/R pattern and parsing fails', async () => {
+    APIClient.generateCompletion.mockResolvedValue('plain text without any pattern');
+    parseLLMJson.mockImplementation(() => {
+      throw new Error('x');
+    });
+
+    const result = await generateQA([makeArticle()], 'groq', 'key');
+
+    expect(result).toHaveLength(1);
+    expect(result[0].question).toContain('temi principali');
+  });
+});
 
 // Risposta di default attesa quando non ci sono coppie Q/R valide
 const DEFAULT_QA = [
@@ -56,7 +350,7 @@ describe('parseQAFromText() — formato standard Q/R con due punti', () => {
 describe('parseQAFromText() — formato con punto Q1./R1.', () => {
   it('test_parseQAFromText_withDotFormatSinglePair_returnsOnePair', () => {
     // Arrange
-    const text = 'Q1. Cosa afferma l\'articolo?\nR1. Afferma che il cambiamento è necessario.';
+    const text = "Q1. Cosa afferma l'articolo?\nR1. Afferma che il cambiamento è necessario.";
 
     // Act
     const result = parseQAFromText(text);
@@ -96,8 +390,8 @@ describe('parseQAFromText() — risposte su più righe', () => {
   it('test_parseQAFromText_withMultilineAnswer_concatenatesLines', () => {
     // Arrange
     const text = [
-      'Q1: Qual è l\'impatto?',
-      'R1: L\'impatto è significativo.',
+      "Q1: Qual è l'impatto?",
+      "R1: L'impatto è significativo.",
       'Ha conseguenze su più settori.',
       'Inclusi quello economico e sociale.',
     ].join('\n');
@@ -136,12 +430,7 @@ describe('parseQAFromText() — risposte su più righe', () => {
 
   it('test_parseQAFromText_withBlankLinesInAnswer_ignoresBlanks', () => {
     // Righe vuote non vengono concatenate (la guard `line.trim()` le esclude)
-    const text = [
-      'Q1: Domanda?',
-      'R1: Prima riga.',
-      '',
-      'Seconda riga.',
-    ].join('\n');
+    const text = ['Q1: Domanda?', 'R1: Prima riga.', '', 'Seconda riga.'].join('\n');
 
     const result = parseQAFromText(text);
 

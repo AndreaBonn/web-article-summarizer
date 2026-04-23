@@ -88,6 +88,15 @@ describe('ContentClassifier.classifyArticle() — selezione manuale', () => {
     expect(result.method).toBe('manual');
   });
 
+  it('test_classifyArticle_withAllManualCategories_returnsCorrectMethod', async () => {
+    const categories = ['scientific', 'news', 'tutorial', 'business', 'opinion', 'general'];
+    for (const cat of categories) {
+      const result = await ContentClassifier.classifyArticle({ title: 'T', content: 'c' }, cat);
+      expect(result.method).toBe('manual');
+      expect(result.category).toBe(cat);
+    }
+  });
+
   it('test_classifyArticle_withAutoAndNoApiKey_returnsFallbackGeneral', async () => {
     // Arrange: StorageManager restituirà undefined → aiClassification lancia
     // Non mocchiamo StorageManager direttamente: lo importiamo e mocchiamo qui
@@ -104,6 +113,126 @@ describe('ContentClassifier.classifyArticle() — selezione manuale', () => {
     expect(result.category).toBe('general');
     expect(result.method).toBe('fallback');
     expect(result.error).toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// classifyArticle — AI classification path
+// ---------------------------------------------------------------------------
+
+describe('ContentClassifier.classifyArticle() — AI classification', () => {
+  let StorageManager;
+  let APIClient;
+
+  beforeEach(async () => {
+    const storageModule = await import('@utils/storage/storage-manager.js');
+    StorageManager = storageModule.StorageManager;
+    vi.spyOn(StorageManager, 'getSettings').mockResolvedValue({ selectedProvider: 'groq' });
+    vi.spyOn(StorageManager, 'getApiKey').mockResolvedValue('test-api-key');
+
+    const apiModule = await import('@utils/ai/api-orchestrator.js');
+    APIClient = apiModule.APIOrchestrator;
+  });
+
+  it('test_classifyArticle_withValidAIResponse_returnsAIMethod', async () => {
+    vi.spyOn(APIClient, 'generateCompletion').mockResolvedValue('scientific');
+
+    const article = { title: 'Research Paper', content: 'methodology results p-value '.repeat(20) };
+    const result = await ContentClassifier.classifyArticle(article, 'auto');
+
+    expect(result.method).toBe('ai');
+    expect(result.category).toBe('scientific');
+  });
+
+  it('test_classifyArticle_withInvalidAICategory_returnsFallback', async () => {
+    vi.spyOn(APIClient, 'generateCompletion').mockResolvedValue('invalid-category-xyz');
+
+    const article = { title: 'Article', content: 'some content '.repeat(10) };
+    const result = await ContentClassifier.classifyArticle(article, 'auto');
+
+    expect(result.method).toBe('fallback');
+    expect(result.category).toBe('general');
+    expect(result.error).toContain('invalid-category-xyz');
+  });
+
+  it('test_classifyArticle_withNetworkError_returnsFallbackWithError', async () => {
+    vi.spyOn(APIClient, 'generateCompletion').mockRejectedValue(
+      new Error('fetch failed: Network error'),
+    );
+
+    const article = { title: 'Net Fail', content: 'content '.repeat(10) };
+    const result = await ContentClassifier.classifyArticle(article, 'auto');
+
+    expect(result.method).toBe('fallback');
+    expect(result.category).toBe('general');
+    expect(result.error).toContain('fetch failed');
+  });
+
+  it('test_classifyArticle_withAPIError401_returnsFallback', async () => {
+    vi.spyOn(APIClient, 'generateCompletion').mockRejectedValue(new Error('401 Unauthorized'));
+
+    const article = { title: 'Auth Fail', content: 'content '.repeat(10) };
+    const result = await ContentClassifier.classifyArticle(article, 'auto');
+
+    expect(result.method).toBe('fallback');
+    expect(result.category).toBe('general');
+  });
+
+  it('test_classifyArticle_withRateLimitError429_returnsFallback', async () => {
+    vi.spyOn(APIClient, 'generateCompletion').mockRejectedValue(
+      new Error('429 rate limit exceeded'),
+    );
+
+    const article = { title: 'Rate Limit', content: 'content '.repeat(10) };
+    const result = await ContentClassifier.classifyArticle(article, 'auto');
+
+    expect(result.method).toBe('fallback');
+    expect(result.category).toBe('general');
+  });
+
+  it('test_classifyArticle_withTimeoutError_returnsFallback', async () => {
+    vi.spyOn(APIClient, 'generateCompletion').mockRejectedValue(
+      new Error('Request timeout after 60 seconds'),
+    );
+
+    const article = { title: 'Timeout', content: 'content '.repeat(10) };
+    const result = await ContentClassifier.classifyArticle(article, 'auto');
+
+    expect(result.method).toBe('fallback');
+    expect(result.category).toBe('general');
+  });
+
+  it('test_classifyArticle_withInternalError_returnsFallback', async () => {
+    vi.spyOn(APIClient, 'generateCompletion').mockRejectedValue(
+      new Error('TypeError: cannot read property of undefined'),
+    );
+
+    const article = { title: 'Internal', content: 'content '.repeat(10) };
+    const result = await ContentClassifier.classifyArticle(article, 'auto');
+
+    expect(result.method).toBe('fallback');
+    expect(result.category).toBe('general');
+  });
+
+  it('test_aiClassification_samplesFirst500Words', async () => {
+    let capturedUserPrompt = '';
+    const { PromptRegistry } = await import('@utils/ai/prompt-registry.js');
+    vi.spyOn(PromptRegistry, 'getClassificationUserPrompt').mockImplementation((art, sample) => {
+      capturedUserPrompt = sample;
+      return 'mocked-user-prompt';
+    });
+    vi.spyOn(PromptRegistry, 'getClassificationSystemPrompt').mockReturnValue('mocked-sys');
+    vi.spyOn(APIClient, 'generateCompletion').mockResolvedValue('news');
+
+    // Create article with more than 500 words
+    const words = Array.from({ length: 600 }, (_, i) => `word${i}`);
+    const article = { title: 'Long Article', content: words.join(' ') };
+
+    await ContentClassifier.classifyArticle(article, 'auto');
+
+    // The sample should contain only ~500 words (joined by spaces)
+    const sampleWords = capturedUserPrompt.split(/\s+/);
+    expect(sampleWords.length).toBeLessThanOrEqual(500);
   });
 });
 

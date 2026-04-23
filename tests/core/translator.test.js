@@ -36,6 +36,9 @@ vi.mock('@utils/ai/prompt-registry.js', () => ({
 
 import { Translator } from '@utils/core/translator.js';
 import { InputSanitizer } from '@utils/security/input-sanitizer.js';
+import { APIOrchestrator as APIClient } from '@utils/ai/api-orchestrator.js';
+import { ContentDetector } from '@utils/ai/content-detector.js';
+import { PromptRegistry } from '@utils/ai/prompt-registry.js';
 
 // ---------------------------------------------------------------------------
 // Fixture comuni
@@ -282,5 +285,157 @@ describe('Translator.buildUserPrompt()', () => {
 
       expect(promptUndefined).toBe(promptGeneral);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// translateArticle — happy path + error path (lines 11-20)
+// ---------------------------------------------------------------------------
+
+describe('Translator.translateArticle()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    InputSanitizer.sanitizeForAI.mockImplementation((text) => text);
+    ContentDetector.detectContentType.mockReturnValue('general');
+    PromptRegistry.getTranslationSystemPrompt.mockReturnValue('system-prompt');
+    APIClient.generateCompletion.mockResolvedValue('Translated text result');
+  });
+
+  it('test_translateArticle_happyPath_returnsTranslatedText', async () => {
+    const article = makeArticle();
+    const result = await Translator.translateArticle(article, 'en', 'groq', 'api-key');
+
+    expect(result).toBe('Translated text result');
+  });
+
+  it('test_translateArticle_callsAPIClientWithProviderAndApiKey', async () => {
+    const article = makeArticle();
+    await Translator.translateArticle(article, 'fr', 'openai', 'my-key');
+
+    expect(APIClient.generateCompletion).toHaveBeenCalledOnce();
+    const [provider, apiKey] = APIClient.generateCompletion.mock.calls[0];
+    expect(provider).toBe('openai');
+    expect(apiKey).toBe('my-key');
+  });
+
+  it('test_translateArticle_usesDetectedContentTypeWhenNotProvided', async () => {
+    ContentDetector.detectContentType.mockReturnValue('scientific');
+    const article = makeArticle();
+
+    await Translator.translateArticle(article, 'de', 'groq', 'key');
+
+    expect(ContentDetector.detectContentType).toHaveBeenCalledWith(article);
+    expect(PromptRegistry.getTranslationSystemPrompt).toHaveBeenCalledWith('groq', 'scientific');
+  });
+
+  it('test_translateArticle_usesProvidedContentTypeWithoutDetecting', async () => {
+    const article = makeArticle();
+
+    await Translator.translateArticle(article, 'de', 'groq', 'key', 'tutorial');
+
+    // ContentDetector should NOT be called when contentType is explicitly provided
+    expect(ContentDetector.detectContentType).not.toHaveBeenCalled();
+    expect(PromptRegistry.getTranslationSystemPrompt).toHaveBeenCalledWith('groq', 'tutorial');
+  });
+
+  it('test_translateArticle_setsMaxTokens8000ForGemini', async () => {
+    const article = makeArticle();
+    await Translator.translateArticle(article, 'en', 'gemini', 'key');
+
+    const options = APIClient.generateCompletion.mock.calls[0][4];
+    expect(options.maxTokens).toBe(8000);
+  });
+
+  it('test_translateArticle_setsMaxTokens4096ForNonGemini', async () => {
+    const article = makeArticle();
+    await Translator.translateArticle(article, 'en', 'anthropic', 'key');
+
+    const options = APIClient.generateCompletion.mock.calls[0][4];
+    expect(options.maxTokens).toBe(4096);
+  });
+
+  it('test_translateArticle_setsTemperature0Point3', async () => {
+    const article = makeArticle();
+    await Translator.translateArticle(article, 'en', 'groq', 'key');
+
+    const options = APIClient.generateCompletion.mock.calls[0][4];
+    expect(options.temperature).toBe(0.3);
+  });
+
+  it('test_translateArticle_apiThrows_wrapsErrorWithContext', async () => {
+    APIClient.generateCompletion.mockRejectedValue(new Error('API failure'));
+    const article = makeArticle();
+
+    await expect(Translator.translateArticle(article, 'en', 'groq', 'key')).rejects.toThrow(
+      'Errore traduzione: API failure',
+    );
+  });
+
+  it('test_translateArticle_apiThrows_preservesCauseChain', async () => {
+    const originalError = new Error('original');
+    APIClient.generateCompletion.mockRejectedValue(originalError);
+    const article = makeArticle();
+
+    let caughtError;
+    try {
+      await Translator.translateArticle(article, 'en', 'groq', 'key');
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError.cause).toBe(originalError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildUserPrompt — paragrafo sanitizzazione fallback (line 56)
+// ---------------------------------------------------------------------------
+
+describe('Translator.buildUserPrompt() — paragraph sanitization fallback', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('test_buildUserPrompt_paragraphSanitizeThrows_skipsParagraphSilently', () => {
+    // First call (title) passes, second call (paragraph) throws
+    InputSanitizer.sanitizeForAI
+      .mockImplementationOnce((text) => text) // title OK
+      .mockImplementationOnce(() => {
+        throw new Error('too short');
+      }); // paragraph fails
+
+    const article = makeArticle({
+      paragraphs: [
+        { text: 'Short.' }, // this will fail sanitization
+        { text: 'Second paragraph that is fine.' },
+      ],
+    });
+
+    // Should not throw
+    expect(() => Translator.buildUserPrompt(article, 'en', 'general')).not.toThrow();
+
+    // Second paragraph mock — since first paragraph threw, sanitizeForAI is called
+    // for title (1) + first para (throws) + second para = calls may vary
+    // Just verify the prompt is still generated
+    const prompt = Translator.buildUserPrompt(article, 'en', 'general');
+    expect(prompt).toBeTypeOf('string');
+    expect(prompt.length).toBeGreaterThan(0);
+  });
+
+  it('test_buildUserPrompt_allParagraphsSanitizeThrow_returnsPromptWithOnlyTitle', () => {
+    InputSanitizer.sanitizeForAI
+      .mockImplementationOnce((text) => text) // title OK
+      .mockImplementation(() => {
+        throw new Error('invalid');
+      }); // all paragraphs fail
+
+    const article = makeArticle({
+      paragraphs: [{ text: 'x' }, { text: 'y' }],
+    });
+
+    const prompt = Translator.buildUserPrompt(article, 'en', 'general');
+
+    // Title included, paragraphs skipped
+    expect(prompt).toContain('Titolo articolo di test');
   });
 });

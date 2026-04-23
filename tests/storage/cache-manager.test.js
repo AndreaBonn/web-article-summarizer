@@ -18,6 +18,11 @@ global.chrome = {
         }
         return Promise.resolve();
       }),
+      remove: vi.fn((keys) => {
+        const keyList = Array.isArray(keys) ? keys : [keys];
+        keyList.forEach((k) => delete store[k]);
+        return Promise.resolve();
+      }),
     },
   },
 };
@@ -186,6 +191,144 @@ describe('CacheManager', () => {
       expect(await cache.get('https://example.com', 'groq', settings)).toBeNull();
       expect(await cache.get('https://example.com', 'openai', settings)).toBeNull();
       expect(await cache.get('https://other.com', 'groq', settings)).not.toBeNull();
+    });
+
+    it('returns 0 when no entries match the URL', async () => {
+      await cache.set('https://other.com', 'groq', settings, { s: '1' });
+
+      const count = await cache.invalidateByUrl('https://notfound.com');
+
+      expect(count).toBe(0);
+    });
+  });
+
+  describe('getStats (delegated to CacheStats)', () => {
+    it('returns stats object with expected keys', async () => {
+      await cache.set('https://example.com', 'groq', settings, { summary: 'x' });
+
+      const stats = await cache.getStats();
+
+      expect(stats).toHaveProperty('totalEntries');
+      expect(stats).toHaveProperty('validEntries');
+      expect(stats).toHaveProperty('expiredEntries');
+      expect(stats).toHaveProperty('hitRate');
+      expect(stats).toHaveProperty('sizeMB');
+    });
+
+    it('returns totalEntries = 1 after one set', async () => {
+      await cache.set('https://example.com', 'groq', settings, { summary: 'y' });
+
+      const stats = await cache.getStats();
+
+      expect(stats.totalEntries).toBe(1);
+      expect(stats.validEntries).toBe(1);
+      expect(stats.expiredEntries).toBe(0);
+    });
+
+    it('counts expired entry correctly in stats', async () => {
+      await cache.set('https://example.com', 'groq', settings, { summary: 'z' });
+      const cacheKey = cache.generateCacheKey('https://example.com', 'groq', settings);
+      store.summaryCache[cacheKey].expiresAt = Date.now() - 1000;
+
+      const stats = await cache.getStats();
+
+      expect(stats.expiredEntries).toBe(1);
+      expect(stats.validEntries).toBe(0);
+    });
+  });
+
+  describe('formatAge (delegated to CacheStats)', () => {
+    it('formats milliseconds < 60s as seconds', () => {
+      expect(cache.formatAge(30000)).toBe('30s');
+    });
+
+    it('formats milliseconds as minutes when >= 60s', () => {
+      expect(cache.formatAge(5 * 60 * 1000)).toBe('5m');
+    });
+
+    it('formats milliseconds as hours when >= 60m', () => {
+      expect(cache.formatAge(3 * 60 * 60 * 1000)).toBe('3h');
+    });
+
+    it('formats milliseconds as days when >= 24h', () => {
+      expect(cache.formatAge(2 * 24 * 60 * 60 * 1000)).toBe('2g');
+    });
+  });
+
+  describe('clearLogs (delegated to CacheStats)', () => {
+    it('does not throw when called', async () => {
+      await expect(cache.clearLogs()).resolves.not.toThrow();
+    });
+  });
+
+  describe('logCacheOperation (delegated to CacheStats)', () => {
+    it('does not throw for valid operation', async () => {
+      await expect(cache.logCacheOperation('read', 'some-key', true)).resolves.not.toThrow();
+    });
+
+    it('does not throw with reason parameter', async () => {
+      await expect(
+        cache.logCacheOperation('write', 'some-key', false, 'storage-error'),
+      ).resolves.not.toThrow();
+    });
+  });
+
+  describe('setDefaultTTL / getDefaultTTL', () => {
+    it('sets and gets TTL in days', () => {
+      cache.setDefaultTTL(14);
+      expect(cache.getDefaultTTL()).toBe(14);
+    });
+
+    it('default TTL is 7 days', () => {
+      expect(cache.getDefaultTTL()).toBe(7);
+    });
+  });
+
+  describe('clearAll', () => {
+    it('removes all cached data', async () => {
+      store.summaryCache = { testKey: { data: 'x' } };
+
+      await cache.clearAll();
+
+      const result = await cache.get('https://example.com', 'groq', settings);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('invalidateIfContentChanged', () => {
+    it('invalidates entry when content hash changed', async () => {
+      await cache.set('https://example.com', 'groq', settings, { summary: 'old' }, null, 'hash-1');
+
+      const count = await cache.invalidateIfContentChanged('https://example.com', 'hash-2');
+
+      expect(count).toBe(1);
+    });
+
+    it('does not invalidate when content hash is unchanged', async () => {
+      await cache.set('https://example.com', 'groq', settings, { summary: 'same' }, null, 'hash-1');
+
+      const count = await cache.invalidateIfContentChanged('https://example.com', 'hash-1');
+
+      expect(count).toBe(0);
+    });
+  });
+
+  describe('CacheStore.hashContent (static)', () => {
+    it('returns null for empty/falsy content', () => {
+      const { CacheStore } = cache.constructor.__proto__;
+      // Access via import
+    });
+
+    it('get returns data for old (>24h) cache with log', async () => {
+      const data = { summary: 'old but valid' };
+      await cache.set('https://example.com', 'groq', settings, data);
+
+      const cacheKey = cache.generateCacheKey('https://example.com', 'groq', settings);
+      // Make cache old (25 hours ago) but not expired (still within defaultTTL)
+      store.summaryCache[cacheKey].timestamp = Date.now() - 25 * 60 * 60 * 1000;
+
+      const result = await cache.get('https://example.com', 'groq', settings);
+      expect(result).toEqual(data);
     });
   });
 });

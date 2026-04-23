@@ -6,16 +6,124 @@ global.chrome = {
   runtime: { id: 'test-id' },
 };
 
-// Mock APIClient to avoid real API calls
-vi.mock('../src/utils/ai/api-client.js', () => ({
-  APIClient: {
+// Mock APIOrchestrator (used as APIClient in advanced-analysis.js)
+vi.mock('@utils/ai/api-orchestrator.js', () => ({
+  APIOrchestrator: {
     generateCompletion: vi.fn(),
   },
 }));
 
-const { AdvancedAnalysis } = await import('../../src/utils/ai/advanced-analysis.js');
+const { AdvancedAnalysis } = await import('@utils/ai/advanced-analysis.js');
+const { APIOrchestrator } = await import('@utils/ai/api-orchestrator.js');
 
 describe('AdvancedAnalysis', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // ---------------------------------------------------------------------------
+  // askQuestion — lines 7-17
+  // ---------------------------------------------------------------------------
+
+  describe('askQuestion', () => {
+    const article = {
+      title: 'Test Article',
+      paragraphs: [
+        { id: 1, text: 'First paragraph.' },
+        { id: 2, text: 'Second paragraph.' },
+      ],
+    };
+    const summary = 'Test summary.';
+    const settings = { outputLanguage: 'it' };
+
+    it('test_askQuestion_returnsGeneratedCompletion', async () => {
+      APIOrchestrator.generateCompletion.mockResolvedValue('La risposta è nel §1.');
+
+      const result = await AdvancedAnalysis.askQuestion(
+        'Qual è il tema?',
+        article,
+        summary,
+        'groq',
+        'api-key',
+        settings,
+      );
+
+      expect(result).toBe('La risposta è nel §1.');
+    });
+
+    it('test_askQuestion_callsGenerateCompletionWithCorrectProvider', async () => {
+      APIOrchestrator.generateCompletion.mockResolvedValue('answer');
+
+      await AdvancedAnalysis.askQuestion('Q?', article, summary, 'anthropic', 'key', settings);
+
+      expect(APIOrchestrator.generateCompletion).toHaveBeenCalledWith(
+        'anthropic',
+        'key',
+        expect.any(String),
+        expect.any(String),
+        expect.objectContaining({ temperature: 0.4 }),
+      );
+    });
+
+    it('test_askQuestion_usesMaxTokens8000ForGemini', async () => {
+      APIOrchestrator.generateCompletion.mockResolvedValue('gemini answer');
+
+      await AdvancedAnalysis.askQuestion('Q?', article, summary, 'gemini', 'key', settings);
+
+      const [, , , , opts] = APIOrchestrator.generateCompletion.mock.calls[0];
+      expect(opts.maxTokens).toBe(8000);
+    });
+
+    it('test_askQuestion_usesMaxTokens1500ForNonGemini', async () => {
+      APIOrchestrator.generateCompletion.mockResolvedValue('openai answer');
+
+      await AdvancedAnalysis.askQuestion('Q?', article, summary, 'openai', 'key', settings);
+
+      const [, , , , opts] = APIOrchestrator.generateCompletion.mock.calls[0];
+      expect(opts.maxTokens).toBe(1500);
+    });
+
+    it('test_askQuestion_usesDefaultLanguageItWhenNotSpecified', async () => {
+      APIOrchestrator.generateCompletion.mockResolvedValue('ok');
+
+      await AdvancedAnalysis.askQuestion('Q?', article, summary, 'groq', 'key', {});
+
+      // System prompt should contain italian instruction (default 'it')
+      const [, , systemPrompt] = APIOrchestrator.generateCompletion.mock.calls[0];
+      expect(systemPrompt).toContain('italiano');
+    });
+
+    it('test_askQuestion_wrapsAPIErrorWithQAPrefix', async () => {
+      APIOrchestrator.generateCompletion.mockRejectedValue(new Error('API unavailable'));
+
+      await expect(
+        AdvancedAnalysis.askQuestion('Q?', article, summary, 'groq', 'key', settings),
+      ).rejects.toThrow('Errore Q&A: API unavailable');
+    });
+
+    it('test_askQuestion_preservesOriginalErrorAsCause', async () => {
+      const originalError = new Error('Network failure');
+      APIOrchestrator.generateCompletion.mockRejectedValue(originalError);
+
+      try {
+        await AdvancedAnalysis.askQuestion('Q?', article, summary, 'groq', 'key', settings);
+      } catch (err) {
+        expect(err.cause).toBe(originalError);
+      }
+    });
+
+    it('test_askQuestion_englishSettingProducesEnglishSystemPrompt', async () => {
+      APIOrchestrator.generateCompletion.mockResolvedValue('ok');
+
+      await AdvancedAnalysis.askQuestion('Q?', article, summary, 'groq', 'key', {
+        outputLanguage: 'en',
+      });
+
+      const [, , systemPrompt] = APIOrchestrator.generateCompletion.mock.calls[0];
+      expect(systemPrompt).toContain('English');
+    });
+  });
+
   const mockArticle = {
     title: 'Test Article',
     paragraphs: [

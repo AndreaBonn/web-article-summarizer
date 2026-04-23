@@ -141,5 +141,257 @@ describe('I18nValidator', () => {
       // Nessun warning atteso per il mock corrente (nessuna lingua ha chiavi extra)
       expect(report.warnings).toHaveLength(0);
     });
+
+    it('test_validateTranslations_includesStatsForEachLanguage', () => {
+      // Act
+      const report = I18nValidator.validateTranslations();
+
+      // Assert
+      expect(report.stats.referenceKeys).toBe(3); // it: common.save, common.cancel, nav.home
+      expect(report.stats.en).toBe(3);
+      expect(report.stats.es).toBe(2); // solo common.save e nav.home
+    });
+
+    it('test_validateTranslations_errorContainsMissingCount', () => {
+      // Act
+      const report = I18nValidator.validateTranslations();
+
+      // Assert
+      const esError = report.errors.find((e) => e.language === 'es');
+      expect(esError.count).toBe(1);
+      expect(esError.type).toBe('missing_keys');
+    });
+
+    it('test_validateTranslations_skipsReferenceLanguage', () => {
+      // Act
+      const report = I18nValidator.validateTranslations();
+
+      // Assert — 'it' non appare negli errori (è la lingua di riferimento)
+      const itError = report.errors.find((e) => e.language === 'it');
+      expect(itError).toBeUndefined();
+    });
+  });
+
+  describe('printReport', () => {
+    it('test_printReport_validReport_returnsTrue', () => {
+      // Arrange
+      const validReport = {
+        valid: true,
+        errors: [],
+        warnings: [],
+        stats: { referenceKeys: 3, en: 3 },
+      };
+
+      // Act
+      const result = I18nValidator.printReport(validReport);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('test_printReport_invalidReport_returnsFalse', () => {
+      // Arrange
+      const invalidReport = {
+        valid: false,
+        errors: [{ language: 'de', count: 2, keys: ['common.save', 'nav.home'] }],
+        warnings: [],
+        stats: { referenceKeys: 3, de: 1 },
+      };
+
+      // Act
+      const result = I18nValidator.printReport(invalidReport);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('test_printReport_withWarnings_returnsTrue', () => {
+      // Arrange
+      const reportWithWarnings = {
+        valid: true,
+        errors: [],
+        warnings: [{ language: 'en', count: 1, keys: ['extra.key'] }],
+        stats: { referenceKeys: 3, en: 4 },
+      };
+
+      // Act
+      const result = I18nValidator.printReport(reportWithWarnings);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('test_printReport_logsStatisticsForEachLanguage', async () => {
+      // Arrange
+      const { Logger } = await import('@utils/core/logger.js');
+      const report = {
+        valid: true,
+        errors: [],
+        warnings: [],
+        stats: { referenceKeys: 5, en: 5, fr: 3 },
+      };
+
+      // Act
+      I18nValidator.printReport(report);
+
+      // Assert — verifica che Logger.info sia stato chiamato (log prodotto)
+      expect(Logger.info).toHaveBeenCalled();
+    });
+
+    it('test_printReport_withErrors_callsLoggerWarn', async () => {
+      // Arrange
+      const { Logger } = await import('@utils/core/logger.js');
+      vi.clearAllMocks();
+      const report = {
+        valid: false,
+        errors: [{ language: 'de', count: 1, keys: ['some.key'] }],
+        warnings: [],
+        stats: { referenceKeys: 3, de: 2 },
+      };
+
+      // Act
+      I18nValidator.printReport(report);
+
+      // Assert
+      expect(Logger.warn).toHaveBeenCalled();
+    });
+  });
+
+  describe('generateMissingTemplate', () => {
+    it('test_generateMissingTemplate_noErrors_doesNotLog_keys', async () => {
+      // Arrange
+      const { Logger } = await import('@utils/core/logger.js');
+      vi.clearAllMocks();
+      const report = { errors: [] };
+
+      // Act
+      I18nValidator.generateMissingTemplate(report);
+
+      // Assert — solo il messaggio "No missing" viene loggato
+      expect(Logger.info).toHaveBeenCalledWith(expect.stringContaining('No missing translations'));
+    });
+
+    it('test_generateMissingTemplate_withErrors_logsKeysWithValues', async () => {
+      // Arrange
+      const { Logger } = await import('@utils/core/logger.js');
+      vi.clearAllMocks();
+      const report = {
+        errors: [
+          {
+            language: 'de',
+            keys: ['common.save', 'nav.home'],
+          },
+        ],
+      };
+
+      // Act
+      I18nValidator.generateMissingTemplate(report);
+
+      // Assert — deve loggare le chiavi mancanti con i valori italiani
+      // Il mock I18n.translations.it.common.save = 'Salva', nav.home = 'Home'
+      const allInfoCalls = Logger.info.mock.calls.flat();
+      expect(allInfoCalls.some((msg) => msg.includes('common.save'))).toBe(true);
+      expect(allInfoCalls.some((msg) => msg.includes('Salva'))).toBe(true);
+    });
+
+    it('test_generateMissingTemplate_withErrors_logsLanguageHeader', async () => {
+      // Arrange
+      const { Logger } = await import('@utils/core/logger.js');
+      vi.clearAllMocks();
+      const report = {
+        errors: [{ language: 'fr', keys: ['common.cancel'] }],
+      };
+
+      // Act
+      I18nValidator.generateMissingTemplate(report);
+
+      // Assert
+      const allInfoCalls = Logger.info.mock.calls.flat();
+      expect(allInfoCalls.some((msg) => msg.includes('FR'))).toBe(true);
+    });
+  });
+
+  describe('getValueByKey', () => {
+    it('test_getValueByKey_deeplyNested_returnsValue', () => {
+      // Arrange
+      const obj = { a: { b: { c: 'deep value' } } };
+
+      // Act
+      const value = I18nValidator.getValueByKey(obj, 'a.b.c');
+
+      // Assert
+      expect(value).toBe('deep value');
+    });
+
+    it('test_getValueByKey_topLevelKey_returnsValue', () => {
+      // Arrange
+      const obj = { topLevel: 'value' };
+
+      // Act
+      const value = I18nValidator.getValueByKey(obj, 'topLevel');
+
+      // Assert
+      expect(value).toBe('value');
+    });
+
+    it('test_getValueByKey_partialPath_intermediate_null_returnsUndefined', () => {
+      // Arrange
+      const obj = { a: null };
+
+      // Act
+      const value = I18nValidator.getValueByKey(obj, 'a.b');
+
+      // Assert
+      expect(value).toBeUndefined();
+    });
+
+    it('test_getValueByKey_emptyObject_returnsUndefined', () => {
+      // Act
+      const value = I18nValidator.getValueByKey({}, 'any.key');
+
+      // Assert
+      expect(value).toBeUndefined();
+    });
+  });
+
+  describe('getAllKeys', () => {
+    it('test_getAllKeys_withPrefix_returnsDottedPaths', () => {
+      // Arrange
+      const obj = { save: 'Salva', cancel: 'Annulla' };
+
+      // Act
+      const keys = I18nValidator.getAllKeys(obj, 'common');
+
+      // Assert
+      expect(keys).toContain('common.save');
+      expect(keys).toContain('common.cancel');
+    });
+
+    it('test_getAllKeys_deeplyNested_returnsAllLeaves', () => {
+      // Arrange
+      const obj = { a: { b: { c: 'v1', d: 'v2' }, e: 'v3' } };
+
+      // Act
+      const keys = I18nValidator.getAllKeys(obj);
+
+      // Assert
+      expect(keys).toContain('a.b.c');
+      expect(keys).toContain('a.b.d');
+      expect(keys).toContain('a.e');
+      expect(keys).toHaveLength(3);
+    });
+
+    it('test_getAllKeys_withNullValue_skipsNullBranch', () => {
+      // Arrange — null non è un object che si itera
+      const obj = { a: 'val', b: null };
+
+      // Act
+      const keys = I18nValidator.getAllKeys(obj);
+
+      // Assert — null viene trattato come leaf? No: typeof null === 'object' ma il check è !== null
+      // Quindi b: null → null !== null è falso → NOT ricorsivo → push 'b'
+      expect(keys).toContain('a');
+      expect(keys).toContain('b');
+    });
   });
 });
