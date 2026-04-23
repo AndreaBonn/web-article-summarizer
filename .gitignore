@@ -17,6 +17,10 @@ build/
 *.log
 *.tmp
 
+# Test coverage
+coverage/
+coverage-tmp/
+
 # Secrets
 .env
 .env.*
