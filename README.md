@@ -17,6 +17,7 @@
 
 [![CI](https://github.com/AndreaBonn/web-article-summarizer/actions/workflows/ci.yml/badge.svg)](https://github.com/AndreaBonn/web-article-summarizer/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AndreaBonn/web-article-summarizer/main/badges/test-badge.json)](https://github.com/AndreaBonn/web-article-summarizer/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AndreaBonn/web-article-summarizer/main/badges/coverage-badge.json)](https://github.com/AndreaBonn/web-article-summarizer/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![ESLint](https://img.shields.io/badge/linter-ESLint-4B32C3.svg)](https://eslint.org)
 [![Prettier](https://img.shields.io/badge/formatter-Prettier-F7B93E.svg)](https://prettier.io)
