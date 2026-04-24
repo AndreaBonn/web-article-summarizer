@@ -674,4 +674,74 @@ describe('ContentExtractor.processReadabilityArticle() — stripping noise da ou
     expect(result.readingTimeMinutes).toBeGreaterThanOrEqual(1);
     expect(typeof result.readingTimeMinutes).toBe('number');
   });
+
+  it('test_processReadabilityArticle_extractionMethodIsReadability', () => {
+    const content = buildArticleContent(250);
+    const article = buildReadabilityArticle(content);
+    const result = ContentExtractor.processReadabilityArticle(article, document);
+
+    expect(result.extractionMethod).toBe('readability');
+  });
+
+  it('test_processReadabilityArticle_excerptUsesArticleExcerpt', () => {
+    const content = buildArticleContent(250);
+    const article = buildReadabilityArticle(content);
+    article.excerpt = 'Custom excerpt from Readability';
+    const result = ContentExtractor.processReadabilityArticle(article, document);
+
+    expect(result.excerpt).toBe('Custom excerpt from Readability');
+  });
+
+  it('test_processReadabilityArticle_noExcerpt_usesFirst200CharsOfContent', () => {
+    const content = buildArticleContent(250);
+    const article = buildReadabilityArticle(content);
+    article.excerpt = '';
+    const result = ContentExtractor.processReadabilityArticle(article, document);
+
+    expect(result.excerpt).toContain('...');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. fallbackExtraction — sentence splitting
+// ---------------------------------------------------------------------------
+
+describe('ContentExtractor.fallbackExtraction() — sentence splitting edge case', () => {
+  it('test_fallbackExtraction_fewParagraphsButEnoughSentences_extractsFromSentences', () => {
+    document.body.innerHTML = '';
+    // No <article>, no <main> — usa body.
+    // Solo 1 paragrafo corto (< 3 paragrafi), ma abbastanza testo in sentences.
+    const longText = Array.from({ length: 300 }, (_, i) => `word${i}`).join(' ');
+    // Splitting on '.' — put whole text in a single <div> (no <p>)
+    const div = document.createElement('div');
+    div.textContent = longText;
+    document.body.appendChild(div);
+
+    const result = ContentExtractor.fallbackExtraction(document);
+
+    expect(result.wordCount).toBeGreaterThanOrEqual(200);
+    expect(result.extractionMethod).toBe('fallback');
+  });
+
+  it('test_fallbackExtraction_degradedFlagIsSet', () => {
+    buildDocument({ wordCount: 300 });
+    const result = ContentExtractor.extract(document);
+
+    // Readability è mockato a ritornare null → fallback → degraded = true
+    expect(result.degraded).toBe(true);
+  });
+
+  it('test_fallbackExtraction_usesBodyWhenNoContainerFound', () => {
+    document.body.innerHTML = '';
+    // Nessun tag semantico — solo paragrafi in body
+    for (let i = 0; i < 5; i++) {
+      const p = document.createElement('p');
+      p.textContent = Array.from({ length: 60 }, (_, j) => `testo${i}_${j}`).join(' ');
+      document.body.appendChild(p);
+    }
+
+    const result = ContentExtractor.fallbackExtraction(document);
+
+    expect(result.wordCount).toBeGreaterThanOrEqual(200);
+  });
 });

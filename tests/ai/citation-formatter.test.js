@@ -363,4 +363,108 @@ describe('CitationFormatter.generateBibliography()', () => {
       CitationFormatter.generateBibliography(ARTICLE_COMPLETO, null, 'apa');
     }).not.toThrow();
   });
+
+  it('test_generateBibliography_citationWithoutAuthor_showsFonteNonSpecificata', () => {
+    const citation = {
+      id: 1,
+      type: 'study_reference',
+      quote_text: 'Some reference text',
+      author: 'N/A',
+      source: 'Nature',
+      year: '2024',
+      paragraph: '3',
+    };
+
+    const result = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, [citation], 'apa');
+
+    expect(result).toContain('Fonte non specificata');
+  });
+
+  it('test_generateBibliography_citationWithContext_includesContext', () => {
+    const citation = {
+      ...CITATION_DIRETTA,
+      context: 'Citazione nel contesto di un confronto',
+    };
+
+    const result = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, [citation], 'apa');
+
+    expect(result).toContain('Citazione nel contesto di un confronto');
+  });
+
+  it('test_generateBibliography_citationWithAdditionalInfo_includesDetails', () => {
+    const citation = {
+      ...CITATION_STUDIO,
+      additional_info: {
+        study_title: 'AI Performance Study',
+        journal: 'Nature AI',
+        doi: '10.1234/test',
+        url: 'https://example.com/study',
+      },
+    };
+
+    const result = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, [citation], 'apa');
+
+    expect(result).toContain('AI Performance Study');
+    expect(result).toContain('Nature AI');
+    expect(result).toContain('10.1234/test');
+    expect(result).toContain('https://example.com/study');
+  });
+
+  it('test_generateBibliography_citationWithEmptyAdditionalInfo_noExtraLine', () => {
+    const citation = {
+      ...CITATION_DIRETTA,
+      additional_info: {
+        study_title: null,
+        journal: null,
+        doi: null,
+        url: null,
+      },
+    };
+
+    const result = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, [citation], 'apa');
+
+    // Non deve contenere la riga info se tutti i campi sono null
+    expect(result).not.toContain('ℹ️');
+  });
+
+  it('test_generateBibliography_citationWithLongQuoteText_truncatesAt150Chars', () => {
+    const longText = 'A'.repeat(200);
+    const citation = {
+      ...CITATION_DIRETTA,
+      quote_text: longText,
+    };
+
+    const result = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, [citation], 'apa');
+
+    // Deve contenere "..." per troncamento
+    expect(result).toContain('...');
+    // Non deve contenere il testo integrale di 200 caratteri
+    expect(result).not.toContain(longText);
+  });
+
+  it('test_generateBibliography_citationWithTextFieldInsteadOfQuoteText_usesTextField', () => {
+    const citation = {
+      id: 1,
+      type: 'direct_quote',
+      text: 'Fallback text field',
+      author: 'Test Author',
+      source: 'Test Source',
+      paragraph: '1',
+    };
+
+    const result = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, [citation], 'apa');
+
+    expect(result).toContain('Fallback text field');
+  });
+
+  it('test_generateBibliography_citationWithoutParagraph_noParagraphLabel', () => {
+    const citation = {
+      ...CITATION_DIRETTA,
+      paragraph: null,
+    };
+
+    const result = CitationFormatter.generateBibliography(ARTICLE_COMPLETO, [citation], 'apa');
+
+    expect(result).not.toContain('Paragrafo:');
+  });
 });

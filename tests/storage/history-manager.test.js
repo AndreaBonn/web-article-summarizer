@@ -293,4 +293,91 @@ describe('HistoryManager', () => {
       expect(HistoryManager.formatFileSize(1536)).toBe('1.5 KB');
     });
   });
+
+  // ===== PDF — metodi aggiuntivi =====
+
+  describe('PDF updates', () => {
+    const mockPdf = { name: 'test.pdf', size: 1024, pages: 5, text: 'PDF text' };
+    const pdfMeta = { provider: 'groq', language: 'it', summaryLength: 'medium' };
+
+    it('togglePDFFavorite works', async () => {
+      const id = await HistoryManager.savePDFAnalysis(mockPdf, 'Summary', [], pdfMeta);
+
+      const isFav = await HistoryManager.togglePDFFavorite(id);
+      expect(isFav).toBe(true);
+
+      const isNotFav = await HistoryManager.togglePDFFavorite(id);
+      expect(isNotFav).toBe(false);
+    });
+
+    it('clearPDFHistory keeps only favorites', async () => {
+      const id1 = await HistoryManager.savePDFAnalysis(mockPdf, 'Fav PDF', [], pdfMeta);
+      await HistoryManager.savePDFAnalysis(mockPdf, 'NotFav PDF', [], pdfMeta);
+
+      await HistoryManager.togglePDFFavorite(id1);
+      await HistoryManager.clearPDFHistory();
+
+      const history = await HistoryManager.getPDFHistory();
+      expect(history).toHaveLength(1);
+      expect(history[0].summary).toBe('Fav PDF');
+    });
+
+    it('updatePDFWithQA adds Q&A by ID', async () => {
+      const id = await HistoryManager.savePDFAnalysis(mockPdf, 'S', [], pdfMeta);
+
+      await HistoryManager.updatePDFWithQA(id, [{ question: 'Q?', answer: 'A' }]);
+
+      const entry = await HistoryManager.getPDFById(id);
+      expect(entry.qa).toHaveLength(1);
+      expect(entry.qa[0].question).toBe('Q?');
+    });
+
+    it('updatePDFWithCitations adds citations by ID', async () => {
+      const id = await HistoryManager.savePDFAnalysis(mockPdf, 'S', [], pdfMeta);
+
+      await HistoryManager.updatePDFWithCitations(id, [
+        { type: 'direct_quote', text: 'PDF Quote' },
+      ]);
+
+      const entry = await HistoryManager.getPDFById(id);
+      expect(entry.citations).toHaveLength(1);
+    });
+  });
+
+  // ===== MULTI-ANALYSIS — metodi aggiuntivi =====
+
+  describe('Multi-Analysis updates', () => {
+    const mockAnalysis = {
+      globalSummary: 'Global summary',
+      comparison: 'Comparison',
+      qa: { interactive: true, articles: [], questions: [] },
+      metadata: { provider: 'groq' },
+    };
+    const mockArticles = [{ id: '1', article: { title: 'Art 1', url: 'url1', wordCount: 100 } }];
+
+    it('toggleMultiAnalysisFavorite works', async () => {
+      const id = await HistoryManager.saveMultiAnalysis(mockAnalysis, mockArticles);
+
+      const isFav = await HistoryManager.toggleMultiAnalysisFavorite(id);
+      expect(isFav).toBe(true);
+
+      const isNotFav = await HistoryManager.toggleMultiAnalysisFavorite(id);
+      expect(isNotFav).toBe(false);
+    });
+
+    it('clearMultiAnalysisHistory keeps only favorites', async () => {
+      const id1 = await HistoryManager.saveMultiAnalysis(mockAnalysis, mockArticles);
+      await HistoryManager.saveMultiAnalysis(
+        { ...mockAnalysis, globalSummary: 'Not fav' },
+        mockArticles,
+      );
+
+      await HistoryManager.toggleMultiAnalysisFavorite(id1);
+      await HistoryManager.clearMultiAnalysisHistory();
+
+      const history = await HistoryManager.getMultiAnalysisHistory();
+      expect(history).toHaveLength(1);
+      expect(history[0].analysis.globalSummary).toBe('Global summary');
+    });
+  });
 });

@@ -271,7 +271,10 @@ describe('APIOrchestrator', () => {
     });
 
     it('uses maxTokens 8000 for gemini', async () => {
-      PromptBuilder.buildKeyPointsPrompt.mockReturnValue({ systemPrompt: 'sys', userPrompt: 'usr' });
+      PromptBuilder.buildKeyPointsPrompt.mockReturnValue({
+        systemPrompt: 'sys',
+        userPrompt: 'usr',
+      });
       ProviderCaller.callGeminiCompletion.mockResolvedValue('gemini kp');
 
       await APIOrchestrator.extractKeyPoints('gemini', 'key', {}, {});
@@ -295,6 +298,76 @@ describe('APIOrchestrator', () => {
     it('passes through empty string', () => {
       APIOrchestrator.parseResponse('');
       expect(ResponseParser.parseResponse).toHaveBeenCalledWith('');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // callAPI — content detection callbacks
+  // ---------------------------------------------------------------------------
+
+  describe('callAPI — content detection', () => {
+    beforeEach(() => {
+      PromptBuilder.buildPrompt.mockReturnValue({
+        systemPrompt: 'sys',
+        userPrompt: 'usr',
+      });
+      ProviderCaller.callGroqCompletion.mockResolvedValue('result');
+    });
+
+    it('passes ContentDetector.detectContentType as callback to PromptBuilder', async () => {
+      await APIOrchestrator.callAPI('groq', 'key', {}, {});
+
+      const [, , , detectContentTypeCb, detectLanguageCb] = PromptBuilder.buildPrompt.mock.calls[0];
+      expect(typeof detectContentTypeCb).toBe('function');
+      expect(typeof detectLanguageCb).toBe('function');
+    });
+
+    it('callAPI detectContentType callback delegates to ContentDetector', async () => {
+      await APIOrchestrator.callAPI('groq', 'key', {}, {});
+
+      const [, , , detectContentTypeCb, detectLanguageCb] = PromptBuilder.buildPrompt.mock.calls[0];
+      const contentResult = detectContentTypeCb({ title: 'Test' });
+      expect(contentResult).toBe('general');
+
+      const langResult = detectLanguageCb('testo in italiano');
+      expect(langResult).toBe('it');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // extractKeyPoints — content detection callbacks
+  // ---------------------------------------------------------------------------
+
+  describe('extractKeyPoints — content detection', () => {
+    beforeEach(() => {
+      PromptBuilder.buildKeyPointsPrompt.mockReturnValue({
+        systemPrompt: 'kp-sys',
+        userPrompt: 'kp-usr',
+      });
+      ProviderCaller.callOpenAICompletion.mockResolvedValue('kp result');
+    });
+
+    it('passes ContentDetector callbacks to PromptBuilder.buildKeyPointsPrompt', async () => {
+      await APIOrchestrator.extractKeyPoints('openai', 'key', {}, {});
+
+      const [, , , detectContentTypeCb, detectLanguageCb] =
+        PromptBuilder.buildKeyPointsPrompt.mock.calls[0];
+      expect(typeof detectContentTypeCb).toBe('function');
+      expect(typeof detectLanguageCb).toBe('function');
+
+      // Invoke callbacks to cover arrow functions at lines 72-73
+      const contentResult = detectContentTypeCb({ title: 'KP' });
+      expect(contentResult).toBe('general');
+
+      const langResult = detectLanguageCb('english text');
+      expect(langResult).toBe('it');
+    });
+
+    it('extractKeyPoints uses maxTokens 4096 for non-gemini', async () => {
+      await APIOrchestrator.extractKeyPoints('openai', 'key', {}, {});
+
+      const [, , , opts] = ProviderCaller.callOpenAICompletion.mock.calls[0];
+      expect(opts.maxTokens).toBe(4096);
     });
   });
 });

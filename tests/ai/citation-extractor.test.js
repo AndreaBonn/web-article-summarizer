@@ -353,3 +353,132 @@ describe('CitationExtractor.parseCitations()', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// extractCitations
+// ---------------------------------------------------------------------------
+
+import { APIOrchestrator } from '@utils/ai/api-orchestrator.js';
+import { PromptRegistry } from '@utils/ai/prompt-registry.js';
+
+describe('CitationExtractor.extractCitations()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    CitationMatcher.findParagraphForCitation.mockImplementation((citation) => citation.paragraph);
+  });
+
+  it('test_extractCitations_validArticle_returnsStructuredCitations', async () => {
+    const mockResponse = '{"citations": [], "total_citations": 0}';
+    APIOrchestrator.generateCompletion.mockResolvedValue(mockResponse);
+    parseLLMJson.mockReturnValue({ citations: [], total_citations: 0 });
+
+    const result = await CitationExtractor.extractCitations(
+      ARTICLE_COMPLETO,
+      'groq',
+      'fake-key',
+      {},
+    );
+
+    expect(result).toHaveProperty('citations');
+    expect(result).toHaveProperty('extractedAt');
+    expect(APIOrchestrator.generateCompletion).toHaveBeenCalledOnce();
+  });
+
+  it('test_extractCitations_geminiProvider_usesMaxTokens8000', async () => {
+    APIOrchestrator.generateCompletion.mockResolvedValue('{}');
+    parseLLMJson.mockReturnValue({ citations: [] });
+
+    await CitationExtractor.extractCitations(ARTICLE_COMPLETO, 'gemini', 'fake-key', {});
+
+    const callArgs = APIOrchestrator.generateCompletion.mock.calls[0];
+    expect(callArgs[4].maxTokens).toBe(8000);
+  });
+
+  it('test_extractCitations_nonGeminiProvider_usesMaxTokens4000', async () => {
+    APIOrchestrator.generateCompletion.mockResolvedValue('{}');
+    parseLLMJson.mockReturnValue({ citations: [] });
+
+    await CitationExtractor.extractCitations(ARTICLE_COMPLETO, 'groq', 'fake-key', {});
+
+    const callArgs = APIOrchestrator.generateCompletion.mock.calls[0];
+    expect(callArgs[4].maxTokens).toBe(4000);
+  });
+
+  it('test_extractCitations_apiError_throwsWithMessage', async () => {
+    APIOrchestrator.generateCompletion.mockRejectedValue(new Error('API timeout'));
+
+    await expect(
+      CitationExtractor.extractCitations(ARTICLE_COMPLETO, 'groq', 'fake-key', {}),
+    ).rejects.toThrow('Impossibile estrarre le citazioni');
+  });
+
+  it('test_extractCitations_callsGetCitationSystemPrompt', async () => {
+    APIOrchestrator.generateCompletion.mockResolvedValue('{}');
+    parseLLMJson.mockReturnValue({ citations: [] });
+
+    await CitationExtractor.extractCitations(ARTICLE_COMPLETO, 'openai', 'key', {});
+
+    expect(PromptRegistry.getCitationSystemPrompt).toHaveBeenCalledWith('openai');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Delegation methods
+// ---------------------------------------------------------------------------
+
+import { CitationFormatter } from '@utils/ai/citation-formatter.js';
+
+describe('CitationExtractor — delegation methods', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('test_generateBibliography_delegatesToCitationFormatter', () => {
+    CitationFormatter.generateBibliography.mockReturnValue('bibliography');
+
+    const result = CitationExtractor.generateBibliography(ARTICLE_COMPLETO, [], 'mla');
+
+    expect(CitationFormatter.generateBibliography).toHaveBeenCalledWith(
+      ARTICLE_COMPLETO,
+      [],
+      'mla',
+    );
+    expect(result).toBe('bibliography');
+  });
+
+  it('test_getCitationTypeLabel_delegatesToCitationFormatter', () => {
+    CitationFormatter.getCitationTypeLabel.mockReturnValue('Citazione Diretta');
+
+    const result = CitationExtractor.getCitationTypeLabel('direct_quote');
+
+    expect(CitationFormatter.getCitationTypeLabel).toHaveBeenCalledWith('direct_quote');
+    expect(result).toBe('Citazione Diretta');
+  });
+
+  it('test_normalizeText_delegatesToCitationMatcher', () => {
+    CitationMatcher.normalizeText = vi.fn().mockReturnValue('normalized');
+
+    const result = CitationExtractor.normalizeText('Some Text');
+
+    expect(CitationMatcher.normalizeText).toHaveBeenCalledWith('Some Text');
+    expect(result).toBe('normalized');
+  });
+
+  it('test_calculateSimilarity_delegatesToCitationMatcher', () => {
+    CitationMatcher.calculateSimilarity = vi.fn().mockReturnValue(0.85);
+
+    const result = CitationExtractor.calculateSimilarity('text1', 'text2');
+
+    expect(CitationMatcher.calculateSimilarity).toHaveBeenCalledWith('text1', 'text2');
+    expect(result).toBe(0.85);
+  });
+
+  it('test_extractKeywords_delegatesToCitationMatcher', () => {
+    CitationMatcher.extractKeywords = vi.fn().mockReturnValue(['keyword1', 'keyword2']);
+
+    const result = CitationExtractor.extractKeywords('some text with keywords');
+
+    expect(CitationMatcher.extractKeywords).toHaveBeenCalledWith('some text with keywords');
+    expect(result).toEqual(['keyword1', 'keyword2']);
+  });
+});
